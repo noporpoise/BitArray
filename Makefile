@@ -3,7 +3,9 @@ ifdef DEBUG
 endif
 
 all:
-	gcc -o bit_array_test $(FLAGS) -Wall bit_array_test.c bit_array.c utility_lib.c
+	gcc -o bit_array_test $(FLAGS) -Wall bit_array_test.c bit_array.c
 
 clean:
-	rm bit_array_test
+	if test -e bit_array_test; then rm bit_array_test; fi
+	for file in $(wildcard *.dSYM); do rm -r $$file; done
+	for file in $(wildcard *.greg); do rm $$file; done

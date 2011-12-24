@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "bit_array.h"
-#include "utility_lib.h"
 
 int main(int argc, char* argv[])
 {

@@ -24,8 +24,6 @@
 #ifndef BIT_ARRAY_HEADER_SEEN
 #define BIT_ARRAY_HEADER_SEEN
 
-#include <stdlib.h>
-
 // 64 bit
 typedef unsigned long word_t, word_addr_t, bit_index_t;
 // 32 bit

@@ -1,0 +1,8 @@
+Library code for bit arrays
+
+Isaac Turner <turner.isaac@gmail.com>
+ 
+== Build ==
+To build the test code:
+
+$ make
