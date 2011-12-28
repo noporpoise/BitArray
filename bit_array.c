@@ -32,7 +32,10 @@
 // sizeof gives size in bytes (8 bits per byte)
 int WORD_SIZE = sizeof(word_t) * 8;
 
+// Index of word
 inline word_addr_t bindex(bit_index_t b) { return b / WORD_SIZE; }
+
+// Offset within a word (values up to 64 most likely)
 inline unsigned int boffset(bit_index_t b) { return b % WORD_SIZE; }
 
 // Number of words required to store so many bits
@@ -85,35 +88,15 @@ char bit_array_get_bit(BIT_ARRAY* bitarr, bit_index_t b)
 /* set all elements of data to zero */
 void bit_array_fill_zeros(BIT_ARRAY* bitarr)
 {
-  int num_of_bytes = (bitarr->num_of_bits / 8) + 1;
-
+  size_t num_of_bytes = (bitarr->num_of_bits / 8) + 1;
   memset(bitarr->words, 0, num_of_bytes);
-
-  /*
-  unsigned long num_of_words = nwords(bitarr->num_of_bits);
-  
-  int i;
-  for(i = 0; i < num_of_words; i++)
-  {
-    bitarr->words[i] = 0;
-  }*/
 }
 
 /* set all elements of data to one */
 void bit_array_fill_ones(BIT_ARRAY* bitarr)
 {
-  int num_of_bytes = (bitarr->num_of_bits / 8) + 1;
-
+  size_t num_of_bytes = (bitarr->num_of_bits / 8) + 1;
   memset(bitarr->words, 0xFF, num_of_bytes);
-
-  /*
-  unsigned long num_of_words = nwords(bitarr->num_of_bits);
-  
-  int i;
-  for(i = 0; i < num_of_words; i++)
-  {
-    bitarr->words[i] = ~0;
-  }*/
 }
 
 // To string method (remember to free the result!)
@@ -121,7 +104,7 @@ char* bit_array_to_string(BIT_ARRAY* bitarr)
 {
   char* str = (char*) malloc(sizeof(char) * (bitarr->num_of_bits + 1));
 
-  unsigned long i;
+  bit_index_t i;
   
   for(i = 0; i < bitarr->num_of_bits; i++)
   {
