@@ -79,7 +79,7 @@ void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b)
 
 char bit_array_get_bit(BIT_ARRAY* bitarr, bit_index_t b)
 {
-  return (bitarr->words[bindex(b)] >> (boffset(b))) & 1;
+  return (bitarr->words[bindex(b)] >> (boffset(b))) & 0x1;
 }
 
 /* set all elements of data to zero */
