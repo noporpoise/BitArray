@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h> // memset
 
 #include "bit_array.h"
 
@@ -83,27 +84,38 @@ char bit_array_get_bit(BIT_ARRAY* bitarr, bit_index_t b)
 /* set all elements of data to zero */
 void bit_array_fill_zeros(BIT_ARRAY* bitarr)
 {
-  unsigned long num_of_words = nwords(bitarr->num_of_bits);
+  int num_of_bytes = (bitarr->num_of_bits / 8) + 1;
 
+  memset(bitarr->words, 0, num_of_bytes);
+
+  /*
+  unsigned long num_of_words = nwords(bitarr->num_of_bits);
+  
   int i;
   for(i = 0; i < num_of_words; i++)
   {
     bitarr->words[i] = 0;
-  }
+  }*/
 }
 
 /* set all elements of data to one */
 void bit_array_fill_ones(BIT_ARRAY* bitarr)
 {
-  unsigned long num_of_words = nwords(bitarr->num_of_bits);
+  int num_of_bytes = (bitarr->num_of_bits / 8) + 1;
 
+  memset(bitarr->words, 0xFF, num_of_bytes);
+
+  /*
+  unsigned long num_of_words = nwords(bitarr->num_of_bits);
+  
   int i;
   for(i = 0; i < num_of_words; i++)
   {
     bitarr->words[i] = ~0;
-  }
+  }*/
 }
 
+// To string method (remember to free the result!)
 char* bit_array_to_string(BIT_ARRAY* bitarr)
 {
   char* str = (char*) malloc(sizeof(char) * (bitarr->num_of_bits + 1));
