@@ -1,6 +1,7 @@
 /*
  bit_array.c
- project: bit array library
+ project: bit array C library
+ url: https://github.com/noporpoise/BitArray/
  author: Isaac Turner <turner.isaac@gmail.com>
  Copyright (C) 23-Dec-2011
  
