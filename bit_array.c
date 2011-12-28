@@ -22,13 +22,9 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define MIN(x,y) ((x) <= (y) ? (x) : (y))
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h> // memset
-
-#include "utility_lib.h"
 
 #include "bit_array.h"
 
@@ -43,7 +39,7 @@ inline word_addr_t bindex(bit_index_t b) { return b / WORD_SIZE; }
 inline unsigned int boffset(bit_index_t b) { return b % WORD_SIZE; }
 
 // Number of words required to store so many bits
-inline word_addr_t nwords(bit_index_t b) { return b / WORD_SIZE + 1; }
+inline word_addr_t nwords(bit_index_t b) { return (b + WORD_SIZE - 1) / WORD_SIZE; }
 
 // Constructor
 BIT_ARRAY* bit_array_create(bit_index_t nbits)
@@ -64,8 +60,10 @@ BIT_ARRAY* bit_array_create(bit_index_t nbits)
   {
     // error - could not allocate enough memory
     fprintf(stderr, "bit_array.c: bit_array_create() - "
-                    "cannot allocate enough memory (requested %lu bytes)",
+                    "cannot allocate enough memory (requested %lu bytes)\n",
             num_of_words);
+
+    exit(EXIT_FAILURE);
   }
 
   // Initialise to zero
@@ -90,6 +88,7 @@ void bit_array_set_bit(BIT_ARRAY* bitarr, bit_index_t b)
     fprintf(stderr, "bit_array.c: bit_array_set_bit() - "
             "out of bound error (index: %lu; length: %lu)\n",
             b, bitarr->num_of_bits);
+
     exit(EXIT_FAILURE);
   }
 
@@ -100,10 +99,11 @@ void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b)
 {
   if(b < 0 || b >= bitarr->num_of_bits)
   {
-    // bounds error
+    // out of bounds error
     fprintf(stderr, "bit_array.c: bit_array_clear_bit() - "
                     "out of bound error (index: %lu; length: %lu)\n",
             b, bitarr->num_of_bits);
+
     exit(EXIT_FAILURE);
   }
 
@@ -169,8 +169,12 @@ void bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
   word_addr_t old_num_of_words = nwords(old_num_of_bits);
   word_addr_t new_num_of_words = nwords(new_num_of_bits);
 
+  printf("resize %lu -> %lu (words: %lu -> %lu)\n",
+         old_num_of_bits, new_num_of_bits, old_num_of_words, new_num_of_words);
+
   if(new_num_of_words != old_num_of_words)
   {
+    // Need to change the amount of memory used
     bitarr->words = realloc(bitarr->words, new_num_of_words * sizeof(word_t));
     
     if(bitarr->words == NULL)
@@ -179,21 +183,27 @@ void bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
       fprintf(stderr, "bit_array.c: bit_array_resize() - "
                       "cannot allocate enough memory (requested %lu bytes)\n",
               new_num_of_words * sizeof(word_t));
+
       exit(EXIT_FAILURE);
     }
   }
 
-  // if we are growing - need to zero new words
+  // if we are growing - need to zero new bits
   if(new_num_of_bits > old_num_of_bits)
   {
-    // zero entire words
+    // zero entire words first
     if(new_num_of_words > old_num_of_words)
     {
-      memset(bitarr->words + old_num_of_words, 0x0,
+      memset(bitarr->words + old_num_of_words, 0,
              (new_num_of_words - old_num_of_words) * sizeof(word_t));
     }
     
-    // mask bits on last word
-    bitarr->words[old_num_of_words-1] &= (1l << old_num_of_bits)-1;
+    // zero bits on the end of what used to be the last word
+    bit_index_t bits_on_last_word = boffset(old_num_of_bits);
+
+    if(bits_on_last_word > 0)
+    {
+      bitarr->words[old_num_of_words-1] &= (1l << bits_on_last_word)-1;
+    }
   }
 }
