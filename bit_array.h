@@ -6,7 +6,7 @@
  Copyright (C) 23-Dec-2011
  
  Project adapted from:
- http://stackoverflow.com/questions/2633400/c-c-efficient-bit-array
+ http://stackoverflow.com/a/2633584/431087
  
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -50,5 +50,11 @@ void bit_array_fill_ones(BIT_ARRAY* bitarr);
 
 // Remember to free result!
 char* bit_array_to_string(BIT_ARRAY* bitarr);
+
+// Copy a BIT_ARRAY struct and the data it holds - returns pointer to new object
+BIT_ARRAY* bit_array_copy(BIT_ARRAY* bitarr);
+
+// Enlarge or shrink the size of a bit array
+void bit_array_resize(BIT_ARRAY* bitarr, bit_index_t nbits);
 
 #endif

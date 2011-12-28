@@ -6,7 +6,7 @@
  Copyright (C) 23-Dec-2011
  
  Project adapted from:
- http://stackoverflow.com/questions/2633400/c-c-efficient-bit-array
+ http://stackoverflow.com/a/2633584/431087
  
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -22,9 +22,13 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define MIN(x,y) ((x) <= (y) ? (x) : (y))
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h> // memset
+
+#include "utility_lib.h"
 
 #include "bit_array.h"
 
@@ -56,6 +60,14 @@ BIT_ARRAY* bit_array_create(bit_index_t nbits)
   bitarr->num_of_bits = nbits;
   bitarr->words = (word_t*) malloc(sizeof(word_t) * num_of_words);
 
+  if(bitarr->words == NULL)
+  {
+    // error - could not allocate enough memory
+    fprintf(stderr, "bit_array.c: bit_array_create() - "
+                    "cannot allocate enough memory (requested %lu bytes)",
+            num_of_words);
+  }
+
   // Initialise to zero
   bit_array_fill_zeros(bitarr);
 
@@ -72,11 +84,29 @@ void bit_array_free(BIT_ARRAY* bitarr)
 // Methods
 void bit_array_set_bit(BIT_ARRAY* bitarr, bit_index_t b)
 {
+  if(b < 0 || b >= bitarr->num_of_bits)
+  {
+    // bounds error
+    fprintf(stderr, "bit_array.c: bit_array_set_bit() - "
+            "out of bound error (index: %lu; length: %lu)\n",
+            b, bitarr->num_of_bits);
+    exit(EXIT_FAILURE);
+  }
+
   bitarr->words[bindex(b)] |= ((word_t)1 << (boffset(b)));
 }
 
 void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b)
 {
+  if(b < 0 || b >= bitarr->num_of_bits)
+  {
+    // bounds error
+    fprintf(stderr, "bit_array.c: bit_array_clear_bit() - "
+                    "out of bound error (index: %lu; length: %lu)\n",
+            b, bitarr->num_of_bits);
+    exit(EXIT_FAILURE);
+  }
+
   bitarr->words[bindex(b)] &= ~((word_t)1 << (boffset(b)));
 }
 
@@ -114,4 +144,56 @@ char* bit_array_to_string(BIT_ARRAY* bitarr)
   str[bitarr->num_of_bits] = '\0';
 
   return str;
+}
+
+BIT_ARRAY* bit_array_copy(BIT_ARRAY* bitarr)
+{
+  BIT_ARRAY* cpy = (BIT_ARRAY*) malloc(sizeof(BIT_ARRAY));
+
+  word_addr_t num_of_words = nwords(bitarr->num_of_bits);
+
+  cpy->num_of_bits = bitarr->num_of_bits;
+  cpy->words = (word_t*) malloc(sizeof(word_t) * num_of_words);
+
+  // Copy across bits
+  memcpy(cpy->words, bitarr->words, num_of_words);
+
+  return cpy;
+}
+
+void bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
+{
+  bit_index_t old_num_of_bits = bitarr->num_of_bits;
+  bitarr->num_of_bits = new_num_of_bits;
+
+  word_addr_t old_num_of_words = nwords(old_num_of_bits);
+  word_addr_t new_num_of_words = nwords(new_num_of_bits);
+
+  if(new_num_of_words != old_num_of_words)
+  {
+    bitarr->words = realloc(bitarr->words, new_num_of_words * sizeof(word_t));
+    
+    if(bitarr->words == NULL)
+    {
+      // error - could not allocate enough memory
+      fprintf(stderr, "bit_array.c: bit_array_resize() - "
+                      "cannot allocate enough memory (requested %lu bytes)\n",
+              new_num_of_words * sizeof(word_t));
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  // if we are growing - need to zero new words
+  if(new_num_of_bits > old_num_of_bits)
+  {
+    // zero entire words
+    if(new_num_of_words > old_num_of_words)
+    {
+      memset(bitarr->words + old_num_of_words, 0x0,
+             (new_num_of_words - old_num_of_words) * sizeof(word_t));
+    }
+    
+    // mask bits on last word
+    bitarr->words[old_num_of_words-1] &= (1l << old_num_of_bits)-1;
+  }
 }

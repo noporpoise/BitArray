@@ -1,11 +1,12 @@
 /*
  bit_array_test.c
- project: bit array library
+ project: bit array C library
+ url: https://github.com/noporpoise/BitArray/
  author: Isaac Turner <turner.isaac@gmail.com>
  Copyright (C) 23-Dec-2011
  
  Project adapted from:
- http://stackoverflow.com/questions/2633400/c-c-efficient-bit-array
+ http://stackoverflow.com/a/2633584/431087
  
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -36,42 +37,86 @@ int main(int argc, char* argv[])
   bitarr = bit_array_create(100);
 
   str = bit_array_to_string(bitarr);
-  printf("0) '%s'\n", str);
+  printf("0) Create bit array 100 bits long\n");
+  printf("'%s'\n", str);
   free(str);
   
   bit_array_set_bit(bitarr, 2);
   str = bit_array_to_string(bitarr);
-  printf("1) '%s'\n", str);
+  printf("1) set bit 2\n");
+  printf("'%s'\n", str);
   free(str);
   
   bit_array_set_bit(bitarr, 5);
   str = bit_array_to_string(bitarr);
-  printf("2) '%s'\n", str);
+  printf("2) set bit 5\n");
+  printf("'%s'\n", str);
   free(str);
   
   bit_array_set_bit(bitarr, 99);
   str = bit_array_to_string(bitarr);
-  printf("3) '%s'\n", str);
+  printf("3) set bit 99\n");
+  printf("'%s'\n", str);
   free(str);
   
   bit_array_fill_zeros(bitarr);
   str = bit_array_to_string(bitarr);
-  printf("4) '%s'\n", str);
+  printf("4) fill with zeros\n");
+  printf("'%s'\n", str);
   free(str);
   
   bit_array_fill_ones(bitarr);
   str = bit_array_to_string(bitarr);
-  printf("5) '%s'\n", str);
+  printf("5) fill with ones\n");
+  printf("'%s'\n", str);
   free(str);
   
   bit_array_clear_bit(bitarr, 1);
   str = bit_array_to_string(bitarr);
-  printf("6) '%s'\n", str);
+  printf("6) clear bit 1\n");
+  printf("'%s'\n", str);
   free(str);
   
   bit_array_clear_bit(bitarr, 98);
   str = bit_array_to_string(bitarr);
-  printf("7) '%s'\n", str);
+  printf("7) clear bit 98\n");
+  printf("'%s'\n", str);
+  free(str);
+  
+  bit_array_clear_bit(bitarr, 99);
+  str = bit_array_to_string(bitarr);
+  printf("8) clear bit 99\n");
+  printf("'%s'\n", str);
+  free(str);
+  
+  bit_array_resize(bitarr, 40);
+  str = bit_array_to_string(bitarr);
+  printf("9) resize to 40 bits\n");
+  printf("'%s'\n", str);
+  free(str);
+  
+  bit_array_resize(bitarr, 100);
+  str = bit_array_to_string(bitarr);
+  printf("10) resize to 100 bits\n");
+  printf("'%s'\n", str);
+  free(str);
+  
+  bit_array_fill_ones(bitarr);
+  str = bit_array_to_string(bitarr);
+  printf("11) fill with ones\n");
+  printf("'%s'\n", str);
+  free(str);
+  
+  bit_array_resize(bitarr, 64);
+  str = bit_array_to_string(bitarr);
+  printf("12) resize to 64 bits\n");
+  printf("'%s'\n", str);
+  free(str);
+  
+  bit_array_resize(bitarr, 128);
+  str = bit_array_to_string(bitarr);
+  printf("13) resize to 128 bits\n");
+  printf("'%s'\n", str);
   free(str);
   
   // Deconstruct bit array
