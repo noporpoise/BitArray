@@ -28,7 +28,10 @@
 
 #include "bit_array.h"
 
+//
 // For internal use
+//
+
 // sizeof gives size in bytes (8 bits per byte)
 int WORD_SIZE = sizeof(word_t) * 8;
 
@@ -41,7 +44,10 @@ inline unsigned int boffset(bit_index_t b) { return b % WORD_SIZE; }
 // Number of words required to store so many bits
 inline word_addr_t nwords(bit_index_t b) { return (b + WORD_SIZE - 1) / WORD_SIZE; }
 
+
+//
 // Constructor
+//
 BIT_ARRAY* bit_array_create(bit_index_t nbits)
 {
   BIT_ARRAY* bitarr = (BIT_ARRAY*) malloc(sizeof(BIT_ARRAY));
@@ -72,14 +78,19 @@ BIT_ARRAY* bit_array_create(bit_index_t nbits)
   return bitarr;
 }
 
+//
 // Destructor
+//
 void bit_array_free(BIT_ARRAY* bitarr)
 {
   free(bitarr->words);
   free(bitarr);
 }
 
+
+//
 // Methods
+//
 void bit_array_set_bit(BIT_ARRAY* bitarr, bit_index_t b)
 {
   if(b < 0 || b >= bitarr->num_of_bits)
