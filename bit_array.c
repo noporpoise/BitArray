@@ -167,11 +167,13 @@ BIT_ARRAY* bit_array_copy(BIT_ARRAY* bitarr)
   cpy->words = (word_t*) malloc(sizeof(word_t) * num_of_words);
 
   // Copy across bits
-  memcpy(cpy->words, bitarr->words, num_of_words);
+  memcpy(cpy->words, bitarr->words, num_of_words*sizeof(word_t));
 
   return cpy;
 }
 
+// Reducing the amount of space required can free up memory
+// Expanding an bit array extends it by adding zeros to the end
 void bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
 {
   bit_index_t old_num_of_bits = bitarr->num_of_bits;
@@ -180,8 +182,8 @@ void bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
   word_addr_t old_num_of_words = nwords(old_num_of_bits);
   word_addr_t new_num_of_words = nwords(new_num_of_bits);
 
-  printf("resize %lu -> %lu (words: %lu -> %lu)\n",
-         old_num_of_bits, new_num_of_bits, old_num_of_words, new_num_of_words);
+  //printf("resize %lu -> %lu (words: %lu -> %lu)\n",
+  //       old_num_of_bits, new_num_of_bits, old_num_of_words, new_num_of_words);
 
   if(new_num_of_words != old_num_of_words)
   {

@@ -29,93 +29,124 @@
 int main(int argc, char* argv[])
 {
   printf("Oh hi!\n");
-  
+  printf("  Example operations on bit_array C library:\n");
+
   BIT_ARRAY* bitarr;
   char* str;
   
   // construct bit array
   bitarr = bit_array_create(100);
+  
+  int step = 0;
 
   str = bit_array_to_string(bitarr);
-  printf("0) Create bit array 100 bits long\n");
+  printf("%i) Create bit array 100 bits long\n", step++);
   printf("'%s'\n", str);
   free(str);
   
   bit_array_set_bit(bitarr, 2);
   str = bit_array_to_string(bitarr);
-  printf("1) set bit 2\n");
+  printf("%i) set bit 2\n", step++);
   printf("'%s'\n", str);
   free(str);
   
   bit_array_set_bit(bitarr, 5);
   str = bit_array_to_string(bitarr);
-  printf("2) set bit 5\n");
+  printf("%i) set bit 5\n", step++);
   printf("'%s'\n", str);
   free(str);
   
   bit_array_set_bit(bitarr, 99);
   str = bit_array_to_string(bitarr);
-  printf("3) set bit 99\n");
+  printf("%i) set bit 99\n", step++);
   printf("'%s'\n", str);
   free(str);
   
+  bit_array_set_bit(bitarr, 0);
+  str = bit_array_to_string(bitarr);
+  printf("%i) set bit 0\n", step);
+  printf("'%s'\n", str);
+  free(str);
+  
+  /* Test Copy */
+  BIT_ARRAY* copy = bit_array_copy(bitarr);
+  str = bit_array_to_string(copy);
+  printf("%i.1) copy\n", step);
+  printf("'%s'\n", str);
+  free(str);
+  
+  bit_array_clear_bit(copy, 0);
+  str = bit_array_to_string(copy);
+  printf("%i.2) clear bit 0\n", step);
+  printf("'%s'\n", str);
+  free(str);
+  
+  bit_array_set_bit(copy, 21);
+  str = bit_array_to_string(copy);
+  printf("%i.3) set bit 21\n", step++);
+  printf("'%s'\n", str);
+  free(str);
+  
+  bit_array_free(copy);
+  /* End of copy */
+  
   bit_array_fill_zeros(bitarr);
   str = bit_array_to_string(bitarr);
-  printf("4) fill with zeros\n");
+  printf("%i) fill with zeros\n", step++);
   printf("'%s'\n", str);
   free(str);
   
   bit_array_fill_ones(bitarr);
   str = bit_array_to_string(bitarr);
-  printf("5) fill with ones\n");
+  printf("%i) fill with ones\n", step++);
   printf("'%s'\n", str);
   free(str);
   
   bit_array_clear_bit(bitarr, 1);
   str = bit_array_to_string(bitarr);
-  printf("6) clear bit 1\n");
+  printf("%i) clear bit 1\n", step++);
   printf("'%s'\n", str);
   free(str);
   
   bit_array_clear_bit(bitarr, 98);
   str = bit_array_to_string(bitarr);
-  printf("7) clear bit 98\n");
+  printf("%i) clear bit 98\n", step++);
   printf("'%s'\n", str);
   free(str);
   
   bit_array_clear_bit(bitarr, 99);
   str = bit_array_to_string(bitarr);
-  printf("8) clear bit 99\n");
+  printf("%i) clear bit 99\n", step++);
   printf("'%s'\n", str);
   free(str);
   
   bit_array_resize(bitarr, 40);
   str = bit_array_to_string(bitarr);
-  printf("9) resize to 40 bits\n");
+  printf("%i) resize to 40 bits\n", step++);
   printf("'%s'\n", str);
   free(str);
   
   bit_array_resize(bitarr, 100);
   str = bit_array_to_string(bitarr);
-  printf("10) resize to 100 bits\n");
+  printf("%i) resize to 100 bits\n", step++);
   printf("'%s'\n", str);
   free(str);
   
   bit_array_fill_ones(bitarr);
   str = bit_array_to_string(bitarr);
-  printf("11) fill with ones\n");
+  printf("%i) fill with ones\n", step++);
   printf("'%s'\n", str);
   free(str);
   
   bit_array_resize(bitarr, 64);
   str = bit_array_to_string(bitarr);
-  printf("12) resize to 64 bits\n");
+  printf("%i) resize to 64 bits\n", step++);
   printf("'%s'\n", str);
   free(str);
   
   bit_array_resize(bitarr, 128);
   str = bit_array_to_string(bitarr);
-  printf("13) resize to 128 bits\n");
+  printf("%i) resize to 128 bits\n", step++);
   printf("'%s'\n", str);
   free(str);
   
