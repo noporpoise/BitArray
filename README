@@ -1,8 +1,64 @@
-Library code for bit arrays
+C code for bit arrays
+https://github.com/noporpoise/BitArray/
+GPLv3
 
 Isaac Turner <turner.isaac@gmail.com>
- 
+
+== About ==
+
+Bit arrays are arrays of bits (values zero or one).  This is a convenient and
+efficient implementation for C/C++.  
+
+Bit arrays are initialised to zero when created or extended.  All operations
+have their bounds checked - an "Out of bounds" error is printed if you try to
+access a bit with index < 0 or >= length.
+
+Please get in touch if you have suggestions / requests / bugs.  
+
 == Build ==
-To build the test code:
+
+To build and run the test code:
 
 $ make
+$ ./bit_array_test
+
+== Methods ==
+
+Add to the top of your code:
+
+#include "bit_array.h"
+
+Then you can call the following methods:
+
+// Constructor - create a new bit array of length nbits
+BIT_ARRAY* bit_array_create(bit_index_t nbits);
+
+// Destructor - free the memory used for a bit array
+void bit_array_free(BIT_ARRAY* bitarray);
+
+// set a bit (to 1) at position b
+void bit_array_set_bit(BIT_ARRAY* bitarr, bit_index_t b);
+
+// clear a bit (to 0) at position b
+void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b);
+
+// Get the value of a bit (returns 0 or 1)
+char bit_array_get_bit(BIT_ARRAY* bitarr, bit_index_t b);
+
+// Set all bits in this array to 0
+void bit_array_fill_zeros(BIT_ARRAY* bitarr);
+
+// Set all bits in this array to 1
+void bit_array_fill_ones(BIT_ARRAY* bitarr);
+
+// Get this array as a string (remember to free the result!)
+char* bit_array_to_string(BIT_ARRAY* bitarr);
+
+// Copy a BIT_ARRAY struct and the data it holds - returns pointer to new object
+BIT_ARRAY* bit_array_copy(BIT_ARRAY* bitarr);
+
+// Enlarge or shrink the size of a bit array
+// Shrinking will free some memory if it is large
+// Enlarging an array will add zeros to the end of it
+void bit_array_resize(BIT_ARRAY* bitarr, bit_index_t nbits);
+
