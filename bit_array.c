@@ -42,7 +42,10 @@ inline word_addr_t bindex(bit_index_t b) { return b / WORD_SIZE; }
 inline unsigned int boffset(bit_index_t b) { return b % WORD_SIZE; }
 
 // Number of words required to store so many bits
-inline word_addr_t nwords(bit_index_t b) { return (b + WORD_SIZE - 1) / WORD_SIZE; }
+inline word_addr_t nwords(bit_index_t b)
+{
+  return (b + WORD_SIZE - 1) / WORD_SIZE;
+}
 
 
 //
@@ -129,14 +132,15 @@ char bit_array_get_bit(BIT_ARRAY* bitarr, bit_index_t b)
 /* set all elements of data to zero */
 void bit_array_fill_zeros(BIT_ARRAY* bitarr)
 {
-  size_t num_of_bytes = (bitarr->num_of_bits / 8) + 1;
+  //size_t num_of_bytes = (bitarr->num_of_bits / 8) + 1;
+  size_t num_of_bytes = nwords(bitarr->num_of_bits) * sizeof(word_t);
   memset(bitarr->words, 0, num_of_bytes);
 }
 
 /* set all elements of data to one */
 void bit_array_fill_ones(BIT_ARRAY* bitarr)
 {
-  size_t num_of_bytes = (bitarr->num_of_bits / 8) + 1;
+  size_t num_of_bytes = nwords(bitarr->num_of_bits) * sizeof(word_t);
   memset(bitarr->words, 0xFF, num_of_bytes);
 }
 
