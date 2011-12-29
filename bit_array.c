@@ -24,6 +24,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <string.h> // memset
 
 #include "bit_array.h"
@@ -54,6 +55,14 @@ inline word_addr_t nwords(bit_index_t b)
 BIT_ARRAY* bit_array_create(bit_index_t nbits)
 {
   BIT_ARRAY* bitarr = (BIT_ARRAY*) malloc(sizeof(BIT_ARRAY));
+  
+  if(bitarr == NULL)
+  {
+    // error - could not allocate enough memory
+    errno = ENOMEM;
+    return NULL;
+  }
+  
   word_addr_t num_of_words = nwords(nbits);
 
   #ifdef DEBUG
@@ -68,11 +77,9 @@ BIT_ARRAY* bit_array_create(bit_index_t nbits)
   if(bitarr->words == NULL)
   {
     // error - could not allocate enough memory
-    fprintf(stderr, "bit_array.c: bit_array_create() - "
-                    "cannot allocate enough memory (requested %lu bytes)\n",
-            num_of_words);
-
-    exit(EXIT_FAILURE);
+    free(bitarr);
+    errno = ENOMEM;
+    return NULL;
   }
 
   // Initialise to zero
@@ -176,18 +183,17 @@ BIT_ARRAY* bit_array_copy(BIT_ARRAY* bitarr)
   return cpy;
 }
 
-// Reducing the amount of space required can free up memory
-// Expanding an bit array extends it by adding zeros to the end
-void bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
+// Enlarge or shrink the size of a bit array
+// Shrinking will free some memory if it is large
+// Enlarging an array will add zeros to the end of it
+// returns 1 on success, 0 on failure
+char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
 {
   bit_index_t old_num_of_bits = bitarr->num_of_bits;
   bitarr->num_of_bits = new_num_of_bits;
 
   word_addr_t old_num_of_words = nwords(old_num_of_bits);
   word_addr_t new_num_of_words = nwords(new_num_of_bits);
-
-  //printf("resize %lu -> %lu (words: %lu -> %lu)\n",
-  //       old_num_of_bits, new_num_of_bits, old_num_of_words, new_num_of_words);
 
   if(new_num_of_words != old_num_of_words)
   {
@@ -197,11 +203,8 @@ void bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
     if(bitarr->words == NULL)
     {
       // error - could not allocate enough memory
-      fprintf(stderr, "bit_array.c: bit_array_resize() - "
-                      "cannot allocate enough memory (requested %lu bytes)\n",
-              new_num_of_words * sizeof(word_t));
-
-      exit(EXIT_FAILURE);
+      errno = ENOMEM;
+      return 0;
     }
   }
 
@@ -220,7 +223,9 @@ void bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
 
     if(bits_on_last_word > 0)
     {
-      bitarr->words[old_num_of_words-1] &= (1l << bits_on_last_word)-1;
+      bitarr->words[old_num_of_words-1] &= ((word_t)1 << bits_on_last_word)-1;
     }
   }
+  
+  return 1;
 }

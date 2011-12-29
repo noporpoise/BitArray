@@ -67,6 +67,7 @@ BIT_ARRAY* bit_array_copy(BIT_ARRAY* bitarr);
 // Enlarge or shrink the size of a bit array
 // Shrinking will free some memory if it is large
 // Enlarging an array will add zeros to the end of it
-void bit_array_resize(BIT_ARRAY* bitarr, bit_index_t nbits);
+// returns 1 on success, 0 on failure
+char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits);
 
 #endif
