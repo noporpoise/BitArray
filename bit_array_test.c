@@ -2,25 +2,28 @@
  bit_array_test.c
  project: bit array C library
  url: https://github.com/noporpoise/BitArray/
+ Adapted from: http://stackoverflow.com/a/2633584/431087
  author: Isaac Turner <turner.isaac@gmail.com>
- Copyright (C) 23-Dec-2011
- 
- Project adapted from:
- http://stackoverflow.com/a/2633584/431087
- 
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
- 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
- 
- You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+
+ Copyright (c) 2011, Isaac Turner
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -68,27 +71,27 @@ int main(int argc, char* argv[])
   printf("'%s'\n", str);
   free(str);
   
-  /* Test Copy */
-  BIT_ARRAY* copy = bit_array_copy(bitarr);
-  str = bit_array_to_string(copy);
-  printf("%i.1) copy\n", step);
+  /* Test clone */
+  BIT_ARRAY* clone = bit_array_clone(bitarr);
+  str = bit_array_to_string(clone);
+  printf("%i.1) clone\n", step);
   printf("'%s'\n", str);
   free(str);
   
-  bit_array_clear_bit(copy, 0);
-  str = bit_array_to_string(copy);
+  bit_array_clear_bit(clone, 0);
+  str = bit_array_to_string(clone);
   printf("%i.2) clear bit 0\n", step);
   printf("'%s'\n", str);
   free(str);
   
-  bit_array_set_bit(copy, 21);
-  str = bit_array_to_string(copy);
+  bit_array_set_bit(clone, 21);
+  str = bit_array_to_string(clone);
   printf("%i.3) set bit 21\n", step++);
   printf("'%s'\n", str);
   free(str);
   
-  bit_array_free(copy);
-  /* End of copy */
+  bit_array_free(clone);
+  /* End of clone */
   
   bit_array_fill_zeros(bitarr);
   str = bit_array_to_string(bitarr);
