@@ -102,4 +102,9 @@ char bit_array_increment(BIT_ARRAY* bitarr);
 // Returns 0 if there was an underflow, 1 otherwise
 char bit_array_decrement(BIT_ARRAY* bitarr);
 
+// start index must be within the range of the bit array (0 <= x < length)
+long bit_array_get_long(BIT_ARRAY* bitarr, bit_index_t start);
+int  bit_array_get_int (BIT_ARRAY* bitarr, bit_index_t start);
+char bit_array_get_char(BIT_ARRAY* bitarr, bit_index_t start);
+
 #endif

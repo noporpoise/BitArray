@@ -555,3 +555,83 @@ char bit_array_decrement(BIT_ARRAY* bitarr)
     return 1;
   }
 }
+
+long bit_array_get_long(BIT_ARRAY* bitarr, bit_index_t start)
+{
+  // Bounds checking
+  if(start >= bitarr->num_of_bits)
+  {
+    fprintf(stderr, "bit_array.c: bit_array_get_long() - out of bounds error "
+                    "(index: %lu, length: %lu)\n", start, bitarr->num_of_bits);
+    exit(EXIT_FAILURE);
+  }
+
+  word_addr_t num_of_words = nwords(bitarr->num_of_bits);
+
+  word_addr_t word_index = bindex(start);
+  unsigned int start_offset = boffset(start);
+
+  long result = get_word(bitarr, word_index++, num_of_words) >> start_offset;
+
+  unsigned int offset = WORD_SIZE - start_offset;
+
+  // 64 bits in a long
+  while(offset < 64)
+  {
+    result |= get_word(bitarr, word_index++, num_of_words) << offset;
+    offset += WORD_SIZE;
+  }
+
+  return result;
+}
+
+int bit_array_get_int(BIT_ARRAY* bitarr, bit_index_t start)
+{
+  // Bounds checking
+  if(start >= bitarr->num_of_bits)
+  {
+    fprintf(stderr, "bit_array.c: bit_array_get_long() - out of bounds error "
+                    "(index: %lu, length: %lu)\n", start, bitarr->num_of_bits);
+    exit(EXIT_FAILURE);
+  }
+
+  word_addr_t num_of_words = nwords(bitarr->num_of_bits);
+
+  word_addr_t word_index = bindex(start);
+  unsigned int start_offset = boffset(start);
+
+  int result
+    = ((get_word(bitarr, word_index++, num_of_words) >> start_offset) & UINT_MAX);
+
+  unsigned int offset = WORD_SIZE - start_offset;
+
+  // 32 bits in an int
+  while(offset < 32)
+  {
+    result |= (get_word(bitarr, word_index++, num_of_words) << offset) & UINT_MAX;
+    offset += WORD_SIZE;
+  }
+
+  return result;
+}
+
+char bit_array_get_char(BIT_ARRAY* bitarr, bit_index_t start)
+{
+  // Bounds checking
+  if(start >= bitarr->num_of_bits)
+  {
+    fprintf(stderr, "bit_array.c: bit_array_get_long() - out of bounds error "
+                    "(index: %lu, length: %lu)\n", start, bitarr->num_of_bits);
+    exit(EXIT_FAILURE);
+  }
+
+  word_addr_t num_of_words = nwords(bitarr->num_of_bits);
+
+  word_addr_t word_index = bindex(start);
+  unsigned int start_offset = boffset(start);
+
+  char result = get_word(bitarr, word_index, num_of_words) >> start_offset;
+  result |= get_word(bitarr, word_index+1, num_of_words) << (WORD_SIZE - start_offset);
+
+  return result;
+}
