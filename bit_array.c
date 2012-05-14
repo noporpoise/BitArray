@@ -40,11 +40,6 @@
 // For internal use
 //
 
-struct BIT_ARRAY {
-  word_t* words;
-  unsigned long num_of_bits;
-};
-
 // sizeof gives size in bytes (8 bits per byte)
 int WORD_SIZE = sizeof(word_t) * 8;
 
@@ -658,3 +653,34 @@ char bit_array_get_char(BIT_ARRAY* bitarr, bit_index_t start)
 
   return result;
 }
+
+
+void bit_array_save(BIT_ARRAY* bitarr, FILE* f) {
+  size_t num_of_bytes = nwords(bitarr->num_of_bits);
+
+  fwrite(&num_of_bytes, sizeof(size_t), 1, f);
+
+  fwrite(&bitarr->num_of_bits, sizeof(unsigned long), 1, f);
+
+  fwrite(bitarr->words, sizeof(word_t), num_of_bytes, f);
+
+}
+
+
+BIT_ARRAY* bit_array_load(FILE* f) {
+  BIT_ARRAY *bitarr;
+  size_t num_of_bytes;
+
+  bitarr = malloc(sizeof(BIT_ARRAY));
+
+  fread(&num_of_bytes, sizeof(size_t), 1, f);
+
+  bitarr->words = malloc(sizeof(word_t) * num_of_bytes);
+
+  fread(&bitarr->num_of_bits, sizeof(unsigned long), 1, f);
+
+  fread(bitarr->words, sizeof(word_t), num_of_bytes, f);
+
+  return bitarr;
+}
+

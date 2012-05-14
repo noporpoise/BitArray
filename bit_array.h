@@ -28,10 +28,18 @@
 #ifndef BIT_ARRAY_HEADER_SEEN
 #define BIT_ARRAY_HEADER_SEEN
 
+#include<stdio.h>
+
 // 64 bit
 typedef unsigned long word_t, word_addr_t, bit_index_t;
 // 32 bit
 //typedef unsigned int word_t, word_addr_t, bit_index_t;
+
+struct BIT_ARRAY {
+  word_t* words;
+  unsigned long num_of_bits;
+};
+
 
 typedef struct BIT_ARRAY BIT_ARRAY;
 
@@ -106,5 +114,9 @@ char bit_array_decrement(BIT_ARRAY* bitarr);
 long bit_array_get_long(BIT_ARRAY* bitarr, bit_index_t start);
 int  bit_array_get_int (BIT_ARRAY* bitarr, bit_index_t start);
 char bit_array_get_char(BIT_ARRAY* bitarr, bit_index_t start);
+
+// store and load bit array from a file
+BIT_ARRAY* bit_array_load(FILE* f);
+void bit_array_save(BIT_ARRAY* bitarr, FILE* f);
 
 #endif
