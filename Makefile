@@ -3,7 +3,7 @@ ifdef DEBUG
 endif
 
 CC=gcc
-CFLAGS=-Wall
+CFLAGS=-Wall -O9
 LDFLAGS=
 SOURCES=bit_array_test.c bit_array.c
 OBJECTS=$(SOURCES:.c=.o)
