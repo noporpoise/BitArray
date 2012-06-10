@@ -153,9 +153,29 @@ int main(int argc, char* argv[])
   printf("'%s'\n", str);
   free(str);
   
+  FILE* f;
+  char filename[] = "/tmp/bitarrtest.bits";
+  f = fopen(filename, "w");
+  bit_array_save(bitarr, f);
+  fclose(f);
+
+  printf("Saving bitarray in %s\n", filename);
+  str = bit_array_to_string(bitarr);
+  printf("'%s'\n", str);
+  free(str);
+
   // Deconstruct bit array
   bit_array_free(bitarr);
   
+  f = fopen(filename, "r");
+  bitarr = bit_array_load(f);
+  fclose(f);
+
+  printf("Loading bitarray in %s\n", filename);
+  str = bit_array_to_string(bitarr);
+  printf("'%s'\n", str);
+  free(str);
+
   printf(" THE END.\n");
   
   return EXIT_SUCCESS;
