@@ -5,7 +5,7 @@
  Adapted from: http://stackoverflow.com/a/2633584/431087
  author: Isaac Turner <turner.isaac@gmail.com>
 
- Copyright (c) 2011, Isaac Turner
+ Copyright (c) 2012, Isaac Turner
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -25,6 +25,10 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// 64 bit words
+// Array length can be zero
+// Unused top bits must be zero
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -40,6 +44,11 @@
 // For internal use
 //
 
+struct BIT_ARRAY {
+  word_t* words;
+  bit_index_t num_of_bits;
+};
+
 // sizeof gives size in bytes (8 bits per byte)
 int WORD_SIZE = sizeof(word_t) * 8;
 
@@ -49,14 +58,27 @@ inline word_addr_t bindex(bit_index_t b) { return b / WORD_SIZE; }
 // Offset within a word (values up to 64 most likely)
 inline unsigned int boffset(bit_index_t b) { return b % WORD_SIZE; }
 
-// Number of words required to store so many bits
+// Number of words required to store a given number of bits
 inline word_addr_t nwords(bit_index_t b)
 {
   return (b + WORD_SIZE - 1) / WORD_SIZE;
 }
 
-//#define BIT_MASK(length)  (((word_t)1 << (length))-1) // overflows
-#define BIT_MASK(length)  ((word_t)ULONG_MAX >> (WORD_SIZE-(length)))
+// Number of bytes required to store a given number of bits
+inline word_addr_t nbytes(bit_index_t b)
+{
+  return (b + 7) / 8;
+}
+
+// word of all 1s
+#define WORD_MAX  (~(word_t)0)
+#define BIT_MASK(length)  (WORD_MAX >> (WORD_SIZE-(length)))
+
+inline void mask_top_word(BIT_ARRAY* bitarr, word_addr_t num_of_words)
+{
+  // Mask top word
+  bitarr->words[num_of_words-1] &= BIT_MASK(boffset(bitarr->num_of_bits-1)+1);
+}
 
 //
 // Constructor
@@ -71,7 +93,7 @@ BIT_ARRAY* bit_array_create(bit_index_t nbits)
     errno = ENOMEM;
     return NULL;
   }
-  
+
   word_addr_t num_of_words = nwords(nbits);
 
   #ifdef DEBUG
@@ -112,79 +134,70 @@ void bit_array_free(BIT_ARRAY* bitarr)
 //
 void bit_array_set_bit(BIT_ARRAY* bitarr, bit_index_t b)
 {
-  if ( b >= 0 && b < bitarr->num_of_bits )
-  {
-    bitarr->words[bindex(b)] |= ((word_t)1 << (boffset(b)));
-  }
-  else
+  if(b >= bitarr->num_of_bits)
   {
     // out of bounds error
     fprintf(stderr, "bit_array.c: bit_array_set_bit() - "
             "out of bounds error (index: %lu; length: %lu)\n",
-            b, bitarr->num_of_bits);
+            (unsigned long)b, (unsigned long)bitarr->num_of_bits);
 
     errno = EDOM;
 
     exit(EXIT_FAILURE);
   }
 
-
+  bitarr->words[bindex(b)] |= ((word_t)0x1 << (boffset(b)));
 }
 
 void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b)
 {
-  if ( b >= 0 && b < bitarr->num_of_bits )
-  {
-    bitarr->words[bindex(b)] &= ~((word_t)1 << (boffset(b)));
-  }
-  else
+  if(b >= bitarr->num_of_bits)
   {
     // out of bounds error
     fprintf(stderr, "bit_array.c: bit_array_clear_bit() - "
                     "out of bounds error (index: %lu; length: %lu)\n",
-            b, bitarr->num_of_bits);
+            (unsigned long)b, (unsigned long)bitarr->num_of_bits);
 
     errno = EDOM;
 
     exit(EXIT_FAILURE);
   }
 
-
+  bitarr->words[bindex(b)] &= ~((word_t)1 << (boffset(b)));
 }
 
 char bit_array_get_bit(BIT_ARRAY* bitarr, bit_index_t b)
 {
-
-  if ( b >= 0 && b < bitarr->num_of_bits )
-  {
-    return (bitarr->words[bindex(b)] >> (boffset(b))) & 0x1;
-  }
-  else
+  if(b >= bitarr->num_of_bits)
   {
     // out of bounds error
     fprintf(stderr, "bit_array.c: bit_array_get_bit() - "
                     "out of bounds error (index: %lu; length: %lu)\n",
-            b, bitarr->num_of_bits);
+            (unsigned long)b, (unsigned long)bitarr->num_of_bits);
 
     errno = EDOM;
 
     exit(EXIT_FAILURE);
   }
+
+  return (bitarr->words[bindex(b)] >> (boffset(b))) & 0x1;
 }
 
 /* set all elements of data to zero */
 void bit_array_fill_zeros(BIT_ARRAY* bitarr)
 {
-  //size_t num_of_bytes = (bitarr->num_of_bits / 8) + 1;
-  size_t num_of_bytes = nwords(bitarr->num_of_bits) * sizeof(word_t);
+  bit_index_t num_of_bytes = nwords(bitarr->num_of_bits) * sizeof(word_t);
   memset(bitarr->words, 0, num_of_bytes);
 }
 
 /* set all elements of data to one */
 void bit_array_fill_ones(BIT_ARRAY* bitarr)
 {
-  size_t num_of_bytes = nwords(bitarr->num_of_bits) * sizeof(word_t);
+  bit_index_t num_of_words = nwords(bitarr->num_of_bits);
+  bit_index_t num_of_bytes = num_of_words * sizeof(word_t);
   memset(bitarr->words, 0xFF, num_of_bytes);
+
+  mask_top_word(bitarr, num_of_words);
 }
 
 // To string method (remember to free the result!)
@@ -219,15 +232,6 @@ BIT_ARRAY* bit_array_clone(BIT_ARRAY* bitarr)
   return cpy;
 }
 
-/*
-void bit_array_copy(BIT_ARRAY* dest, bit_index_t dstindx,
-                    BIT_ARRAY* src, bit_index_t srcindx, bit_index_t length)
-{
-  
-}
-*/
-
-
 // Enlarge or shrink the size of a bit array
 // Shrinking will free some memory if it is large
 // Enlarging an array will add zeros to the end of it
@@ -235,10 +239,11 @@ void bit_array_copy(BIT_ARRAY* dest, bit_index_t dstindx,
 char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
 {
   bit_index_t old_num_of_bits = bitarr->num_of_bits;
-  bitarr->num_of_bits = new_num_of_bits;
 
   word_addr_t old_num_of_words = nwords(old_num_of_bits);
   word_addr_t new_num_of_words = nwords(new_num_of_bits);
+
+  bitarr->num_of_bits = new_num_of_bits;
 
   if(new_num_of_words != old_num_of_words)
   {
@@ -251,27 +256,18 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
       errno = ENOMEM;
       return 0;
     }
-  }
 
-  // if we are growing - need to zero new bits
-  if(new_num_of_bits > old_num_of_bits)
-  {
-    // zero entire words first
     if(new_num_of_words > old_num_of_words)
     {
-      memset(bitarr->words + old_num_of_words, 0,
-             (new_num_of_words - old_num_of_words) * sizeof(word_t));
-    }
-    
-    // zero bits on the end of what used to be the last word
-    unsigned int bits_on_last_word = boffset(old_num_of_bits);
-
-    if(bits_on_last_word > 0)
-    {
-      bitarr->words[old_num_of_words-1] &= BIT_MASK(bits_on_last_word);
+      bit_index_t new_bytes = (new_num_of_words - old_num_of_words)
+                              * sizeof(word_t);
+      memset(bitarr->words + old_num_of_words, 0x0, new_bytes);
     }
   }
-  
+
+  // Mask top word
+  mask_top_word(bitarr, new_num_of_words);
+
   return 1;
 }
 
@@ -279,117 +275,86 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
 // Logic operators
 //
 
-void bit_array_and(BIT_ARRAY* dest, BIT_ARRAY* src1, BIT_ARRAY* src2)
+// Destination can be the same as one or both of the sources
+void bit_array_and(BIT_ARRAY* dst, BIT_ARRAY* src1, BIT_ARRAY* src2)
 {
-  if(dest->num_of_bits == src1->num_of_bits &&
-     src1->num_of_bits == src2->num_of_bits)
-  {
-    word_addr_t num_of_words = nwords(src1->num_of_bits);
-
-    word_addr_t i;
-    for(i = 0; i < num_of_words; i++)
-    {
-      dest->words[i] = src1->words[i] & src2->words[i];
-    }
-  }
-  else
+  if(dst->num_of_bits != src1->num_of_bits ||
+     src1->num_of_bits != src2->num_of_bits)
   {
     // error
     fprintf(stderr, "bit_array.c: bit_array_and() : "
-                    "dest, src1 and src2 must be of the same length\n");
+                    "dst, src1 and src2 must be of the same length\n");
     exit(EXIT_FAILURE);
   }
 
-
-}
-
-void bit_array_or(BIT_ARRAY* dest, BIT_ARRAY* src1, BIT_ARRAY* src2)
-{
-  if(dest->num_of_bits == src1->num_of_bits &&
-      src1->num_of_bits == src2->num_of_bits)
-  {
-    word_addr_t num_of_words = nwords(src1->num_of_bits);
-
-    word_addr_t i;
-    for(i = 0; i < num_of_words; i++)
-    {
-      dest->words[i] = src1->words[i] | src2->words[i];
-    }
-
-  }
-  else
-  {
-    // error
-    fprintf(stderr, "bit_array.c: bit_array_and() : "
-                    "dest, src1 and src2 must be of the same length\n");
-    exit(EXIT_FAILURE);
-  }
-
-
-}
-
-void bit_array_xor(BIT_ARRAY* dest, BIT_ARRAY* src1, BIT_ARRAY* src2)
-{
-  if(dest->num_of_bits == src1->num_of_bits &&
-        src1->num_of_bits == src2->num_of_bits)
-  {
-    word_addr_t num_of_words = nwords(src1->num_of_bits);
-
-    word_addr_t i;
-    for(i = 0; i < num_of_words; i++)
-    {
-      dest->words[i] = src1->words[i] ^ src2->words[i];
-    }
-  }
-  else
-  {// error
-    fprintf(stderr, "bit_array.c: bit_array_and() : "
-                    "dest, src1 and src2 must be of the same length\n");
-    exit(EXIT_FAILURE);
-  }
-
-
-}
-
-void bit_array_not(BIT_ARRAY* dest, BIT_ARRAY* src)
-{
-  if(dest->num_of_bits != src->num_of_bits)
-  {
-    // error
-    fprintf(stderr, "bit_array.c: bit_array_and() : "
-                    "dest and src1 must be of the same length\n");
-    exit(EXIT_FAILURE);
-  }
-
-  word_addr_t num_of_words = nwords(dest->num_of_bits);
-
+  word_addr_t num_of_words = nwords(src1->num_of_bits);
   word_addr_t i;
+
   for(i = 0; i < num_of_words; i++)
   {
-    dest->words[i] = ~(src->words[i]);
+    dst->words[i] = src1->words[i] & src2->words[i];
   }
 }
 
-
-inline word_t get_word(BIT_ARRAY* bitarr, word_addr_t word_index,
-                       word_addr_t nwords)
+// Destination can be the same as one or both of the sources
+void bit_array_or(BIT_ARRAY* dst, BIT_ARRAY* src1, BIT_ARRAY* src2)
 {
-  if(word_index >= nwords)
+  if(dst->num_of_bits != src1->num_of_bits ||
+     src1->num_of_bits != src2->num_of_bits)
   {
-    return 0;
+    // error
+    fprintf(stderr, "bit_array.c: bit_array_and() : "
+                    "dst, src1 and src2 must be of the same length\n");
+    exit(EXIT_FAILURE);
   }
-  
-  unsigned int offset;
-  
-  if(word_index == nwords - 1 &&
-     (offset = boffset(bitarr->num_of_bits)) != 0)
+
+  word_addr_t num_of_words = nwords(src1->num_of_bits);
+  word_addr_t i;
+
+  for(i = 0; i < num_of_words; i++)
   {
-    // get masked
-    return bitarr->words[word_index] & BIT_MASK(offset);
+    dst->words[i] = src1->words[i] | src2->words[i];
   }
-  else
+}
+
+// Destination can be the same as one or both of the sources
+void bit_array_xor(BIT_ARRAY* dst, BIT_ARRAY* src1, BIT_ARRAY* src2)
+{
+  if(dst->num_of_bits != src1->num_of_bits ||
+     src1->num_of_bits != src2->num_of_bits)
   {
-    return bitarr->words[word_index];
+    // error
+    fprintf(stderr, "bit_array.c: bit_array_and() : "
+                    "dst, src1 and src2 must be of the same length\n");
+    exit(EXIT_FAILURE);
+  }
+
+  word_addr_t num_of_words = nwords(src1->num_of_bits);
+  word_addr_t i;
+
+  for(i = 0; i < num_of_words; i++)
+  {
+    dst->words[i] = src1->words[i] ^ src2->words[i];
+  }
+}
+
+// Destination can be the same as the source
+void bit_array_not(BIT_ARRAY* dst, BIT_ARRAY* src)
+{
+  if(dst->num_of_bits != src->num_of_bits)
+  {
+    // error
+    fprintf(stderr, "bit_array.c: bit_array_and() : "
+                    "dst and src1 must be of the same length\n");
+    exit(EXIT_FAILURE);
+  }
+
+  word_addr_t num_of_words = nwords(dst->num_of_bits);
+  word_addr_t i;
+
+  for(i = 0; i < num_of_words; i++)
+  {
+    dst->words[i] = ~(src->words[i]);
   }
 }
 
@@ -407,8 +372,8 @@ int bit_array_compare(BIT_ARRAY* bitarr1, BIT_ARRAY* bitarr2)
 
   for(i = max_words-1; i >= 0; i--)
   {
-    word1 = get_word(bitarr1, i, nwords1);
-    word2 = get_word(bitarr2, i, nwords2);
+    word1 = (i < nwords1 ? bitarr1->words[i] : 0);
+    word2 = (i < nwords2 ? bitarr2->words[i] : 0);
 
     if(word1 > word2)
     {
@@ -423,15 +388,280 @@ int bit_array_compare(BIT_ARRAY* bitarr1, BIT_ARRAY* bitarr2)
   return 0;
 }
 
+uint64_t bit_array_word64(BIT_ARRAY* bitarr, bit_index_t start)
+{
+  // Bounds checking
+  if(start >= bitarr->num_of_bits)
+  {
+    fprintf(stderr, "bit_array.c: bit_array_word64() - out of bounds error "
+                    "(index: %lu, length: %lu)\n",
+                    (unsigned long)start, (unsigned long)bitarr->num_of_bits);
+    exit(EXIT_FAILURE);
+  }
+
+  word_addr_t word_index = bindex(start);
+  word_t start_offset = boffset(start);
+
+  uint64_t result = bitarr->words[word_index] >> start_offset;
+
+  if(start + start_offset < bitarr->num_of_bits)
+  {
+    result |= bitarr->words[word_index+1] << (WORD_SIZE - start_offset);
+  }
+
+  return result;
+}
+
+uint32_t bit_array_word32(BIT_ARRAY* bitarr, bit_index_t start)
+{
+  return (uint32_t)bit_array_word64(bitarr, start);
+}
+
+uint16_t bit_array_word16(BIT_ARRAY* bitarr, bit_index_t start)
+{
+  return (uint16_t)bit_array_word64(bitarr, start);
+}
+
+uint8_t bit_array_word8(BIT_ARRAY* bitarr, bit_index_t start)
+{
+  return (uint8_t)bit_array_word64(bitarr, start);
+}
+
+word_t bit_array_get_word(BIT_ARRAY* bitarr, bit_index_t start)
+{
+  return (word_t)bit_array_word64(bitarr, start);
+}
+
+void bit_array_set_word(BIT_ARRAY* bitarr, bit_index_t start, word_t word)
+{
+  // Bounds checking
+  if(start >= bitarr->num_of_bits)
+  {
+    fprintf(stderr, "bit_array.c: bit_array_set_word() - out of bounds error "
+                    "(index: %lu, length: %lu)\n",
+                    (unsigned long)start, (unsigned long)bitarr->num_of_bits);
+    exit(EXIT_FAILURE);
+  }
+
+  word_addr_t num_of_words = bindex(bitarr->num_of_bits);
+
+  word_addr_t word_index = bindex(start);
+  word_offset_t word_offset = boffset(start);
+
+  if(word_offset == 0)
+  {
+    bitarr->words[word_index] = word;
+  }
+  else
+  {
+    bitarr->words[word_index]
+      = (word << word_offset) |
+        (bitarr->words[word_index] & BIT_MASK(word_offset));
+  
+    if(word_index+1 < num_of_words)
+    {
+      bitarr->words[word_index+1]
+        = (word >> word_offset) |
+          (bitarr->words[word_index] & (WORD_MAX << word_offset));
+    }
+  }
+
+  // Mask top word
+  mask_top_word(bitarr, num_of_words);
+}
+
+// destination and source may be the same bit_array
+// and src/dst regions may overlap
+void bit_array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
+                    BIT_ARRAY* src, bit_index_t srcindx,
+                    bit_index_t length)
+{
+  // Bounds checking
+  if(srcindx + length >= src->num_of_bits ||
+     dstindx + length >= dst->num_of_bits)
+  {
+    fprintf(stderr, "bit_array.c: bit_array_copy() - out of bounds error "
+                    "(dstindx: %lu, srcindx: %lu, length: %lu)\n",
+                    (unsigned long)dstindx, (unsigned long)srcindx,
+                    (unsigned long)length);
+    exit(EXIT_FAILURE);
+  }
+
+  // Num of full words to copy
+  word_addr_t num_of_words = length / WORD_SIZE;
+  word_addr_t i;
+
+  word_offset_t bits_in_last_word = boffset(length);
+
+  if(dst == src && srcindx < dstindx)
+  {
+    // Work left to right
+    for(i = 0; i < num_of_words; i++)
+    {
+      word_t word = bit_array_get_word(src, srcindx+i*WORD_SIZE);
+      bit_array_set_word(dst, dstindx+i*WORD_SIZE, word);
+    }
+
+    if(bits_in_last_word > 0)
+    {
+      word_t src_word = bit_array_get_word(src, srcindx+i*WORD_SIZE);
+      word_t dst_word = bit_array_get_word(dst, dstindx+i*WORD_SIZE);
+
+      word_t mask = BIT_MASK(bits_in_last_word);
+      word_t word = (dst_word & ~mask) | (src_word & mask);
+
+      bit_array_set_word(dst, dstindx+num_of_words*WORD_SIZE, word);
+    }
+
+    mask_top_word(dst, bindex(dst->num_of_bits));
+  }
+  else
+  {
+    // Work right to left
+    for(i = num_of_words-1; i >= 0; i--)
+    {
+      word_t word = bit_array_get_word(src, srcindx+length-i*WORD_SIZE);
+      bit_array_set_word(dst, dstindx+length-i*WORD_SIZE, word);
+    }
+
+    if(bits_in_last_word > 0)
+    {
+      word_t src_word = bit_array_get_word(src, srcindx);
+      word_t dst_word = bit_array_get_word(dst, dstindx);
+
+      word_t mask = BIT_MASK(bits_in_last_word)
+                    << (WORD_SIZE - bits_in_last_word);
+
+      word_t word = (dst_word & ~mask) | (src_word & mask);
+
+      bit_array_set_word(dst, dstindx, word);
+    }
+  }
+}
+
+void bit_array_fill_region(BIT_ARRAY* bitarr,
+                           bit_index_t start, bit_index_t length,
+                           word_t fill, bit_index_t spacing)
+{
+  // Bounds checking
+  if(start + length >= bitarr->num_of_bits)
+  {
+    fprintf(stderr, "bit_array.c: bit_array_zero_region() - out of bounds error "
+                    "(start: %lu, length: %lu, size: %lu)\n",
+                    (unsigned long)start, (unsigned long)length,
+                    (unsigned long)bitarr->num_of_bits);
+    exit(EXIT_FAILURE);
+  }
+
+  bit_index_t pos = start;
+
+  for(; pos+spacing <= start+length; pos += spacing)
+  {
+    bit_array_set_word(bitarr, pos, fill);
+  }
+
+  word_offset_t bits_remaining = start+length - pos;
+
+  if(bits_remaining > 0)
+  {
+    word_t mask = BIT_MASK(bits_remaining);
+    word_t dest_word = bit_array_get_word(bitarr, pos);
+    word_t fill_word = (fill & mask) | (dest_word & ~mask);
+
+    bit_array_set_word(bitarr, pos, fill_word);
+  }
+
+  mask_top_word(bitarr, bindex(bitarr->num_of_bits));
+}
+
+// Clear all the bits in a region
+void bit_array_clear_region(BIT_ARRAY* bitarr,
+                            bit_index_t start, bit_index_t length)
+{
+  bit_array_fill_region(bitarr, start, length, (word_t)0x0, sizeof(word_t)*8);
+}
+
+// Set all the bits in a region
+void bit_array_set_region(BIT_ARRAY* bitarr,
+                          bit_index_t start, bit_index_t length)
+{
+  bit_array_fill_region(bitarr, start, length, WORD_MAX, sizeof(word_t)*8);
+}
+
+// Saves bit array to a file
+// file format is [8 bytes: for number of elements in array][data]
+// returns the number of bytes written
+bit_index_t bit_array_save(BIT_ARRAY* bitarr, FILE* f)
+{
+  bit_index_t num_of_bytes = nbytes(bitarr->num_of_bits);
+  bit_index_t bytes_written = 0;
+
+  // Write 8 bytes to store the number of bits in the array
+  bytes_written += fwrite(&bitarr->num_of_bits, 8, 1, f);
+  // Write the array
+  bytes_written += fwrite(bitarr->words, 1, num_of_bytes, f);
+
+  return bytes_written;
+}
+
+// Reads bit array from a file
+// file format is [8 bytes: for number of elements in array][data]
+// returns bit array or NULL on failure
+BIT_ARRAY* bit_array_load(FILE* f)
+{
+  bit_index_t items_read;
+
+  // Create bit_array
+  BIT_ARRAY* bitarr = (BIT_ARRAY*) malloc(sizeof(BIT_ARRAY));
+
+  // Read in number of bits
+  items_read = fread(&bitarr->num_of_bits, sizeof(bit_index_t), 1, f);
+
+  if(items_read != 1)
+  {
+    free(bitarr);
+    return NULL;
+  }
+
+  // Calculate the number of bytes required
+  word_addr_t num_of_words = nwords(bitarr->num_of_bits);
+
+  // Malloc memory for bit_array and read in
+  bitarr->words = malloc(num_of_words * sizeof(word_t));
+
+  // Have to calculate how many bytes are needed for the file
+  // (Note: this may be different from num_of_words * sizeof(word_t))
+  bit_index_t num_of_bytes_in_file = nbytes(bitarr->num_of_bits);
+
+  items_read = fread(bitarr->words, 1, num_of_bytes_in_file, f);
+
+  if(items_read != num_of_bytes_in_file)
+  {
+    free(bitarr->words);
+    free(bitarr);
+    return NULL;
+  }
+
+  // Mask top word
+  mask_top_word(bitarr, num_of_words);
+
+  return bitarr;
+}
+
+
+//
+// Experimental - haven't check below here
+//
+
 // Return 0 if there was an overflow error, 1 otherwise
-char bit_array_add(BIT_ARRAY* dest, BIT_ARRAY* src1, BIT_ARRAY* src2)
+char bit_array_add(BIT_ARRAY* dst, BIT_ARRAY* src1, BIT_ARRAY* src2)
 {
   word_addr_t nwords1 = nwords(src1->num_of_bits);
   word_addr_t nwords2 = nwords(src2->num_of_bits);
 
   word_addr_t max_words = MAX(nwords1, nwords2);
 
-  word_addr_t dest_words = nwords(dest->num_of_bits);
+  word_addr_t dst_words = nwords(dst->num_of_bits);
 
   char carry = 0;
 
@@ -440,26 +670,26 @@ char bit_array_add(BIT_ARRAY* dest, BIT_ARRAY* src1, BIT_ARRAY* src2)
   
   for(i = 0; i < max_words; i++)
   {
-    word1 = get_word(src1, i, nwords1);
-    word2 = get_word(src2, i, nwords2);
+    word1 = (i < nwords1 ? src1->words[i] : 0);
+    word2 = (i < nwords2 ? src2->words[i] : 0);
 
     word_t result = word1 + word2 + carry;
     carry = (result < src1->words[i] || result < src2->words[i]) ? 1 : 0;
 
     // Check we can store this result
-    if(i < dest_words-1)
+    if(i < dst_words-1)
     {
-      dest->words[i] = result;
+      dst->words[i] = result;
     }
-    else if(i >= dest_words || carry)
+    else if(i >= dst_words || carry)
     {
       // overflow error
       return 0;
     }
     else
     {
-      // Check last word (i == dest_words-1)
-      unsigned int bits_on_last_word = boffset(dest->num_of_bits);
+      // Check last word (i == dst_words-1)
+      unsigned int bits_on_last_word = boffset(dst->num_of_bits);
 
       if(bits_on_last_word > 0 && BIT_MASK(bits_on_last_word) < result)
       {
@@ -471,13 +701,13 @@ char bit_array_add(BIT_ARRAY* dest, BIT_ARRAY* src1, BIT_ARRAY* src2)
 
   if(carry)
   {
-    dest->words[max_words] = 1;
+    dst->words[max_words] = 1;
   }
 
-  // Zero the rest of dest
-  for(i = max_words+1; i < dest_words; i++)
+  // Zero the rest of dst
+  for(i = max_words+1; i < dst_words; i++)
   {
-    dest->words[i] = 0;
+    dst->words[i] = 0;
   }
 
   return 1;
@@ -549,7 +779,7 @@ char bit_array_decrement(BIT_ARRAY* bitarr)
       i--;
       while(i >= 0)
       {
-        bitarr->words[i--] = ULONG_MAX;
+        bitarr->words[i--] = ~0;
       }
       
       return 1;
@@ -573,114 +803,3 @@ char bit_array_decrement(BIT_ARRAY* bitarr)
     return 1;
   }
 }
-
-long bit_array_get_long(BIT_ARRAY* bitarr, bit_index_t start)
-{
-  // Bounds checking
-  if(start >= bitarr->num_of_bits)
-  {
-    fprintf(stderr, "bit_array.c: bit_array_get_long() - out of bounds error "
-                    "(index: %lu, length: %lu)\n", start, bitarr->num_of_bits);
-    exit(EXIT_FAILURE);
-  }
-
-  word_addr_t num_of_words = nwords(bitarr->num_of_bits);
-
-  word_addr_t word_index = bindex(start);
-  unsigned int start_offset = boffset(start);
-
-  long result = get_word(bitarr, word_index++, num_of_words) >> start_offset;
-
-  unsigned int offset = WORD_SIZE - start_offset;
-
-  // 64 bits in a long
-  while(offset < 64)
-  {
-    result |= get_word(bitarr, word_index++, num_of_words) << offset;
-    offset += WORD_SIZE;
-  }
-
-  return result;
-}
-
-int bit_array_get_int(BIT_ARRAY* bitarr, bit_index_t start)
-{
-  // Bounds checking
-  if(start >= bitarr->num_of_bits)
-  {
-    fprintf(stderr, "bit_array.c: bit_array_get_long() - out of bounds error "
-                    "(index: %lu, length: %lu)\n", start, bitarr->num_of_bits);
-    exit(EXIT_FAILURE);
-  }
-
-  word_addr_t num_of_words = nwords(bitarr->num_of_bits);
-
-  word_addr_t word_index = bindex(start);
-  unsigned int start_offset = boffset(start);
-
-  int result
-    = ((get_word(bitarr, word_index++, num_of_words) >> start_offset) & UINT_MAX);
-
-  unsigned int offset = WORD_SIZE - start_offset;
-
-  // 32 bits in an int
-  while(offset < 32)
-  {
-    result |= (get_word(bitarr, word_index++, num_of_words) << offset) & UINT_MAX;
-    offset += WORD_SIZE;
-  }
-
-  return result;
-}
-
-char bit_array_get_char(BIT_ARRAY* bitarr, bit_index_t start)
-{
-  // Bounds checking
-  if(start >= bitarr->num_of_bits)
-  {
-    fprintf(stderr, "bit_array.c: bit_array_get_long() - out of bounds error "
-                    "(index: %lu, length: %lu)\n", start, bitarr->num_of_bits);
-    exit(EXIT_FAILURE);
-  }
-
-  word_addr_t num_of_words = nwords(bitarr->num_of_bits);
-
-  word_addr_t word_index = bindex(start);
-  unsigned int start_offset = boffset(start);
-
-  char result = get_word(bitarr, word_index, num_of_words) >> start_offset;
-  result |= get_word(bitarr, word_index+1, num_of_words) << (WORD_SIZE - start_offset);
-
-  return result;
-}
-
-
-void bit_array_save(BIT_ARRAY* bitarr, FILE* f) {
-  size_t num_of_bytes = nwords(bitarr->num_of_bits);
-
-  fwrite(&num_of_bytes, sizeof(size_t), 1, f);
-
-  fwrite(&bitarr->num_of_bits, sizeof(unsigned long), 1, f);
-
-  fwrite(bitarr->words, sizeof(word_t), num_of_bytes, f);
-
-}
-
-
-BIT_ARRAY* bit_array_load(FILE* f) {
-  BIT_ARRAY *bitarr;
-  size_t num_of_bytes;
-
-  bitarr = malloc(sizeof(BIT_ARRAY));
-
-  fread(&num_of_bytes, sizeof(size_t), 1, f);
-
-  bitarr->words = malloc(sizeof(word_t) * num_of_bytes);
-
-  fread(&bitarr->num_of_bits, sizeof(unsigned long), 1, f);
-
-  fread(bitarr->words, sizeof(word_t), num_of_bytes, f);
-
-  return bitarr;
-}
-

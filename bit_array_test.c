@@ -146,13 +146,14 @@ int main(int argc, char* argv[])
   printf("%i) resize to 64 bits\n", step++);
   printf("'%s'\n", str);
   free(str);
-  
-  bit_array_resize(bitarr, 128);
+
+  bit_array_resize(bitarr, 100);
   str = bit_array_to_string(bitarr);
   printf("%i) resize to 128 bits\n", step++);
   printf("'%s'\n", str);
   free(str);
-  
+
+  // Test write/read file
   FILE* f;
   char filename[] = "/tmp/bitarrtest.bits";
   f = fopen(filename, "w");
@@ -166,7 +167,7 @@ int main(int argc, char* argv[])
 
   // Deconstruct bit array
   bit_array_free(bitarr);
-  
+
   f = fopen(filename, "r");
   bitarr = bit_array_load(f);
   fclose(f);
@@ -175,6 +176,9 @@ int main(int argc, char* argv[])
   str = bit_array_to_string(bitarr);
   printf("'%s'\n", str);
   free(str);
+
+  // Deconstruct bit array
+  bit_array_free(bitarr);
 
   printf(" THE END.\n");
   

@@ -5,7 +5,7 @@
  Adapted from: http://stackoverflow.com/a/2633584/431087
  author: Isaac Turner <turner.isaac@gmail.com>
 
- Copyright (c) 2011, Isaac Turner
+ Copyright (c) 2012, Isaac Turner
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -28,18 +28,10 @@
 #ifndef BIT_ARRAY_HEADER_SEEN
 #define BIT_ARRAY_HEADER_SEEN
 
-#include<stdio.h>
+#include <inttypes.h>
 
-// 64 bit
-typedef unsigned long word_t, word_addr_t, bit_index_t;
-// 32 bit
-//typedef unsigned int word_t, word_addr_t, bit_index_t;
-
-struct BIT_ARRAY {
-  word_t* words;
-  unsigned long num_of_bits;
-};
-
+// 64 bit words
+typedef uint64_t word_t, word_addr_t, word_offset_t, bit_index_t;
 
 typedef struct BIT_ARRAY BIT_ARRAY;
 
@@ -64,6 +56,14 @@ void bit_array_fill_zeros(BIT_ARRAY* bitarr);
 // Set all bits in this array to 1
 void bit_array_fill_ones(BIT_ARRAY* bitarr);
 
+// Clear all the bits in a region
+void bit_array_clear_region(BIT_ARRAY* bitarr,
+                            bit_index_t start, bit_index_t length);
+
+// Set all the bits in a region
+void bit_array_set_region(BIT_ARRAY* bitarr,
+                          bit_index_t start, bit_index_t length);
+
 // Get length of bit array
 bit_index_t bit_array_length(BIT_ARRAY* bit_arr);
 
@@ -73,11 +73,12 @@ char* bit_array_to_string(BIT_ARRAY* bitarr);
 // Copy a BIT_ARRAY struct and the data it holds - returns pointer to new object
 BIT_ARRAY* bit_array_clone(BIT_ARRAY* bitarr);
 
-// Copy the data it holds
-// Handles overlaps properly if dest == src
-//void bit_array_copy(BIT_ARRAY* dest, bit_index_t dstindx,
-//                    BIT_ARRAY* src, bit_index_t srcindx, bit_index_t length);
-
+// Copy bits from one array to another
+// Destination and source can be the same bit_array and
+// src/dst regions can overlap
+void bit_array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
+                    BIT_ARRAY* src, bit_index_t srcindx,
+                    bit_index_t length);
 
 // Enlarge or shrink the size of a bit array
 // Shrinking will free some memory if it is large
@@ -99,6 +100,31 @@ void bit_array_not(BIT_ARRAY* dest, BIT_ARRAY* src);
 // arrays do not have to be the same length (e.g. 101 (5) > 00000011 (3))
 int bit_array_compare(BIT_ARRAY* bitarr1, BIT_ARRAY* bitarr2);
 
+// start index must be within the range of the bit array (0 <= x < length)
+uint64_t bit_array_word64(BIT_ARRAY* bitarr, bit_index_t start);
+uint32_t bit_array_word32(BIT_ARRAY* bitarr, bit_index_t start);
+uint16_t bit_array_word16(BIT_ARRAY* bitarr, bit_index_t start);
+uint8_t  bit_array_word8 (BIT_ARRAY* bitarr, bit_index_t start);
+
+//
+// Read/Write bit_array to a file
+//
+// File format is [8 bytes: for number of elements in array][data]
+// Number of bytes of data is: (int)((num_of_bits + 7) / 8)
+//
+
+// Saves bit array to a file
+// returns the number of bytes written
+bit_index_t bit_array_save(BIT_ARRAY* bitarr, FILE* f);
+
+// Reads bit array from a file
+// returns bit array or NULL on failure
+BIT_ARRAY* bit_array_load(FILE* f);
+
+//
+// Experimental
+//
+
 // Return 0 if there was an overflow error
 char bit_array_add(BIT_ARRAY* dest, BIT_ARRAY* src1, BIT_ARRAY* src2);
 
@@ -109,14 +135,5 @@ char bit_array_increment(BIT_ARRAY* bitarr);
 // If there is an underflow, bit array will be set to all 0s and 0 is returned
 // Returns 0 if there was an underflow, 1 otherwise
 char bit_array_decrement(BIT_ARRAY* bitarr);
-
-// start index must be within the range of the bit array (0 <= x < length)
-long bit_array_get_long(BIT_ARRAY* bitarr, bit_index_t start);
-int  bit_array_get_int (BIT_ARRAY* bitarr, bit_index_t start);
-char bit_array_get_char(BIT_ARRAY* bitarr, bit_index_t start);
-
-// store and load bit array from a file
-BIT_ARRAY* bit_array_load(FILE* f);
-void bit_array_save(BIT_ARRAY* bitarr, FILE* f);
 
 #endif
