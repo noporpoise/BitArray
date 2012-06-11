@@ -32,7 +32,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
-#include <limits.h> // ULONG_MAX
 #include <string.h> // memset
 
 #include "bit_array.h"

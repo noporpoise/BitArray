@@ -155,6 +155,14 @@ char bit_array_decrement(BIT_ARRAY* bitarr);
 
 == Development ==
 
-Possibly to be added:
-- shift left / right (filled in with passed value 0 or 1)
-- cycle left / right
+To do:
+* shift left / right (filled in with passed value 0 or 1)
+* cycle left / right
+
+Need re-writing:
+* bit_array_add
+* bit_array_increment
+* bit_array_decrement
+
+Also:
+* write test cases for each method (test cases to go in bit_array_test.c)
