@@ -538,9 +538,9 @@ void bit_array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
   }
 }
 
-void bit_array_fill_region(BIT_ARRAY* bitarr,
-                           bit_index_t start, bit_index_t length,
-                           word_t fill, bit_index_t spacing)
+inline void bit_array_fill_region(BIT_ARRAY* bitarr,
+                                  bit_index_t start, bit_index_t length,
+                                  word_t fill, bit_index_t spacing)
 {
   // Bounds checking
   if(start + length >= bitarr->num_of_bits)
