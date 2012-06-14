@@ -216,6 +216,35 @@ char* bit_array_to_string(BIT_ARRAY* bitarr)
   return str;
 }
 
+// From string method (remember to free the result!)
+BIT_ARRAY* bit_array_from_string(char* bitstr)
+{
+  char* tmp;
+  for(tmp = bitstr; *tmp != '\0'; tmp++)
+  {
+    if(*tmp != '0' && *tmp != '1')
+    {
+      fprintf(stderr, "bit_array_from_string(): Invalid char '%c'\n", *tmp);
+      return NULL;
+    }
+  }
+
+  bit_index_t num_of_bits = tmp - bitstr;
+  BIT_ARRAY* bitarr = bit_array_create(num_of_bits);
+
+  // BitArray is all 0s by default -- just set the 1s
+  bit_index_t bit_index;
+  for(bit_index = 0; bit_index < num_of_bits; bit_index++)
+  {
+    if(*(bitstr + bit_index) == '1')
+    {
+      bit_array_set_bit(bitarr, bit_index);
+    }
+  }
+
+  return bitarr;
+}
+
 BIT_ARRAY* bit_array_clone(BIT_ARRAY* bitarr)
 {
   BIT_ARRAY* cpy = (BIT_ARRAY*) malloc(sizeof(BIT_ARRAY));

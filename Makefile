@@ -1,9 +1,11 @@
 ifdef DEBUG
 	DEBUG_FLAGS=-DDEBUG=1 --debug
+else
+	DEBUG_FLAGS=-03
 endif
 
 all:
-	gcc -o bit_array.o $(DEBUG_FLAGS) -Wall -O9 -c bit_array.c
+	gcc -o bit_array.o $(DEBUG_FLAGS) -Wall -c bit_array.c
 	gcc -o bit_array_test $(DEBUG_FLAGS) -Wall bit_array_test.c bit_array.o
 
 clean:

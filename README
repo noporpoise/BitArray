@@ -65,6 +65,9 @@ bit_index_t bit_array_length(BIT_ARRAY* bit_arr);
 // Get this array as a string (remember to free the result!)
 char* bit_array_to_string(BIT_ARRAY* bitarr);
 
+// From string method (remember to free the result!)
+BIT_ARRAY* bit_array_from_string(char* bitstr);
+
 // Copy a BIT_ARRAY struct and the data it holds - returns pointer to new object
 BIT_ARRAY* bit_array_clone(BIT_ARRAY* bitarr);
 
