@@ -35,147 +35,263 @@ int main(int argc, char* argv[])
   printf("  Example operations on bit_array C library:\n");
 
   BIT_ARRAY* bitarr;
-  char* str;
-  
-  // construct bit array
-  bitarr = bit_array_create(100);
-  
-  int step = 0;
 
-  str = bit_array_to_string(bitarr);
-  printf("%i) Create bit array 100 bits long\n", step++);
-  printf("'%s'\n", str);
-  free(str);
+  // construct bit array
+  printf("Create bit array 100 bits long\n");
+  bitarr = bit_array_create(100);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
   
+  printf("Set bit 2\n");
   bit_array_set_bit(bitarr, 2);
-  str = bit_array_to_string(bitarr);
-  printf("%i) set bit 2\n", step++);
-  printf("'%s'\n", str);
-  free(str);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
   
+  printf("Set bit 5\n");
   bit_array_set_bit(bitarr, 5);
-  str = bit_array_to_string(bitarr);
-  printf("%i) set bit 5\n", step++);
-  printf("'%s'\n", str);
-  free(str);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
   
+  printf("Set bit 99\n");
   bit_array_set_bit(bitarr, 99);
-  str = bit_array_to_string(bitarr);
-  printf("%i) set bit 99\n", step++);
-  printf("'%s'\n", str);
-  free(str);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
   
+  printf("Set bit 0\n");
   bit_array_set_bit(bitarr, 0);
-  str = bit_array_to_string(bitarr);
-  printf("%i) set bit 0\n", step);
-  printf("'%s'\n", str);
-  free(str);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
   
   /* Test clone */
+  printf("Clone\n");
   BIT_ARRAY* clone = bit_array_clone(bitarr);
-  str = bit_array_to_string(clone);
-  printf("%i.1) clone\n", step);
-  printf("'%s'\n", str);
-  free(str);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
   
+  printf("  Clear bit 0\n");
   bit_array_clear_bit(clone, 0);
-  str = bit_array_to_string(clone);
-  printf("%i.2) clear bit 0\n", step);
-  printf("'%s'\n", str);
-  free(str);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
   
+  printf("  Set bit 21\n");
   bit_array_set_bit(clone, 21);
-  str = bit_array_to_string(clone);
-  printf("%i.3) set bit 21\n", step++);
-  printf("'%s'\n", str);
-  free(str);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
   
+  printf("  Set bit 63\n");
+  bit_array_set_bit(clone, 63);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+  
+  printf("  End of clone\n");
   bit_array_free(clone);
+
   /* End of clone */
   
-  bit_array_fill_zeros(bitarr);
-  str = bit_array_to_string(bitarr);
-  printf("%i) fill with zeros\n", step++);
-  printf("'%s'\n", str);
-  free(str);
+  printf("Fill with zeros\n");
+  bit_array_clear_all(bitarr);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
   
-  bit_array_fill_ones(bitarr);
-  str = bit_array_to_string(bitarr);
-  printf("%i) fill with ones\n", step++);
-  printf("'%s'\n", str);
-  free(str);
+  printf("Fill with ones\n");
+  bit_array_set_all(bitarr);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
   
+  printf("Clear bit 1\n");
   bit_array_clear_bit(bitarr, 1);
-  str = bit_array_to_string(bitarr);
-  printf("%i) clear bit 1\n", step++);
-  printf("'%s'\n", str);
-  free(str);
-  
-  bit_array_clear_bit(bitarr, 98);
-  str = bit_array_to_string(bitarr);
-  printf("%i) clear bit 98\n", step++);
-  printf("'%s'\n", str);
-  free(str);
-  
-  bit_array_clear_bit(bitarr, 99);
-  str = bit_array_to_string(bitarr);
-  printf("%i) clear bit 99\n", step++);
-  printf("'%s'\n", str);
-  free(str);
-  
-  bit_array_resize(bitarr, 40);
-  str = bit_array_to_string(bitarr);
-  printf("%i) resize to 40 bits\n", step++);
-  printf("'%s'\n", str);
-  free(str);
-  
-  bit_array_resize(bitarr, 100);
-  str = bit_array_to_string(bitarr);
-  printf("%i) resize to 100 bits\n", step++);
-  printf("'%s'\n", str);
-  free(str);
-  
-  bit_array_fill_ones(bitarr);
-  str = bit_array_to_string(bitarr);
-  printf("%i) fill with ones\n", step++);
-  printf("'%s'\n", str);
-  free(str);
-  
-  bit_array_resize(bitarr, 64);
-  str = bit_array_to_string(bitarr);
-  printf("%i) resize to 64 bits\n", step++);
-  printf("'%s'\n", str);
-  free(str);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
 
+  printf("Clear bits 0-39\n");
+  bit_array_clear_region(bitarr, 0, 40);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+
+  bit_index_t first_set_bit;
+  if(bit_array_find_first_set_bit(bitarr, &first_set_bit))
+  {
+    printf("first set bit: %i\n", (int)first_set_bit);
+  }
+  
+  printf("Set bits 1-1\n");
+  bit_array_set_region(bitarr, 1, 1);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+  
+  printf("Set bits (3,0)\n");
+  bit_array_set_region(bitarr, 3, 0);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+  
+  printf("Clear bits 50-59\n");
+  bit_array_clear_region(bitarr, 50, 10);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+
+  printf("Negate\n");
+  bit_array_not(bitarr, bitarr);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+
+  printf("Sort bits\n");
+  bit_array_sort_bits(bitarr);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+
+  printf("Clear bits 1-51\n");
+  bit_array_clear_region(bitarr, 1, 51);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+
+  if(bit_array_find_first_set_bit(bitarr, &first_set_bit))
+  {
+    printf("first set bit: %i\n", (int)first_set_bit);
+  }
+  
+  printf("Set bits 1-51\n");
+  bit_array_set_region(bitarr, 1, 51);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+
+  if(bit_array_find_first_set_bit(bitarr, &first_set_bit))
+  {
+    printf("first set bit: %i\n", (int)first_set_bit);
+  }
+  
+  printf("Clear bit 98\n");
+  bit_array_clear_bit(bitarr, 98);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+  
+  printf("Clear bit 99\n");
+  bit_array_clear_bit(bitarr, 99);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+  
+  printf("Resize to 40 bits\n");
+  bit_array_resize(bitarr, 40);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+  
+  printf("Resize to 100 bits\n");
   bit_array_resize(bitarr, 100);
-  str = bit_array_to_string(bitarr);
-  printf("%i) resize to 128 bits\n", step++);
-  printf("'%s'\n", str);
-  free(str);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+  
+  printf("Fill with ones\n");
+  bit_array_set_all(bitarr);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+  
+  printf("Resize to 64 bits\n");
+  bit_array_resize(bitarr, 64);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+
+  printf("Resize to 100 bits\n");
+  bit_array_resize(bitarr, 100);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+
+  printf("Set clear 0,10,55:\n");
+  bit_array_clear_bits(bitarr, 3, 0, 10, 55);
+  printf("Set bits 67,69,70:\n");
+  bit_array_set_bits(bitarr, 3, 67, 69, 70);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+
+  printf("Bits set: %i\n", (int)bit_array_num_bits_set(bitarr));
+
+  printf("Shift left 10 bits\n");
+  bit_array_shift_left(bitarr, 10, 0);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+  
+  printf("Shift right 10 bits [fill with 1s]\n");
+  bit_array_shift_right(bitarr, 10, 1);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+  
+  printf("Shift left 10 bits [fill with 1s]\n");
+  bit_array_shift_left(bitarr, 10, 1);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+
+  /*
+  // Test cycle bits when it's ready
+
+  printf("Cycle right 10 bits\n");
+  bit_array_cycle_right(bitarr, 10);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+
+  printf("Cycle right 80 bits\n");
+  bit_array_cycle_right(bitarr, 80);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+
+  bit_array_free(bitarr);
+
+  printf("\nNew bit array:\n");
+  bitarr = bit_array_create(210); // = ~3.28 words
+  bit_array_set_region(bitarr, 0, 100);
+  bit_array_set_bits(bitarr, 5, 200, 202, 204, 206, 208);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+
+  printf("Cycle right 80 bits\n");
+  bit_array_cycle_right(bitarr, 80);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+  */
+
+  /*
+  // Test reverse when it's ready
+
+  printf("Reverse region [10,90]:\n");
+  bit_array_reverse_region(bitarr, 10, 90);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+
+  printf("Reverse region [10,90]:\n");
+  bit_array_reverse_region(bitarr, 10, 90);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+
+  printf("Reverse region [90,10]:\n");
+  bit_array_reverse_region(bitarr, 90, 10);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+
+  printf("Reverse region [90,10]:\n");
+  bit_array_reverse_region(bitarr, 90, 10);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
+  */
 
   // Test write/read file
-  FILE* f;
   char filename[] = "/tmp/bitarrtest.bits";
+  FILE* f;
+
+  printf("Saving bitarray in %s\n", filename);
   f = fopen(filename, "w");
   bit_array_save(bitarr, f);
   fclose(f);
 
-  printf("Saving bitarray in %s\n", filename);
-  str = bit_array_to_string(bitarr);
-  printf("'%s'\n", str);
-  free(str);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
 
   // Deconstruct bit array
   bit_array_free(bitarr);
 
+  printf("Loading bitarray in %s\n", filename);
   f = fopen(filename, "r");
   bitarr = bit_array_load(f);
   fclose(f);
 
-  printf("Loading bitarray in %s\n", filename);
-  str = bit_array_to_string(bitarr);
-  printf("'%s'\n", str);
-  free(str);
+  bit_array_print(bitarr, stdout);
+  printf("\n");
 
   // Deconstruct bit array
   bit_array_free(bitarr);
