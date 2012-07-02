@@ -682,7 +682,7 @@ int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
   word_addr_t i;
   word_t word1, word2;
 
-  for(i = max_words-1; i >= 0; i--)
+  for(i = max_words-1; ; i--)
   {
     word1 = (i < nwords1 ? bitarr1->words[i] : 0);
     word2 = (i < nwords2 ? bitarr2->words[i] : 0);
@@ -694,6 +694,10 @@ int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
     else if(word1 < word2)
     {
       return -1;
+    }
+    else if(i == 0)
+    {
+      return 0;
     }
   }
 
@@ -1449,10 +1453,9 @@ char bit_array_decrement(BIT_ARRAY* bitarr)
     {
       bitarr->words[i]--;
 
-      i--;
-      while(i >= 0)
+      for(; i > 0; i--)
       {
-        bitarr->words[i--] = ~0;
+        bitarr->words[i-1] = ~0;
       }
       
       return 1;

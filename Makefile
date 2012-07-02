@@ -5,7 +5,7 @@ else
 endif
 
 all:
-	gcc -o bit_array.o $(DEBUG_FLAGS) -Wall -c bit_array.c
+	gcc -o bit_array.o $(DEBUG_FLAGS) -Wall -Wextra -c bit_array.c
 	gcc -o bit_array_test $(DEBUG_FLAGS) -Wall bit_array_test.c bit_array.o
 
 clean:
