@@ -31,6 +31,13 @@
 
 int main(int argc, char* argv[])
 {
+  if(argc != 1)
+  {
+    printf("  Unused args '%s..'\n", argv[1]);
+    printf("Usage: ./bit_array_test\n");
+    exit(EXIT_FAILURE);
+  }
+
   printf("Oh hi!\n");
   printf("  Example operations on bit_array C library:\n");
 
