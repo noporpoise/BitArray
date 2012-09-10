@@ -1,6 +1,8 @@
 **C code for bit arrays**
+=========================
 
 https://github.com/noporpoise/BitArray/
+
 License: revised BSD
 
 Isaac Turner <turner.isaac@gmail.com>
@@ -25,12 +27,17 @@ To build and run the test code:
     make
     ./bit_array_test
 
-Methods
-=======
+Using bit_array in your code
+============================
 
 Add to the top of your code:
 
     #include "bit_array.h"
+
+Add to your compiler arguments
+
+    BIT_ARR_PATH=path/to/bit_array/
+    gcc ... -I$(BIT_ARR_PATH) -L$(BIT_ARR_PATH) -libbitarr
 
 You can then call the following methods:
 
@@ -46,6 +53,13 @@ Get length of bit array
 
     bit_index_t bit_array_length(const BIT_ARRAY* bit_arr);
 
+Enlarge or shrink the size of a bit array. 
+Shrinking will free some memory if it is large.
+Enlarging an array will add zeros to the end of it.
+Returns 1 on success, 0 on failure
+
+    char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits);
+
 Set/Get bits
 ------------
 
@@ -53,11 +67,11 @@ Get the value of a bit (returns 0 or 1)
 
     char bit_array_get_bit(const BIT_ARRAY* bitarr, bit_index_t b);
 
-set a bit (to 1) at position b
+Set a bit (to 1) at position b
 
     void bit_array_set_bit(BIT_ARRAY* bitarr, bit_index_t b);
 
-clear a bit (to 0) at position b
+Clear a bit (to 0) at position b
 
     void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b);
 
@@ -134,19 +148,20 @@ Put all the 1s before all the 0s
 
     void bit_array_rev_sort_bits(BIT_ARRAY* bitarr);
 
-Get this array as a string (remember to free the result!)
-
-    char* bit_array_to_string(const BIT_ARRAY* bitarr);
 
 String functions
 ----------------
 
-Copy to a string.  Warning: does not null-terminate string!
+Get this array as a string (remember to free the result!)
+
+    char* bit_array_to_string(const BIT_ARRAY* bitarr);
+
+Copy to a string.  Warning: does not null-terminate string.
 
     void bit_array_cpy_to_string(const BIT_ARRAY* bitarr, char* str,
                                  bit_index_t start, bit_index_t length);
 
-Get this array as a string (remember to free the result!)
+Print this array to a file stream.  Prints '0's and '1'.  Doesn't print newline.
 
     void bit_array_print(const BIT_ARRAY* bitarr, FILE* fout);
 
@@ -155,8 +170,8 @@ Remember to free the result!
 
     BIT_ARRAY* bit_array_from_string(const char* bitstr);
 
-Clone/copy/resize
---------------------------
+Clone/copy
+----------
 
 Copy a BIT_ARRAY struct and the data it holds - returns pointer to new object
 
@@ -169,17 +184,10 @@ Destination and source can be the same bit_array and src/dst regions can overlap
                         const BIT_ARRAY* src, bit_index_t srcindx,
                         bit_index_t length);
 
-Enlarge or shrink the size of a bit array. 
-Shrinking will free some memory if it is large.
-Enlarging an array will add zeros to the end of it.
-Returns 1 on success, 0 on failure
-
-    char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits);
-
 Logic operators
 ---------------
 
-Destination and source bit arrays must be of the same length, however, they may
+Destination and source bit arrays must be of the same length, however they may
 point to the same object
 
     void bit_array_and(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);

@@ -37,11 +37,26 @@ typedef struct BIT_ARRAY BIT_ARRAY;
 typedef uint64_t word_t, word_addr_t, bit_index_t;
 typedef char word_offset_t; // Offset within a 64 bit word
 
+
 // Constructor - create a new bit array of length nbits
 BIT_ARRAY* bit_array_create(bit_index_t nbits);
 
 // Destructor - free the memory used for a bit array
 void bit_array_free(BIT_ARRAY* bitarray);
+
+// Get length of bit array
+bit_index_t bit_array_length(const BIT_ARRAY* bit_arr);
+
+// Enlarge or shrink the size of a bit array
+// Shrinking will free some memory if it is large
+// Enlarging an array will add zeros to the end of it
+// returns 1 on success, 0 on failure
+char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits);
+
+
+//
+// Get and set bits
+//
 
 // Get the value of a bit (returns 0 or 1)
 char bit_array_get_bit(const BIT_ARRAY* bitarr, bit_index_t b);
@@ -66,18 +81,6 @@ void bit_array_clear_all(BIT_ARRAY* bitarr);
 // Set all bits in this array to 1
 void bit_array_set_all(BIT_ARRAY* bitarr);
 
-// Get the number of bits set (hamming weight)
-bit_index_t bit_array_num_bits_set(const BIT_ARRAY* bitarr);
-
-// Get the number of bits not set (length - hamming weight)
-bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr);
-
-// Put all the 0s before all the 1s
-void bit_array_sort_bits(BIT_ARRAY* bitarr);
-
-// Put all the 1s before all the 0s
-void bit_array_rev_sort_bits(BIT_ARRAY* bitarr);
-
 // Clear all the bits in a region
 void bit_array_clear_region(BIT_ARRAY* bitarr,
                             bit_index_t start, bit_index_t length);
@@ -85,52 +88,6 @@ void bit_array_clear_region(BIT_ARRAY* bitarr,
 // Set all the bits in a region
 void bit_array_set_region(BIT_ARRAY* bitarr,
                           bit_index_t start, bit_index_t length);
-
-// Get length of bit array
-bit_index_t bit_array_length(const BIT_ARRAY* bit_arr);
-
-// Get this array as a string (remember to free the result!)
-char* bit_array_to_string(const BIT_ARRAY* bitarr);
-
-// Warning: does not null-terminate string!
-void bit_array_cpy_to_string(const BIT_ARRAY* bitarr, char* str,
-                             bit_index_t start, bit_index_t length);
-
-// Get this array as a string (remember to free the result!)
-void bit_array_print(const BIT_ARRAY* bitarr, FILE* fout);
-
-// From string method (remember to free the result!)
-BIT_ARRAY* bit_array_from_string(const char* bitstr);
-
-// Copy a BIT_ARRAY struct and the data it holds - returns pointer to new object
-BIT_ARRAY* bit_array_clone(const BIT_ARRAY* bitarr);
-
-// Copy bits from one array to another
-// Destination and source can be the same bit_array and
-// src/dst regions can overlap
-void bit_array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
-                    const BIT_ARRAY* src, bit_index_t srcindx,
-                    bit_index_t length);
-
-// Enlarge or shrink the size of a bit array
-// Shrinking will free some memory if it is large
-// Enlarging an array will add zeros to the end of it
-// returns 1 on success, 0 on failure
-char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits);
-
-//
-// Logic operators
-//   destination and source bit arrays must be of the same length,
-//   however, they may point to the same object
-//
-void bit_array_and(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
-void bit_array_or(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
-void bit_array_xor(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
-void bit_array_not(BIT_ARRAY* dest, const BIT_ARRAY* src);
-
-// Compare two bit arrays by value stored
-// arrays do not have to be the same length (e.g. 101 (5) > 00000011 (3))
-int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
 
 // Get a word of a given size.  First bit is in the least significant bit position
 // start index must be within the range of the bit array (0 <= x < length)
@@ -142,11 +99,85 @@ uint8_t  bit_array_word8 (const BIT_ARRAY* bitarr, bit_index_t start);
 // Set 64 bits at once from a particular start position
 void bit_array_set_word64(BIT_ARRAY* bitarr, bit_index_t start, uint64_t word);
 
+
+//
+// Number of bits set
+//
+
+// Get the number of bits set (hamming weight)
+bit_index_t bit_array_num_bits_set(const BIT_ARRAY* bitarr);
+
+// Get the number of bits not set (length - hamming weight)
+bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr);
+
 // Find the index of the first bit that is set.  
 // Returns 1 if a bit is set, otherwise 0
 // Index of first set bit is stored in the integer pointed to by result
 // If not bit is set result is not changed
 char bit_array_find_first_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
+
+
+//
+// Sorting
+//
+
+// Put all the 0s before all the 1s
+void bit_array_sort_bits(BIT_ARRAY* bitarr);
+
+// Put all the 1s before all the 0s
+void bit_array_rev_sort_bits(BIT_ARRAY* bitarr);
+
+
+
+// Get this array as a string (remember to free the result!)
+char* bit_array_to_string(const BIT_ARRAY* bitarr);
+
+// Warning: does not null-terminate string!
+void bit_array_cpy_to_string(const BIT_ARRAY* bitarr, char* str,
+                             bit_index_t start, bit_index_t length);
+
+// Print this array to a file stream.  Prints '0's and '1'.  Doesn't print newline.
+void bit_array_print(const BIT_ARRAY* bitarr, FILE* fout);
+
+// From string method (remember to free the result!)
+BIT_ARRAY* bit_array_from_string(const char* bitstr);
+
+
+
+//
+// Clone and copy
+//
+
+// Copy a BIT_ARRAY struct and the data it holds - returns pointer to new object
+BIT_ARRAY* bit_array_clone(const BIT_ARRAY* bitarr);
+
+// Copy bits from one array to another
+// Destination and source can be the same bit_array and
+// src/dst regions can overlap
+void bit_array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
+                    const BIT_ARRAY* src, bit_index_t srcindx,
+                    bit_index_t length);
+
+
+//
+// Logic operators
+//
+
+// Destination and source bit arrays must be of the same length, however they
+// may point to the same object
+void bit_array_and(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
+void bit_array_or(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
+void bit_array_xor(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
+void bit_array_not(BIT_ARRAY* dest, const BIT_ARRAY* src);
+
+// Compare two bit arrays by value stored
+// arrays do not have to be the same length (e.g. 101 (5) > 00000011 (3))
+int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
+
+
+//
+// Shift left/right
+//
 
 // Shift array left/right with a given fill
 void bit_array_shift_right(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);

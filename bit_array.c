@@ -640,6 +640,7 @@ void bit_array_cpy_to_string(const BIT_ARRAY* bitarr, char* str,
   }
 }
 
+// Print this array to a file stream.  Prints '0's and '1'.  Doesn't print newline.
 void bit_array_print(const BIT_ARRAY* bitarr, FILE* fout)
 {
   bit_index_t i;
