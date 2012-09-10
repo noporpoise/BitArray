@@ -357,15 +357,64 @@ void bit_array_free(BIT_ARRAY* bitarr)
   free(bitarr);
 }
 
-
-//
-// Methods
-//
-
 bit_index_t bit_array_length(const BIT_ARRAY* bit_arr)
 {
   return bit_arr->num_of_bits;
 }
+
+// Enlarge or shrink the size of a bit array
+// Shrinking will free some memory if it is large
+// Enlarging an array will add zeros to the end of it
+// returns 1 on success, 0 on failure
+char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
+{
+  bit_index_t old_num_of_bits = bitarr->num_of_bits;
+
+  word_addr_t old_num_of_words = nwords(old_num_of_bits);
+  word_addr_t new_num_of_words = nwords(new_num_of_bits);
+
+  #ifdef DEBUG
+  printf("bit_array_resize: (bits %lu -> %lu; words %lu -> %lu)\n",
+         (unsigned long)old_num_of_bits, (unsigned long)old_num_of_bits,
+         (unsigned long)old_num_of_words, (unsigned long)new_num_of_words);
+  #endif
+
+  bitarr->num_of_bits = new_num_of_bits;
+
+  if(new_num_of_words != old_num_of_words)
+  {
+    // Need to change the amount of memory used
+    bitarr->words = realloc(bitarr->words, new_num_of_words * sizeof(word_t));
+    
+    if(bitarr->words == NULL)
+    {
+      // error - could not allocate enough memory
+      errno = ENOMEM;
+      return 0;
+    }
+
+    if(new_num_of_words > old_num_of_words)
+    {
+      bit_index_t new_bytes = (new_num_of_words - old_num_of_words)
+                              * sizeof(word_t);
+      memset(bitarr->words + old_num_of_words, 0x0, new_bytes);
+    }
+  }
+
+  // Mask top word
+  _mask_top_word(bitarr, new_num_of_words);
+
+  #ifdef DEBUG
+  _bit_array_check_top_word(bitarr);
+  #endif
+
+  return 1;
+}
+
+
+//
+// Methods
+//
 
 char bit_array_get_bit(const BIT_ARRAY* bitarr, bit_index_t b)
 {
@@ -805,55 +854,6 @@ void bit_array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
   #endif
 }
 
-
-// Enlarge or shrink the size of a bit array
-// Shrinking will free some memory if it is large
-// Enlarging an array will add zeros to the end of it
-// returns 1 on success, 0 on failure
-char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
-{
-  bit_index_t old_num_of_bits = bitarr->num_of_bits;
-
-  word_addr_t old_num_of_words = nwords(old_num_of_bits);
-  word_addr_t new_num_of_words = nwords(new_num_of_bits);
-
-  #ifdef DEBUG
-  printf("bit_array_resize: (bits %lu -> %lu; words %lu -> %lu)\n",
-         (unsigned long)old_num_of_bits, (unsigned long)old_num_of_bits,
-         (unsigned long)old_num_of_words, (unsigned long)new_num_of_words);
-  #endif
-
-  bitarr->num_of_bits = new_num_of_bits;
-
-  if(new_num_of_words != old_num_of_words)
-  {
-    // Need to change the amount of memory used
-    bitarr->words = realloc(bitarr->words, new_num_of_words * sizeof(word_t));
-    
-    if(bitarr->words == NULL)
-    {
-      // error - could not allocate enough memory
-      errno = ENOMEM;
-      return 0;
-    }
-
-    if(new_num_of_words > old_num_of_words)
-    {
-      bit_index_t new_bytes = (new_num_of_words - old_num_of_words)
-                              * sizeof(word_t);
-      memset(bitarr->words + old_num_of_words, 0x0, new_bytes);
-    }
-  }
-
-  // Mask top word
-  _mask_top_word(bitarr, new_num_of_words);
-
-  #ifdef DEBUG
-  _bit_array_check_top_word(bitarr);
-  #endif
-
-  return 1;
-}
 
 //
 // Logic operators
