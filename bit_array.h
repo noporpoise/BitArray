@@ -69,7 +69,7 @@ void bit_array_set_all(BIT_ARRAY* bitarr);
 // Get the number of bits set (hamming weight)
 bit_index_t bit_array_num_bits_set(const BIT_ARRAY* bitarr);
 
-// Get the number of bits not set (1 - hamming weight)
+// Get the number of bits not set (length - hamming weight)
 bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr);
 
 // Put all the 0s before all the 1s
