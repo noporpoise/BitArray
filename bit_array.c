@@ -97,6 +97,8 @@ word_offset_t boffset(bit_index_t b) { return (b % WORD_SIZE); }
 word_offset_t _bits_in_top_word(bit_index_t b) { return boffset((b)-1)+1; }
 
 // Number of words required to store a given number of bits
+// 0..WORD_SIZE -> 1
+// WORD_SIZE+1..2*WORD_SIZE -> 2 etc.
 word_addr_t nwords(bit_index_t b)
 {
   return (b + WORD_SIZE - 1) / WORD_SIZE;
@@ -649,6 +651,7 @@ void bit_array_print(const BIT_ARRAY* bitarr, FILE* fout)
 }
 
 // From string method (remember to free the result!)
+// Returns NULL if not enough memory to allocate the array
 BIT_ARRAY* bit_array_from_string(const char* bitstr)
 {
   const char* tmp;
@@ -663,6 +666,12 @@ BIT_ARRAY* bit_array_from_string(const char* bitstr)
 
   bit_index_t num_of_bits = tmp - bitstr;
   BIT_ARRAY* bitarr = bit_array_create(num_of_bits);
+
+  // Return null if not enough memory to allocate bit array
+  if(bitarr == NULL)
+  {
+    return NULL;
+  }
 
   // BitArray is all 0s by default -- just set the 1s
   bit_index_t bit_index;
