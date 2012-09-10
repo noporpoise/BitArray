@@ -75,6 +75,10 @@ Clear a bit (to 0) at position b
 
     void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b);
 
+Assign a value to a bit.  If `c != 0` then set bit; otherwise clear bit.
+
+    void bit_array_assign_bit(BIT_ARRAY* bitarr, bit_index_t b, char c);
+
 Set multiple bits at once. 
 
     void bit_array_set_bits(BIT_ARRAY* bitarr, size_t n, ...);

@@ -421,6 +421,12 @@ void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b)
   #endif
 }
 
+// If char c != 0, set bit; otherwise clear bit
+void bit_array_assign_bit(BIT_ARRAY* bitarr, bit_index_t b, char c)
+{
+  c ? bit_array_set_bit(bitarr, b) : bit_array_clear_bit(bitarr, b);
+}
+
 // Set multiple bits at once. 
 // usage: bit_array_set_bits(bitarr, 3, {1,20,31});
 void bit_array_set_bits(BIT_ARRAY* bitarr, size_t n, ...)
