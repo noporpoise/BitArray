@@ -34,7 +34,8 @@
 typedef struct BIT_ARRAY BIT_ARRAY;
 
 // 64 bit words
-typedef uint64_t word_t, word_addr_t, word_offset_t, bit_index_t;
+typedef uint64_t word_t, word_addr_t, bit_index_t;
+typedef char word_offset_t; // Offset within a 64 bit word
 
 // Constructor - create a new bit array of length nbits
 BIT_ARRAY* bit_array_create(bit_index_t nbits);

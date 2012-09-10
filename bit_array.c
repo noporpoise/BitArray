@@ -86,7 +86,7 @@ word_t reverse_table[256] =
   0x1F, 0x9F, 0x5F, 0xDF, 0x3F, 0xBF, 0x7F, 0xFF};
 
 // sizeof gives size in bytes (8 bits per byte)
-word_t WORD_SIZE = sizeof(word_t) * 8;
+word_offset_t WORD_SIZE = sizeof(word_t) * 8;
 
 // Index of word
 word_addr_t bindex(bit_index_t b) { return (b / WORD_SIZE); }
@@ -125,7 +125,7 @@ void _bit_array_print_word(word_t word, FILE* out)
 void _bit_array_check_top_word(BIT_ARRAY* bitarr)
 {
   word_addr_t num_of_words = nwords(bitarr->num_of_bits);
-  bit_index_t num_of_bits_in_top_word = _bits_in_top_word(bitarr->num_of_bits);
+  word_offset_t num_of_bits_in_top_word = _bits_in_top_word(bitarr->num_of_bits);
 
   if(num_of_bits_in_top_word < WORD_SIZE &&
      bitarr->words[num_of_words-1] >> num_of_bits_in_top_word)
@@ -230,7 +230,7 @@ word_t _bit_array_get_word_cyclic(const BIT_ARRAY* bitarr, bit_index_t start)
   {
     word |= (bitarr->words[0] << bits_taken);
 
-    if(bitarr->num_of_bits < WORD_SIZE)
+    if(bitarr->num_of_bits < (bit_index_t)WORD_SIZE)
     {
       // Mask word to prevent repetition of the same bits
       word = word & BIT_MASK(bitarr->num_of_bits);
@@ -251,7 +251,7 @@ void _bit_array_set_word_cyclic(BIT_ARRAY* bitarr, bit_index_t start, word_t wor
   {
     // Prevent overwriting the bits we've just set
     // by setting 'start' as the upper bound for the number of bits to write
-    word_offset_t bits_remaining = MIN(WORD_SIZE - bits_set, start);
+    word_offset_t bits_remaining = MIN((bit_index_t)(WORD_SIZE - bits_set), start);
     word_t mask = BIT_MASK(bits_remaining);
 
     bitarr->words[0] = ((word >> bits_remaining) & mask) |
@@ -522,7 +522,7 @@ bit_index_t bit_array_num_bits_set(const BIT_ARRAY* bitarr)
   {
     if(bitarr->words[i] > 0)
     {
-      num_of_bits_set += __builtin_popcount(bitarr->words[i]);
+      num_of_bits_set += __builtin_popcountl(bitarr->words[i]);
       
       /*
       // Use if not using GCC or __builtin_popcount not available
@@ -1152,7 +1152,7 @@ void bit_array_reverse_region(BIT_ARRAY* bitarr,
   bit_index_t left = start_indx;
   bit_index_t right;
   
-  if(end_indx < WORD_SIZE)
+  if(end_indx < (bit_index_t)WORD_SIZE)
   {
     right = end_indx + bitarr->num_of_bits - WORD_SIZE + 1;
   }
@@ -1166,7 +1166,7 @@ void bit_array_reverse_region(BIT_ARRAY* bitarr,
   bit_index_t dist = (left <= right) ? right - left
                                      : right + (bitarr->num_of_bits - left);
 
-  while(dist > WORD_SIZE)
+  while(dist > (bit_index_t)WORD_SIZE)
   {
     left_word = _bit_array_get_word_cyclic(bitarr, left);
     right_word = _bit_array_get_word_cyclic(bitarr, right);
@@ -1174,7 +1174,7 @@ void bit_array_reverse_region(BIT_ARRAY* bitarr,
     _bit_array_set_word_cyclic(bitarr, left, _bit_array_reverse_word(right_word));
     _bit_array_set_word_cyclic(bitarr, right, _bit_array_reverse_word(left_word));
 
-    if(dist <= WORD_SIZE)
+    if(dist <= (bit_index_t)WORD_SIZE)
     {
       break;
     }
@@ -1191,7 +1191,7 @@ void bit_array_reverse_region(BIT_ARRAY* bitarr,
       left -= bitarr->num_of_bits;
     }
 
-    if(right < WORD_SIZE)
+    if(right < (bit_index_t)WORD_SIZE)
     {
       right += bitarr->num_of_bits;
     }
@@ -1248,12 +1248,14 @@ void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
   {
     return;
   }
-  else if(bitarr->num_of_bits <= 2 * WORD_SIZE) // cycle < WORD_SIZE
+  else if(bitarr->num_of_bits <= (bit_index_t)(2 * WORD_SIZE))
   {
+    // cycle < WORD_SIZE
+
     bit_index_t cpy_from, cpy_to, cpy_length;
     word_t tmp, mask;
 
-    if(cycle <= WORD_SIZE)
+    if(cycle <= (bit_index_t)WORD_SIZE)
     {
       // cycle is small
       cpy_from = 0;
@@ -1393,7 +1395,7 @@ char bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
     else
     {
       // Check last word (i == dst_words-1)
-      unsigned int bits_on_last_word = _bits_in_top_word(dst->num_of_bits);
+      word_offset_t bits_on_last_word = _bits_in_top_word(dst->num_of_bits);
 
       if(bits_on_last_word > 0 && BIT_MASK(bits_on_last_word) < result)
       {
@@ -1449,7 +1451,7 @@ char bit_array_increment(BIT_ARRAY* bitarr)
   // Deal with last word
   if(carry)
   {
-    unsigned int bits_in_last_word = _bits_in_top_word(bitarr->num_of_bits);
+    word_offset_t bits_in_last_word = _bits_in_top_word(bitarr->num_of_bits);
     word_t mask = BIT_MASK(bits_in_last_word);
     word_t prev_last_word = bitarr->words[num_of_words-1] & mask;
 
@@ -1493,7 +1495,7 @@ char bit_array_decrement(BIT_ARRAY* bitarr)
   }
   
   // Must subtract from last word
-  unsigned int bits_in_last_word = _bits_in_top_word(bitarr->num_of_bits);
+  word_offset_t bits_in_last_word = _bits_in_top_word(bitarr->num_of_bits);
   word_t mask = BIT_MASK(bits_in_last_word);
   word_t prev_last_word = bitarr->words[num_of_words-1] & mask;
   
