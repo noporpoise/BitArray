@@ -1,10 +1,11 @@
-C code for bit arrays
+**C code for bit arrays**
 https://github.com/noporpoise/BitArray/
 revised BSD
 
 Isaac Turner <turner.isaac@gmail.com>
 
-== About ==
+About
+=====
 
 Bit arrays are arrays of bits (values zero or one).  This is a convenient and
 efficient implementation for C/C++.  
