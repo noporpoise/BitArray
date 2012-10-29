@@ -29,6 +29,74 @@
 #include <stdio.h>
 #include "bit_array.h"
 
+void test_arithmetic()
+{
+  BIT_ARRAY* arr1 = bit_array_create(100);
+  BIT_ARRAY* arr2 = bit_array_create(100);
+
+  int i = 0;
+  for(i = 0; i < 99; i+=3)
+  {
+    bit_array_set_bit(arr1, i);
+    bit_array_set_bit(arr2, i);
+    bit_array_set_bit(arr2, i+1);
+  }
+
+
+  printf("Init:\narr1: ");
+  bit_array_print(arr1, stdout);
+  printf("\n");
+  printf("arr2: ");
+  bit_array_print(arr2, stdout);
+  printf("\n");
+
+
+  printf("Increment: arr1++\n");
+  bit_array_increment(arr1);
+  printf("arr1: ");
+  bit_array_print(arr1, stdout);
+  printf("\n");
+
+  printf("Decrement: arr1--\n");
+  bit_array_decrement(arr1);
+  printf("arr1: ");
+  bit_array_print(arr1, stdout);
+  printf("\n");
+
+  printf("Add: arr1 = arr1 + arr2\n");
+  bit_array_add(arr1, arr1, arr2);
+  printf("arr1: ");
+  bit_array_print(arr1, stdout);
+  printf("\n");
+
+  printf("Subtract: arr1 = arr1 - arr2\n");
+  bit_array_subtract(arr1, arr1, arr2);
+  printf("arr1: ");
+  bit_array_print(arr1, stdout);
+  printf("\n");
+
+  printf("Subtract: arr1 = arr1 - arr1\n");
+  bit_array_subtract(arr1, arr1, arr1);
+  printf("arr1: ");
+  bit_array_print(arr1, stdout);
+  printf("\n");
+
+  printf("Add: arr1 = arr1 + arr2\n");
+  bit_array_add(arr1, arr1, arr2);
+  printf("arr1: ");
+  bit_array_print(arr1, stdout);
+  printf("\n");
+
+  printf("Add: arr1 = arr1 + arr2\n");
+  bit_array_add(arr1, arr1, arr2);
+  printf("arr1: ");
+  bit_array_print(arr1, stdout);
+  printf("\n");
+
+  bit_array_free(arr1);
+  bit_array_free(arr2);
+}
+
 int main(int argc, char* argv[])
 {
   if(argc != 1)
@@ -37,6 +105,9 @@ int main(int argc, char* argv[])
     printf("Usage: ./bit_array_test\n");
     exit(EXIT_FAILURE);
   }
+
+  test_arithmetic();
+  exit(EXIT_SUCCESS);
 
   printf("Oh hi!\n");
   printf("  Example operations on bit_array C library:\n");

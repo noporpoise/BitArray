@@ -1183,7 +1183,7 @@ void _bit_array_arithmetic(BIT_ARRAY* dst,
     {
       word_t mask = BIT_MASK(bits_on_last_word);
 
-      if(dst->words[i] > mask)
+      if(dst->words[max_words-1] > mask)
       {
         // Array has overflowed, increase size
         dst->num_of_bits++;
