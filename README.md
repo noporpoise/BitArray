@@ -229,10 +229,16 @@ To be interpretted as a number, bit at index 0 is treated as the least
 significant bit.
 
 Add two bit arrays together and store the result.  `src1` and `src2` do not have
-to be the same length. `src1`, `src2` and `dst` can all be the same `BIT_ARRAY`.
-If `dst` is too small it will be resized to hold the highest set bit.
+to be the same length. `src1`, `src2` and `dst` can all be the same or different
+`BIT_ARRAY`s. If dst is shorter than either of src1, src2, it is enlarged.
 
     void bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
+
+Subtract on BIT_ARRAY from another. `src1`, `src2` and `dst` can all be the same
+or different `BIT_ARRAY`s. If dst is shorter than src1, it will be extended to
+be as long as `src1`. `src1` must be greater than or equal to `src2` (`src1 >= src2`).
+
+    void bit_array_subtract(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 
 Add one to a `BIT_ARRAY`.
 If `dst` is too small it will be resized to hold the highest set bit.

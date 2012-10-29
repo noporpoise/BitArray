@@ -1147,17 +1147,9 @@ void _bit_array_arithmetic(BIT_ARRAY* dst,
   word_addr_t nwords2 = nwords(src2->num_of_bits);
 
   word_addr_t max_words = MAX(nwords1, nwords2);
-  bit_index_t max_src_bits = MAX(src1->num_of_bits, src2->num_of_bits);
 
-  if(dst->num_of_bits < max_src_bits)
-  {
-    if(!bit_array_resize(dst, max_src_bits))
-    {
-      fprintf(stderr, "Error [%s:%i]: ran out of memory\n", __FILE__, __LINE__);
-      exit(EXIT_FAILURE);
-    }
-  }
-
+  // Adding: dst_words >= max(src1 words, src2 words)
+  // Subtracting: dst_words is >= nwords1
   word_addr_t dst_words = nwords(dst->num_of_bits);
 
   char carry = subtract ? 1 : 0;
@@ -1203,7 +1195,7 @@ void _bit_array_arithmetic(BIT_ARRAY* dst,
       if(dst_words == max_words)
       {
         // Need to resize for the carry bit
-        if(!bit_array_resize(dst, max_src_bits+1))
+        if(!bit_array_resize(dst, dst->num_of_bits+1))
         {
           fprintf(stderr, "Error [%s:%i]: ran out of memory\n", __FILE__, __LINE__);
           exit(EXIT_FAILURE);
@@ -1226,9 +1218,20 @@ void _bit_array_arithmetic(BIT_ARRAY* dst,
 }
 
 // src1, src2 and dst can all be the same BIT_ARRAY
-// If dst is too small it will be resized to hold the highest set bit
+// If dst is shorter than either of src1, src2, it is enlarged
 void bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 {
+  bit_index_t max_src_bits = MAX(src1->num_of_bits, src2->num_of_bits);
+
+  if(dst->num_of_bits < max_src_bits)
+  {
+    if(!bit_array_resize(dst, max_src_bits))
+    {
+      fprintf(stderr, "Error [%s:%i]: ran out of memory\n", __FILE__, __LINE__);
+      exit(EXIT_FAILURE);
+    }
+  }
+
   _bit_array_arithmetic(dst, src1, src2, 0);
 }
 
@@ -1248,6 +1251,15 @@ void bit_array_subtract(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* 
     fprintf(stderr, "Error [%s:%i]: bit_array_substract requires src1 >= src2\n",
             __FILE__, __LINE__);
     exit(EXIT_FAILURE);
+  }
+
+  if(dst->num_of_bits < src1->num_of_bits)
+  {
+    if(!bit_array_resize(dst, src1->num_of_bits))
+    {
+      fprintf(stderr, "Error [%s:%i]: ran out of memory\n", __FILE__, __LINE__);
+      exit(EXIT_FAILURE);
+    }
   }
 
   _bit_array_arithmetic(dst, src1, src2, 1);

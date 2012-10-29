@@ -198,12 +198,13 @@ void bit_array_shift_left(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
 //
 
 // src1, src2 and dst can all be the same BIT_ARRAY
-// dst will be resized if it is too short to hold the highest set bit
+// If dst is shorter than either of src1, src2, it is enlarged
 void bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 
 // dst = src1 - src2
 // src1, src2 and dst can all be the same BIT_ARRAY
-// dst will be resized if it is too short to hold the highest set bit
+// If dst is shorter than src1, it will be extended to be as long as src1
+// src1 must be greater than or equal to src2 (src1 >= src2)
 void bit_array_subtract(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 
 // bitarr will be extended if needed
