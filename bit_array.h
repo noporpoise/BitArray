@@ -172,8 +172,9 @@ void bit_array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
 // Logic operators
 //
 
-// Destination and source bit arrays must be of the same length, however they
-// may point to the same object
+// BIT_ARRAYs can all be different or the same object
+// dest array will be resized if it is too short
+// 
 void bit_array_and(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 void bit_array_or(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 void bit_array_xor(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
@@ -232,20 +233,7 @@ BIT_ARRAY* bit_array_load(FILE* f);
 
 //
 // Experimental (here for development)
-//
-
-// DO NOT USE -- contains bugs!
-
-// If there is an overflow, bit array will be set to all 1s and 0 is returned
-// Returns 0 if there was an overflow, 1 otherwise
-//char bit_array_increment(BIT_ARRAY* bitarr);
-
-// If there is an underflow, bit array will be set to all 0s and 0 is returned
-// Returns 0 if there was an underflow, 1 otherwise
-//char bit_array_decrement(BIT_ARRAY* bitarr);
-
-//
-// Coming soon...
+// DO NOT USE -- they contain bugs!
 //
 
 //void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t dist);

@@ -212,7 +212,7 @@ Arrays do not have to be the same length
 Returns:
 * 1 iff bitarr1 > bitarr2
 * 0 iff bitarr1 == bitarr2
-*-1 iff bitarr1 < bitarr2
+* -1 iff bitarr1 < bitarr2
 
     int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
 
@@ -272,6 +272,8 @@ Under development
 
     void bit_array_cycle_right(BIT_ARRAY* bitarr, const bit_index_t dist);
     void bit_array_cycle_left(BIT_ARRAY* bitarr, const bit_index_t dist);
+    void bit_array_reverse(BIT_ARRAY* bitarr);
+    void bit_array_reverse_region(BIT_ARRAY* bitarr, bit_index_t start_indx, bit_index_t end_indx);
 
 Revised BSD License
 ===================
@@ -301,11 +303,6 @@ Development
 To do:
 * cycle left / right
 * reverse array, reverse region
-
-Need re-writing:
-* bit_array_add
-* bit_array_increment
-* bit_array_decrement
 
 Also:
 * remove same length restriction on and/or/xor/not

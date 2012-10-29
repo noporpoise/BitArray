@@ -911,22 +911,32 @@ void bit_array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
 // Destination can be the same as one or both of the sources
 void bit_array_and(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 {
-  if(dst->num_of_bits != src1->num_of_bits ||
-     src1->num_of_bits != src2->num_of_bits)
+  // Ensure dst array is big enough
+  word_addr_t max_bits = MAX(src1->num_of_bits, src2->num_of_bits);
+
+  if(dst->num_of_bits < max_bits)
   {
-    // error
-    fprintf(stderr, "bit_array.c: bit_array_and() : "
-                    "dst, src1 and src2 must be of the same length\n");
-    errno = EDOM;
-    exit(EXIT_FAILURE);
+    bit_array_resize(dst, max_bits);
   }
 
-  word_addr_t num_of_words = nwords(src1->num_of_bits);
+  word_addr_t num_of_words1 = nwords(src1->num_of_bits);
+  word_addr_t num_of_words2 = nwords(src2->num_of_bits);
+
+  word_addr_t min_words = MIN(num_of_words1, num_of_words2);
+
   word_addr_t i;
 
-  for(i = 0; i < num_of_words; i++)
+  for(i = 0; i < min_words; i++)
   {
     dst->words[i] = src1->words[i] & src2->words[i];
+  }
+
+  // Set remaining bits to zero
+  word_addr_t dst_words = nwords(dst->num_of_bits);
+
+  for(i = min_words; i < dst_words; i++)
+  {
+    dst->words[i] = (word_t)0;
   }
 
   #ifdef DEBUG
@@ -935,67 +945,76 @@ void bit_array_and(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 }
 
 // Destination can be the same as one or both of the sources
-void bit_array_or(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
+void bit_array_or_xor(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2, char xor)
 {
-  if(dst->num_of_bits != src1->num_of_bits ||
-     src1->num_of_bits != src2->num_of_bits)
+  // Ensure dst array is big enough
+  word_addr_t max_bits = MAX(src1->num_of_bits, src2->num_of_bits);
+
+  if(dst->num_of_bits < max_bits)
   {
-    // error
-    fprintf(stderr, "bit_array.c: bit_array_and() : "
-                    "dst, src1 and src2 must be of the same length\n");
-    errno = EDOM;
-    exit(EXIT_FAILURE);
+    bit_array_resize(dst, max_bits);
   }
 
-  word_addr_t num_of_words = nwords(src1->num_of_bits);
+  word_addr_t num_of_words1 = nwords(src1->num_of_bits);
+  word_addr_t num_of_words2 = nwords(src2->num_of_bits);
+
+  word_addr_t min_words = MIN(num_of_words1, num_of_words2);
+  word_addr_t max_words = MAX(num_of_words1, num_of_words2);
+
   word_addr_t i;
 
-  for(i = 0; i < num_of_words; i++)
+  if(xor)
   {
-    dst->words[i] = src1->words[i] | src2->words[i];
+    for(i = 0; i < min_words; i++)
+      dst->words[i] = src1->words[i] ^ src2->words[i];
+  }
+  else
+  {
+    for(i = 0; i < min_words; i++)
+      dst->words[i] = src1->words[i] | src2->words[i];
+  }
+
+  // Copy remaining bits from longer src array
+  if(min_words != max_words)
+  {
+    const BIT_ARRAY* longer = src1->num_of_bits > src2->num_of_bits ? src1 : src2;
+
+    for(i = min_words; i < max_words; i++)
+    {
+      dst->words[i] = longer->words[i];
+    }
+  }
+
+  // Set remaining bits to zero
+  word_addr_t dst_words = nwords(dst->num_of_bits);
+
+  for(i = max_words; i < dst_words; i++)
+  {
+    dst->words[i] = (word_t)0;
   }
 
   #ifdef DEBUG
   _bit_array_check_top_word(dst);
   #endif
+}
+
+void bit_array_or(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
+{
+  bit_array_or_xor(dst, src1, src2, 0);
 }
 
 // Destination can be the same as one or both of the sources
 void bit_array_xor(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 {
-  if(dst->num_of_bits != src1->num_of_bits ||
-     src1->num_of_bits != src2->num_of_bits)
-  {
-    // error
-    fprintf(stderr, "bit_array.c: bit_array_and() : "
-                    "dst, src1 and src2 must be of the same length\n");
-    errno = EDOM;
-    exit(EXIT_FAILURE);
-  }
-
-  word_addr_t num_of_words = nwords(src1->num_of_bits);
-  word_addr_t i;
-
-  for(i = 0; i < num_of_words; i++)
-  {
-    dst->words[i] = src1->words[i] ^ src2->words[i];
-  }
-
-  #ifdef DEBUG
-  _bit_array_check_top_word(dst);
-  #endif
+  bit_array_or_xor(dst, src1, src2, 1);
 }
 
 // Destination can be the same as the source
 void bit_array_not(BIT_ARRAY* dst, const BIT_ARRAY* src)
 {
-  if(dst->num_of_bits != src->num_of_bits)
+  if(dst->num_of_bits < src->num_of_bits)
   {
-    // error
-    fprintf(stderr, "bit_array.c: bit_array_and() : "
-                    "dst and src1 must be of the same length\n");
-    errno = EDOM;
-    exit(EXIT_FAILURE);
+    bit_array_resize(dst, src->num_of_bits);
   }
 
   word_addr_t num_of_words = nwords(dst->num_of_bits);
@@ -1138,7 +1157,6 @@ void bit_array_shift_left(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
 //
 
 // src1, src2 and dst can all be the same BIT_ARRAY
-// If dst is too small it will be resized to hold the highest set bit
 void _bit_array_arithmetic(BIT_ARRAY* dst,
                            const BIT_ARRAY* src1, const BIT_ARRAY* src2,
                            char subtract)
