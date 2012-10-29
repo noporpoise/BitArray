@@ -35,7 +35,7 @@ typedef struct BIT_ARRAY BIT_ARRAY;
 
 // 64 bit words
 typedef uint64_t word_t, word_addr_t, bit_index_t;
-typedef char word_offset_t; // Offset within a 64 bit word
+typedef uint8_t word_offset_t; // Offset within a 64 bit word
 
 
 // Constructor - create a new bit array of length nbits
@@ -180,7 +180,7 @@ void bit_array_or(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 void bit_array_xor(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 void bit_array_not(BIT_ARRAY* dest, const BIT_ARRAY* src);
 
-// apply `not` to a region
+// `Flip' the bits in a particular regions -- apply `not`
 void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t len);
 
 // Compare two bit arrays by value stored.

@@ -1038,6 +1038,7 @@ void bit_array_not(BIT_ARRAY* dst, const BIT_ARRAY* src)
   #endif
 }
 
+// Flip bits is a region
 void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t len)
 {
   if(start + len > dst->num_of_bits)
@@ -1049,7 +1050,69 @@ void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t 
 
     exit(EXIT_FAILURE);
   }
+  else if(len == 0)
+  {
+    return;
+  }
 
+  word_t w, mask;
+
+  word_addr_t first_word = start/WORD_SIZE;
+  bit_index_t first_word_index = first_word * WORD_SIZE;
+  word_offset_t bits_in_first_word = first_word_index + WORD_SIZE - start;
+
+  if(bits_in_first_word >= len)
+  {
+    // All bits are in the first word
+    w = dst->words[first_word];
+    mask = BIT_MASK(len) << (WORD_SIZE - bits_in_first_word);
+    dst->words[first_word] = (w & ~mask) | (~w & mask);
+
+    // Mask top word
+    _mask_top_word(dst, nwords(dst->num_of_bits));
+
+    return;
+  }
+
+  if(bits_in_first_word < WORD_SIZE)
+  {
+    // Deal with first partial word
+    w = dst->words[first_word];
+    mask = BIT_MASK(bits_in_first_word) << (WORD_SIZE - bits_in_first_word);
+    dst->words[first_word] = (w & ~mask) | (~w & mask);
+    first_word++;
+  }
+
+  word_addr_t last_word = (start+len)/WORD_SIZE;
+  bit_index_t last_word_index = last_word * WORD_SIZE;
+  word_offset_t bits_in_last_word = len - last_word_index;
+
+  //printf("last word: %i, last word index: %i, bits in last word: %i\n",
+  //       (int)last_word, (int)last_word_index, (int)bits_in_last_word);
+
+  word_addr_t i;
+  for(i = first_word; i < last_word; i++)
+  {
+    // Deal with whole words
+    dst->words[i] = ~dst->words[i];
+  }
+
+  if(bits_in_last_word > 0)
+  {
+    // Deal with last partial word
+    w = dst->words[last_word];
+    mask = BIT_MASK(bits_in_last_word);
+    dst->words[last_word] = (w & ~mask) | (~w & mask);
+  }
+
+  // Mask top word
+  _mask_top_word(dst, nwords(dst->num_of_bits));
+
+  #ifdef DEBUG
+  _bit_array_check_top_word(dst);
+  #endif
+
+  /*
   word_t w;
   bit_index_t end = start + (len / WORD_SIZE)*WORD_SIZE;
 
@@ -1063,6 +1126,7 @@ void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t 
   word_t mask = BIT_MASK(remaining);
   w = _bit_array_get_word(dst, start);
   _bit_array_set_word(dst, start, (~w & mask) | (w & ~mask));
+  */
 }
 
 // Compare two bit arrays by value stored

@@ -31,6 +31,8 @@
 
 void test_arithmetic()
 {
+  printf("== testing arithmetic ==\n");
+
   BIT_ARRAY* arr1 = bit_array_create(100);
   BIT_ARRAY* arr2 = bit_array_create(100);
 
@@ -95,31 +97,61 @@ void test_arithmetic()
 
   bit_array_free(arr1);
   bit_array_free(arr2);
+
+  printf("== End of testing arithmetic ==\n\n");
 }
 
-int main(int argc, char* argv[])
+void test_complement_region()
 {
-  if(argc != 1)
-  {
-    printf("  Unused args '%s..'\n", argv[1]);
-    printf("Usage: ./bit_array_test\n");
-    exit(EXIT_FAILURE);
-  }
+  printf("== testing complement_region ==\n");
 
-  test_arithmetic();
-  exit(EXIT_SUCCESS);
+  BIT_ARRAY* arr = bit_array_create(100);
 
-  printf("Oh hi!\n");
-  printf("  Example operations on bit_array C library:\n");
+  printf("complement 0,100:\n");
+  bit_array_complement_region(arr,0,100);
+  bit_array_print(arr, stdout);
+  printf("\n");
 
-  BIT_ARRAY* bitarr;
+  printf("complement 0,0:\n");
+  bit_array_complement_region(arr,0,0);
+  bit_array_print(arr, stdout);
+  printf("\n");
 
-  // construct bit array
+  printf("complement 1,1:\n");
+  bit_array_complement_region(arr,1,1);
+  bit_array_print(arr, stdout);
+  printf("\n");
+
+  printf("complement 3,1:\n");
+  bit_array_complement_region(arr,3,1);
+  bit_array_print(arr, stdout);
+  printf("\n");
+
+  printf("complement 20,80:\n");
+  bit_array_complement_region(arr,20,80);
+  bit_array_print(arr, stdout);
+  printf("\n");
+
+  printf("complement 0,64:\n");
+  bit_array_complement_region(arr,0,64);
+  bit_array_print(arr, stdout);
+  printf("\n");
+
+  bit_array_free(arr);
+
+  printf("== End of testing complement_region ==\n\n");
+}
+
+void test_multiple_actions()
+{
+  printf("== testing all functions ==\n");
+
   printf("Create bit array 100 bits long\n");
-  bitarr = bit_array_create(100);
+
+  BIT_ARRAY* bitarr = bit_array_create(100);
   bit_array_print(bitarr, stdout);
   printf("\n");
-  
+
   printf("Set bit 2\n");
   bit_array_set_bit(bitarr, 2);
   bit_array_print(bitarr, stdout);
@@ -139,7 +171,7 @@ int main(int argc, char* argv[])
   bit_array_set_bit(bitarr, 0);
   bit_array_print(bitarr, stdout);
   printf("\n");
-  
+
   /* Test clone */
   printf("Clone\n");
   BIT_ARRAY* clone = bit_array_clone(bitarr);
@@ -373,6 +405,24 @@ int main(int argc, char* argv[])
 
   // Deconstruct bit array
   bit_array_free(bitarr);
+
+  printf("== End of testing all functions ==\n\n");
+}
+
+int main(int argc, char* argv[])
+{
+  if(argc != 1)
+  {
+    printf("  Unused args '%s..'\n", argv[1]);
+    printf("Usage: ./bit_array_test\n");
+    exit(EXIT_FAILURE);
+  }
+
+  printf("  Example operations on bit_array C library:\n\n");
+
+  test_complement_region();
+  test_arithmetic();
+  //test_multiple_actions();
 
   printf(" THE END.\n");
   
