@@ -115,9 +115,15 @@ bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr);
 
 // Find the index of the first bit that is set.  
 // Returns 1 if a bit is set, otherwise 0
-// Index of first set bit is stored in the integer pointed to by result
-// If not bit is set result is not changed
+// Index of first set bit is stored in the integer pointed to by `result`
+// If no bit is set result is not changed
 char bit_array_find_first_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
+
+// Find the index of the last bit that is set.  
+// Returns 1 if a bit is set, otherwise 0
+// Index of last set bit is stored in the integer pointed to by `result`
+// If no bit is set result is not changed
+char bit_array_find_last_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
 
 
 //
@@ -173,8 +179,9 @@ void bit_array_or(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 void bit_array_xor(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 void bit_array_not(BIT_ARRAY* dest, const BIT_ARRAY* src);
 
-// Compare two bit arrays by value stored
-// arrays do not have to be the same length (e.g. 101 (5) > 00000011 (3))
+// Compare two bit arrays by value stored.
+// arrays do not have to be the same length
+// (e.g. 101 (5) > 00000011 (3) [lsb at right hand side])
 int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
 
 
@@ -182,9 +189,30 @@ int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
 // Shift left/right
 //
 
-// Shift array left/right with a given fill
+// Shift array left/right.  If fill is zero, filled with 0, otherwise 1
 void bit_array_shift_right(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
 void bit_array_shift_left(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
+
+//
+// Adding
+//
+
+// src1, src2 and dst can all be the same BIT_ARRAY
+// dst will be resized if it is too short to hold the highest set bit
+void bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
+
+// dst = src1 - src2
+// src1, src2 and dst can all be the same BIT_ARRAY
+// dst will be resized if it is too short to hold the highest set bit
+void bit_array_subtract(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
+
+// bitarr will be extended if needed
+void bit_array_increment(BIT_ARRAY* bitarr);
+
+// If there is an underflow, bit array will be set to all 0s and 0 is returned
+// Returns 1 on success, 0 if there was an underflow
+//   (i.e. called with an array of all zeros)
+char bit_array_decrement(BIT_ARRAY* bitarr);
 
 //
 // Read/Write bit_array to a file
@@ -206,9 +234,6 @@ BIT_ARRAY* bit_array_load(FILE* f);
 //
 
 // DO NOT USE -- contains bugs!
-
-// Return 0 if there was an overflow error
-//char bit_array_add(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 
 // If there is an overflow, bit array will be set to all 1s and 0 is returned
 // Returns 0 if there was an overflow, 1 otherwise

@@ -134,12 +134,19 @@ Get the number of bits not set (length - hamming weight)
 
     bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr);
 
-Find the index of the first bit that is set.  
-Returns 1 if a bit is set, otherwise 0. 
+Find the index of the first bit that is set.
+Returns 1 if a bit is set, otherwise 0.
 Index of first set bit is stored in the integer pointed to by `result`.
 If no bit is set `result` is not changed and zero is returned.
 
     char bit_array_find_first_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
+
+Find the index of the last bit that is set.
+Returns 1 if a bit is set, otherwise 0.
+Index of last set bit is stored in the integer pointed to by `result`.
+If no bit is set result is not changed and zero is returned.
+
+    char bit_array_find_last_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
 
 Sorting
 -------
@@ -200,10 +207,14 @@ point to the same object
     void bit_array_not(BIT_ARRAY* dest, const BIT_ARRAY* src);
 
 Compare two bit arrays by value stored.
-Arrays do not have to be the same length (e.g. 101 (5) > 00000011 (3))
+Arrays do not have to be the same length
+(e.g. 101 (5) > 00000011 (3) [lsb at right hand side]).
+Returns:
+* 1 iff bitarr1 > bitarr2
+* 0 iff bitarr1 == bitarr2
+*-1 iff bitarr1 < bitarr2
 
     int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
-
 
 Shift array left/right with a given `fill` (0 or 1)
 
@@ -211,11 +222,34 @@ Shift array left/right with a given `fill` (0 or 1)
     void bit_array_shift_left(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
 
 
+Adding / Subtracting
+--------------------
+
+To be interpretted as a number, bit at index 0 is treated as the least
+significant bit.
+
+Add two bit arrays together and store the result.  `src1` and `src2` do not have
+to be the same length. `src1`, `src2` and `dst` can all be the same `BIT_ARRAY`.
+If `dst` is too small it will be resized to hold the highest set bit.
+
+    void bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
+
+Add one to a `BIT_ARRAY`.
+If `dst` is too small it will be resized to hold the highest set bit.
+
+    void bit_array_increment(BIT_ARRAY* bitarr);
+
+Subtract one to a `BIT_ARRAY`. If there is an underflow, bit array will be set
+to all 0s and 0 is returned. Returns 1 on success, 0 if there was an underflow.
+
+    char bit_array_decrement(BIT_ARRAY* bitarr);
+
+
 Read/Write bit_array to a file
 ------------------------------
 
 File format is [8 bytes: for number of elements in array][data].
-Number of bytes of data is: (int)((num_of_bits + 7) / 8) -- i.e. rounddown(num_of_bits)
+Number of bytes of data is: (int)((num_of_bits + 7) / 8) -- i.e. roundup(num_of_bits/8)
 
 Saves bit array to a file.  Returns the number of bytes written
 
@@ -268,4 +302,5 @@ Need re-writing:
 * bit_array_decrement
 
 Also:
+* remove same length restriction on and/or/xor/not
 * write test cases for each method (test cases to go in bit_array_test.c)
