@@ -310,5 +310,4 @@ To do:
 * reverse array, reverse region
 
 Also:
-* remove same length restriction on and/or/xor/not
-* write test cases for each method (test cases to go in bit_array_test.c)
+* write more test cases for each method (test cases to go in bit_array_test.c)
