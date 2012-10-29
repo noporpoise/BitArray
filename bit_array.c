@@ -1009,7 +1009,6 @@ void bit_array_xor(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
   bit_array_or_xor(dst, src1, src2, 1);
 }
 
-// Destination can be the same as the source
 void bit_array_not(BIT_ARRAY* dst, const BIT_ARRAY* src)
 {
   if(dst->num_of_bits < src->num_of_bits)
@@ -1017,19 +1016,53 @@ void bit_array_not(BIT_ARRAY* dst, const BIT_ARRAY* src)
     bit_array_resize(dst, src->num_of_bits);
   }
 
-  word_addr_t num_of_words = nwords(dst->num_of_bits);
+  word_addr_t src_words = nwords(src->num_of_bits);
+  word_addr_t dst_words = nwords(dst->num_of_bits);
+
   word_addr_t i;
 
-  for(i = 0; i < num_of_words; i++)
+  for(i = 0; i < src_words; i++)
   {
     dst->words[i] = ~(src->words[i]);
   }
 
-  _mask_top_word(dst, num_of_words);
+  for(i = src_words; i < dst_words; i++)
+  {
+    dst->words[i] = WORD_MAX;
+  }
+
+  _mask_top_word(dst, dst_words);
 
   #ifdef DEBUG
   _bit_array_check_top_word(dst);
   #endif
+}
+
+void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t len)
+{
+  if(start + len > dst->num_of_bits)
+  {
+    fprintf(stderr, "%s:%i: Error -- bit_array_complement_region(%lu,%lu) out "
+                    "of bounds [length: %lu]\n", __FILE__, __LINE__,
+            (unsigned long)start, (unsigned long)len,
+            (unsigned long)dst->num_of_bits);
+
+    exit(EXIT_FAILURE);
+  }
+
+  word_t w;
+  bit_index_t end = start + (len / WORD_SIZE)*WORD_SIZE;
+
+  for(; start < end; start += WORD_SIZE)
+  {
+    w = _bit_array_get_word(dst, start);
+    _bit_array_set_word(dst, start, ~w);
+  }
+
+  bit_index_t remaining = start + len - end;
+  word_t mask = BIT_MASK(remaining);
+  w = _bit_array_get_word(dst, start);
+  _bit_array_set_word(dst, start, (~w & mask) | (w & ~mask));
 }
 
 // Compare two bit arrays by value stored

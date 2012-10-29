@@ -206,6 +206,10 @@ point to the same object
     void bit_array_xor(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
     void bit_array_not(BIT_ARRAY* dest, const BIT_ARRAY* src);
 
+Apply `not` to a region
+
+void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t len);
+
 Compare two bit arrays by value stored.
 Arrays do not have to be the same length
 (e.g. 101 (5) > 00000011 (3) [lsb at right hand side]).
@@ -273,7 +277,7 @@ Under development
     void bit_array_cycle_right(BIT_ARRAY* bitarr, const bit_index_t dist);
     void bit_array_cycle_left(BIT_ARRAY* bitarr, const bit_index_t dist);
     void bit_array_reverse(BIT_ARRAY* bitarr);
-    void bit_array_reverse_region(BIT_ARRAY* bitarr, bit_index_t start_indx, bit_index_t end_indx);
+    void bit_array_reverse_region(BIT_ARRAY* bitarr, bit_index_t start_indx, bit_index_t length);
 
 Revised BSD License
 ===================

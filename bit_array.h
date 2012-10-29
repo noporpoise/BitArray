@@ -180,6 +180,9 @@ void bit_array_or(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 void bit_array_xor(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 void bit_array_not(BIT_ARRAY* dest, const BIT_ARRAY* src);
 
+// apply `not` to a region
+void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t len);
+
 // Compare two bit arrays by value stored.
 // arrays do not have to be the same length
 // (e.g. 101 (5) > 00000011 (3) [lsb at right hand side])
