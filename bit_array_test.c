@@ -29,6 +29,10 @@
 #include <stdio.h>
 #include "bit_array.h"
 
+//
+// Testing per function
+//
+
 void test_arithmetic()
 {
   printf("== testing arithmetic ==\n");
@@ -43,7 +47,6 @@ void test_arithmetic()
     bit_array_set_bit(arr2, i);
     bit_array_set_bit(arr2, i+1);
   }
-
 
   printf("Init:\narr1: ");
   bit_array_print(arr1, stdout);
@@ -140,6 +143,59 @@ void test_complement_region()
   bit_array_free(arr);
 
   printf("== End of testing complement_region ==\n\n");
+}
+
+
+
+
+
+
+
+
+
+//
+// Aggregate testing
+//
+
+void test_zero_length_arrays()
+{
+  BIT_ARRAY* arr1 = bit_array_create(0);
+  BIT_ARRAY* arr2 = bit_array_create(10);
+
+  printf("Initial arr1[length:0] arr2[length:10]:\n");
+  bit_array_print(arr1, stdout);
+  printf("\n");
+  bit_array_print(arr2, stdout);
+  printf("\n");
+
+  printf("Resize arr2 to 0:\n");
+  bit_array_resize(arr2, 0);
+  bit_array_print(arr1, stdout);
+  printf("\n");
+  bit_array_print(arr2, stdout);
+  printf("\n");
+
+  printf("And:\n");
+  bit_array_and(arr1, arr1, arr2);
+  bit_array_print(arr1, stdout);
+  printf("\n");
+  bit_array_print(arr2, stdout);
+  printf("\n");
+
+  printf("Not arr1:\n");
+  bit_array_not(arr1, arr1);
+  bit_array_print(arr1, stdout);
+  printf("\n");
+
+  printf("And:\n");
+  bit_array_and(arr1, arr1, arr2);
+  bit_array_print(arr1, stdout);
+  printf("\n");
+  bit_array_print(arr2, stdout);
+  printf("\n");
+
+  bit_array_free(arr1);
+  bit_array_free(arr2);
 }
 
 void test_multiple_actions()
@@ -422,6 +478,7 @@ int main(int argc, char* argv[])
 
   test_complement_region();
   test_arithmetic();
+  test_zero_length_arrays();
   //test_multiple_actions();
 
   printf(" THE END.\n");

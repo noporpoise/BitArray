@@ -30,7 +30,7 @@ To build and run the test code:
 Using bit_array in your code
 ============================
 
-Add to the top of your code:
+You are welcome to bundle bit_array with your own code. Add to the top of your code:
 
     #include "bit_array.h"
 
@@ -163,23 +163,41 @@ Put all the 1s before all the 0s
 String functions
 ----------------
 
-Get this array as a string (remember to free the result!)
+To convert to/from string representations of an array, '1' and '0' are used by
+default as on and off.
 
-    char* bit_array_to_string(const BIT_ARRAY* bitarr);
+Create a bit array from a string of '0's and '1's e.g. "01001010110".
+Remember to free the result.
 
-Copy to a string.  Warning: does not null-terminate string.
+    BIT_ARRAY* bit_array_from_str(const char* bitstr);
 
-    void bit_array_cpy_to_string(const BIT_ARRAY* bitarr, char* str,
-                                 bit_index_t start, bit_index_t length);
+Construct a BIT_ARRAY from a substring with given on and off characters.
+
+    BIT_ARRAY* bit_array_from_substr(const char* str, size_t len,
+                                     char on, char off);
+
+To string method. Takes a char array to write to.
+`str` must be bitarr->num_of_bits+1 in length.
+Terminates string with '\0'.
+
+    char* bit_array_to_str(const BIT_ARRAY* bitarr, char* str);
+
+Get a string representations for a given region, using given on/off characters.
+Does not null-terminate string.
+
+    void bit_array_to_substr(const BIT_ARRAY* bitarr, char* str,
+                             bit_index_t start, bit_index_t length,
+                             char on, char off);
 
 Print this array to a file stream.  Prints '0's and '1'.  Doesn't print newline.
 
     void bit_array_print(const BIT_ARRAY* bitarr, FILE* fout);
 
-Create a bit array from a string of '0's and '1's e.g. "01001010110".  
-Remember to free the result!
+Print a string representations for a given region, using given on/off characters.
 
-    BIT_ARRAY* bit_array_from_string(const char* bitstr);
+    void bit_array_print_substr(const BIT_ARRAY* bitarr, FILE* fout,
+                                bit_index_t start, bit_index_t length,
+                                char on, char off);
 
 Clone/copy
 ----------
@@ -206,19 +224,20 @@ point to the same object
     void bit_array_xor(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
     void bit_array_not(BIT_ARRAY* dest, const BIT_ARRAY* src);
 
-`Flip' the bits in a particular regions -- apply `not`
+'Flip' the bits in a particular regions -- apply `not`
 
     void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t len);
 
-Compare two bit arrays by value stored.
-Arrays do not have to be the same length
-(e.g. 101 (5) > 00000011 (3) [lsb at right hand side]).
-Returns:
+Compare two bit arrays by value stored. Returns:
 * 1 iff bitarr1 > bitarr2
 * 0 iff bitarr1 == bitarr2
 * -1 iff bitarr1 < bitarr2
 
+Arrays do not have to be the same length
+(e.g. 101 (5) > 00000011 (3) [lsb at right hand side]).
+
     int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
+
 
 Shift array left/right with a given `fill` (0 or 1)
 

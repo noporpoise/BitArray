@@ -137,21 +137,34 @@ void bit_array_sort_bits(BIT_ARRAY* bitarr);
 void bit_array_rev_sort_bits(BIT_ARRAY* bitarr);
 
 
+//
+// String and printing methods
+//
 
-// Get this array as a string (remember to free the result!)
-char* bit_array_to_string(const BIT_ARRAY* bitarr);
+// Takes a char array to write to.  `str` must be bitarr->num_of_bits+1 in length
+// Terminates string with '\0'
+char* bit_array_to_str(const BIT_ARRAY* bitarr, char* str);
 
-// Warning: does not null-terminate string!
-void bit_array_cpy_to_string(const BIT_ARRAY* bitarr, char* str,
-                             bit_index_t start, bit_index_t length);
+// Get a string representations for a given region, using given on/off characters.
+// Does not null-terminate string.
+void bit_array_to_substr(const BIT_ARRAY* bitarr, char* str,
+                         bit_index_t start, bit_index_t length,
+                         char on, char off);
 
 // Print this array to a file stream.  Prints '0's and '1'.  Doesn't print newline.
 void bit_array_print(const BIT_ARRAY* bitarr, FILE* fout);
 
-// From string method (remember to free the result!)
-BIT_ARRAY* bit_array_from_string(const char* bitstr);
+// Print a string representations for a given region, using given on/off characters.
+void bit_array_print_substr(const BIT_ARRAY* bitarr, FILE* fout,
+                            bit_index_t start, bit_index_t length,
+                            char on, char off);
 
+// Construct a BIT_ARRAY from a string. Remember to free the result.
+BIT_ARRAY* bit_array_from_str(const char* bitstr);
 
+// Construct a BIT_ARRAY from a substring with given on and off characters.
+BIT_ARRAY* bit_array_from_substr(const char* str, size_t len,
+                                 char on, char off);
 
 //
 // Clone and copy
