@@ -126,7 +126,7 @@ char bit_array_find_first_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
 char bit_array_find_last_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
 
 // Parity - returns 1 if odd number of bits set, 0 if even
-char bit_array_parity(BIT_ARRAY* bitarr);
+char bit_array_parity(const BIT_ARRAY* bitarr);
 
 //
 // Sorting
@@ -143,13 +143,13 @@ void bit_array_rev_sort_bits(BIT_ARRAY* bitarr);
 // String and printing methods
 //
 
-// Construct a BIT_ARRAY from a string. Remember to free the result.
-BIT_ARRAY* bit_array_from_str(const char* bitstr);
+// Construct a BIT_ARRAY from a string. 
+void bit_array_from_str(BIT_ARRAY* bitarr, const char* bitstr);
 
 // Construct a BIT_ARRAY from a substring with given on and off characters.
 // Reverse reads from highest to lowest -- this is useful for loading binary numbers
-BIT_ARRAY* bit_array_from_substr(const char* str, size_t len,
-                                 char on, char off, char reverse);
+void bit_array_from_substr(BIT_ARRAY* bitarr, const char* str, size_t len,
+                           char on, char off, char reverse);
 
 // Takes a char array to write to.  `str` must be bitarr->num_of_bits+1 in length
 // Terminates string with '\0'
@@ -194,18 +194,27 @@ void bit_array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
 // dest array will be resized if it is too short
 // 
 void bit_array_and(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
-void bit_array_or(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
+void bit_array_or (BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 void bit_array_xor(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 void bit_array_not(BIT_ARRAY* dest, const BIT_ARRAY* src);
 
 // `Flip' the bits in a particular regions -- apply `not`
 void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t len);
 
-// Compare two bit arrays by value stored.
-// arrays do not have to be the same length
-// (e.g. 101 (5) > 00000011 (3) [lsb at right hand side])
+// cmp functions return:
+//   1 iff bitarr1 > bitarr2
+//   0 iff bitarr1 == bitarr2
+//  -1 iff bitarr1 < bitarr2
+
+// Compare two bit arrays by value stored, with index 0 being the Least
+// Significant Bit (LSB). Arrays do not have to be the same length.
+// Example: ..0101 (5) > ...0011 (3) [index 0 is LSB at right hand side]
 int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
 
+// Compare two bit arrays by value stored, with index 0 being the Most
+// Significant Bit (MSB). Arrays do not have to be the same length.
+// Example: 10.. > 01.. [index 0 is MSB at left hand side]
+int bit_array_other_endian_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
 
 //
 // Shift left/right
@@ -213,7 +222,18 @@ int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
 
 // Shift array left/right.  If fill is zero, filled with 0, otherwise 1
 void bit_array_shift_right(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
-void bit_array_shift_left(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
+void bit_array_shift_left (BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
+
+//
+// Interleave
+//
+// dst cannot point to the same bit array as src1 or src2
+// src1, src2 may point to the same bit array
+// abcd 1234 -> a1b2c3d4
+// 0011 0000 -> 00001010
+// 1111 0000 -> 10101010
+// 0101 1010 -> 01100110
+void bit_array_interleave(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 
 //
 // Adding
@@ -265,14 +285,6 @@ BIT_ARRAY* bit_array_load(FILE* f);
 //void bit_array_reverse_region(BIT_ARRAY* bitarr,
 //                              bit_index_t start_indx,
 //                              bit_index_t end_indx);
-
-// dst cannot point to the same bit array as src1 or src2
-// src1, src2 may point to the same bit array
-// abcd 1234 -> a1b2c3d4
-// 0011 0000 -> 00001010
-// 1111 0000 -> 10101010
-// 0101 1010 -> 01100110
-//void bit_array_interleave(BIT_ARRAY* dst, BIT_ARRAY* src1, BIT_ARRAY* src2);
 
 // hash value returned as an unsigned 64 bit int
 // Using bob jenkins hash

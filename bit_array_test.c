@@ -233,6 +233,137 @@ void test_parity()
   printf("== End of testing parity ==\n\n");
 }
 
+void test_interleave()
+{
+  printf("== testing interleave ==\n");
+
+  char tmp[201];
+  BIT_ARRAY* arr1 = bit_array_create(10);
+  BIT_ARRAY* arr2 = bit_array_create(10);
+  BIT_ARRAY* result = bit_array_create(25);
+
+  printf("--\n");
+  bit_array_set_all(arr1);
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
+  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
+  printf("Interleave:\n");
+  bit_array_interleave(result, arr1, arr2);
+  printf("result: %s\n", bit_array_to_str(result, tmp));
+
+  printf("--\n");
+  bit_array_clear_all(arr1);
+  bit_array_set_all(arr2);
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
+  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
+  printf("Interleave:\n");
+  bit_array_interleave(result, arr1, arr2);
+  printf("result: %s\n", bit_array_to_str(result, tmp));
+
+  printf("--\n");
+  bit_array_set_all(arr1);
+  bit_array_set_all(arr2);
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
+  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
+  printf("Interleave:\n");
+  bit_array_interleave(result, arr1, arr2);
+  printf("result: %s\n", bit_array_to_str(result, tmp));
+
+  printf("--\n");
+  bit_array_clear_all(arr1);
+  bit_array_clear_all(arr2);
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
+  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
+  printf("Interleave:\n");
+  bit_array_interleave(result, arr1, arr2);
+  printf("result: %s\n", bit_array_to_str(result, tmp));
+
+  printf("--\n");
+  bit_array_resize(arr1, 100);
+  bit_array_resize(arr2, 100);
+  bit_array_clear_all(arr1);
+  bit_array_set_all(arr2);
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
+  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
+  printf("Interleave:\n");
+  bit_array_interleave(result, arr1, arr2);
+  printf("result: %s\n", bit_array_to_str(result, tmp));
+
+  bit_array_free(arr1);
+  bit_array_free(arr2);
+  bit_array_free(result);
+
+  printf("== End of testing interleave ==\n\n");
+}
+
+void test_compare()
+{
+  printf("== testing compare ==\n");
+
+  char tmp[201];
+  BIT_ARRAY* arr1 = bit_array_create(10);
+  BIT_ARRAY* arr2 = bit_array_create(10);
+
+  printf("--\n");
+  bit_array_from_str(arr1, "011010100");
+  bit_array_from_str(arr2, "001101010");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
+  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
+  printf("compare: %i\n", bit_array_cmp(arr1, arr2));
+
+  printf("--\n");
+  bit_array_from_str(arr1, "0");
+  bit_array_from_str(arr2, "00");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
+  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
+  printf("compare: %i\n", bit_array_cmp(arr1, arr2));
+
+  printf("--\n");
+  bit_array_from_str(arr1, "");
+  bit_array_from_str(arr2, "");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
+  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
+  printf("compare: %i\n", bit_array_cmp(arr1, arr2));
+
+  bit_array_free(arr1);
+  bit_array_free(arr2);
+
+  printf("== End of testing compare ==\n\n");
+}
+
+void test_compare2()
+{
+  printf("== testing other endian compare ==\n");
+
+  char tmp[201];
+  BIT_ARRAY* arr1 = bit_array_create(10);
+  BIT_ARRAY* arr2 = bit_array_create(10);
+
+  printf("--\n");
+  bit_array_from_str(arr1, "011010100");
+  bit_array_from_str(arr2, "001101010");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
+  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
+  printf("compare: %i\n", bit_array_other_endian_cmp(arr1, arr2));
+
+  printf("--\n");
+  bit_array_from_str(arr1, "0");
+  bit_array_from_str(arr2, "00");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
+  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
+  printf("compare: %i\n", bit_array_other_endian_cmp(arr1, arr2));
+
+  printf("--\n");
+  bit_array_from_str(arr1, "");
+  bit_array_from_str(arr2, "");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
+  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
+  printf("compare: %i\n", bit_array_other_endian_cmp(arr1, arr2));
+
+  bit_array_free(arr1);
+  bit_array_free(arr2);
+
+  printf("== End of testing compare ==\n\n");
+}
 
 //
 // Aggregate testing
@@ -553,11 +684,16 @@ int main(int argc, char* argv[])
 
   printf("  Example operations on bit_array C library:\n\n");
 
+  // Test functions
   test_complement_region();
   test_arithmetic();
   test_first_last_bit_set();
   test_zero_length_arrays();
   test_parity();
+  test_interleave();
+  test_compare();
+  test_compare2();
+
   //test_multiple_actions();
 
   printf(" THE END.\n");

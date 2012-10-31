@@ -150,7 +150,7 @@ If no bit is set result is not changed and zero is returned.
 
 Get parity: returns 1 if odd number of bits set, 0 if even.
 
-    char bit_array_parity(BIT_ARRAY* bitarr)
+    char bit_array_parity(const BIT_ARRAY* bitarr)
 
 Sorting
 -------
@@ -171,15 +171,14 @@ To convert to/from string representations of an array, '1' and '0' are used by
 default as on and off.
 
 Create a bit array from a string of '0's and '1's e.g. "01001010110".
-Remember to free the result.
 
-    BIT_ARRAY* bit_array_from_str(const char* bitstr)
+    void bit_array_from_str(BIT_ARRAY* bitarr, const char* bitstr)
 
 Construct a BIT_ARRAY from a substring with given on and off characters.
 Reverse reads from highest to lowest -- this is useful for loading binary numbers.
 
-    BIT_ARRAY* bit_array_from_substr(const char* str, size_t len,
-                                     char on, char off, char reverse)
+    void bit_array_from_substr(BIT_ARRAY* bitarr, const char* str, size_t len,
+                               char on, char off, char reverse)
 
 To string method. Takes a char array to write to.
 `str` must be bitarr->num_of_bits+1 in length.
@@ -235,15 +234,28 @@ point to the same object
 
     void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t len)
 
-Compare two bit arrays by value stored. Returns:
-* 1 iff bitarr1 > bitarr2
-* 0 iff bitarr1 == bitarr2
-* -1 iff bitarr1 < bitarr2
+Compare two bit arrays by value stored, with index 0 being the Least
+Significant Bit (LSB). Returns:
+* >0 iff bitarr1 > bitarr2
+*  0 iff bitarr1 == bitarr2
+* <0 iff bitarr1 < bitarr2
 
-Arrays do not have to be the same length
-(e.g. 101 (5) > 00000011 (3) [lsb at right hand side]).
+Arrays do not have to be the same length.
+Example: ..0101 (5) > ...0011 (3) [index 0 is LSB at right hand side].
 
     int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
+
+Compare two bit arrays by value stored, with index 0 being the Most Significant
+Bit (MSB). Sorts on length if all zeros: (0,0) < (0,0,0)
+Returns:
+* >0 iff bitarr1 > bitarr2
+*  0 iff bitarr1 == bitarr2
+* <0 iff bitarr1 < bitarr2
+
+Arrays do not have to be the same length.
+Example: 10.. > 01.. [index 0 is MSB at left hand side]
+
+    int bit_array_other_endian_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
 
 
 Shift array left/right with a given `fill` (0 or 1)
@@ -251,6 +263,18 @@ Shift array left/right with a given `fill` (0 or 1)
     void bit_array_shift_right(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
     void bit_array_shift_left(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
 
+Interleave bits
+---------------
+Copy bits from two arrays into another, alternating between taking a bit from each.
+In other words, two arrays a,b,c,d and 1,2,3,4 -> a,1,b,2,c,3,d,4. Examples:
+* 0011 0000 -> 00001010
+* 1111 0000 -> 10101010
+* 0101 1010 -> 01100110
+
+`dst` cannot point to the same bit array as `src1` or `src2`
+`src1`, `src2` may point to the same bit array
+
+    void bit_array_interleave(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 
 Adding / Subtracting
 --------------------
@@ -306,8 +330,6 @@ Under development
 
     void bit_array_reverse(BIT_ARRAY* bitarr)
     void bit_array_reverse_region(BIT_ARRAY* bitarr, bit_index_t start_indx, bit_index_t length)
-    
-    void bit_array_interleave(BIT_ARRAY* dst, BIT_ARRAY* src1, BIT_ARRAY* src2)
     
     uint64_t bit_array_hash(BIT_ARRAY* bitarr)
     
