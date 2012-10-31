@@ -43,103 +43,103 @@ You can then call the following methods:
 
 Constructor - create a new bit array of length nbits
 
-    BIT_ARRAY* bit_array_create(bit_index_t nbits);
+    BIT_ARRAY* bit_array_create(bit_index_t nbits)
 
 Destructor - free the memory used for a bit array
 
-    void bit_array_free(BIT_ARRAY* bitarray);
+    void bit_array_free(BIT_ARRAY* bitarray)
 
 Get length of bit array
 
-    bit_index_t bit_array_length(const BIT_ARRAY* bit_arr);
+    bit_index_t bit_array_length(const BIT_ARRAY* bit_arr)
 
 Enlarge or shrink the size of a bit array. 
 Shrinking will free some memory if it is large.
 Enlarging an array will add zeros to the end of it.
 Returns 1 on success, 0 on failure
 
-    char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits);
+    char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
 
 Set/Get bits
 ------------
 
 Get the value of a bit (returns 0 or 1)
 
-    char bit_array_get_bit(const BIT_ARRAY* bitarr, bit_index_t b);
+    char bit_array_get_bit(const BIT_ARRAY* bitarr, bit_index_t b)
 
 Set a bit (to 1) at position b
 
-    void bit_array_set_bit(BIT_ARRAY* bitarr, bit_index_t b);
+    void bit_array_set_bit(BIT_ARRAY* bitarr, bit_index_t b)
 
 Clear a bit (to 0) at position b
 
-    void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b);
+    void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b)
 
 Assign a value to a bit.  If `c != 0` then set bit; otherwise clear bit.
 
-    void bit_array_assign_bit(BIT_ARRAY* bitarr, bit_index_t b, char c);
+    void bit_array_assign_bit(BIT_ARRAY* bitarr, bit_index_t b, char c)
 
 Set multiple bits at once. 
 
-    void bit_array_set_bits(BIT_ARRAY* bitarr, size_t n, ...);
+    void bit_array_set_bits(BIT_ARRAY* bitarr, size_t n, ...)
     
     // e.g.
-    bit_array_set_bits(bitarr, 3, {1,20,31});
+    bit_array_set_bits(bitarr, 3, {1,20,31})
 
 Clear multiple bits at once.
 
-    void bit_array_clear_bits(BIT_ARRAY* bitarr, size_t n, ...);
+    void bit_array_clear_bits(BIT_ARRAY* bitarr, size_t n, ...)
 
     // e.g.
-    bit_array_clear_bits(bitarr, 3, {1,20,31});
+    bit_array_clear_bits(bitarr, 3, {1,20,31})
 
 Set all bits in this array to 0
 
-    void bit_array_clear_all(BIT_ARRAY* bitarr);
+    void bit_array_clear_all(BIT_ARRAY* bitarr)
 
 Set all bits in this array to 1
 
-    void bit_array_set_all(BIT_ARRAY* bitarr);
+    void bit_array_set_all(BIT_ARRAY* bitarr)
 
 Clear all the bits in a region
 
     void bit_array_clear_region(BIT_ARRAY* bitarr,
-                                bit_index_t start, bit_index_t length);
+                                bit_index_t start, bit_index_t length)
 
 Set all the bits in a region
 
     void bit_array_set_region(BIT_ARRAY* bitarr,
-                              bit_index_t start, bit_index_t length);
+                              bit_index_t start, bit_index_t length)
 
 Get a word of a given size.  First bit is in the least significant bit position
 start index must be within the range of the bit array (0 <= x < length)
 
-    uint64_t bit_array_word64(const BIT_ARRAY* bitarr, bit_index_t start);
-    uint32_t bit_array_word32(const BIT_ARRAY* bitarr, bit_index_t start);
-    uint16_t bit_array_word16(const BIT_ARRAY* bitarr, bit_index_t start);
-    uint8_t  bit_array_word8 (const BIT_ARRAY* bitarr, bit_index_t start);
+    uint64_t bit_array_word64(const BIT_ARRAY* bitarr, bit_index_t start)
+    uint32_t bit_array_word32(const BIT_ARRAY* bitarr, bit_index_t start)
+    uint16_t bit_array_word16(const BIT_ARRAY* bitarr, bit_index_t start)
+    uint8_t  bit_array_word8 (const BIT_ARRAY* bitarr, bit_index_t start)
 
 Set 64 bits at once from a particular start position
 
-    void bit_array_set_word64(BIT_ARRAY* bitarr, bit_index_t start, uint64_t word);
+    void bit_array_set_word64(BIT_ARRAY* bitarr, bit_index_t start, uint64_t word)
 
 Count bits set
 --------------
 
 Get the number of bits set (hamming weight)
 
-    bit_index_t bit_array_num_bits_set(const BIT_ARRAY* bitarr);
+    bit_index_t bit_array_num_bits_set(const BIT_ARRAY* bitarr)
 
 Get the number of bits not set (length - hamming weight)
 
-    bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr);
+    bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr)
 
 Find the index of the first bit that is set.
 Returns 1 if a bit is set, otherwise 0.
 Index of first set bit is stored in the integer pointed to by `result`.
 If no bit is set `result` is not changed and zero is returned.
 
-    char bit_array_find_first_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
+    char bit_array_find_first_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
 
 Find the index of the last bit that is set.
 Returns 1 if a bit is set, otherwise 0.
@@ -148,20 +148,24 @@ If no bit is set result is not changed and zero is returned.
 
     char bit_array_find_last_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
 
+Get parity: returns 1 if odd number of bits set, 0 if even.
+
+    char bit_array_parity(BIT_ARRAY* bitarr)
+
 Sorting
 -------
 
 Put all the 0s before all the 1s
 
-    void bit_array_sort_bits(BIT_ARRAY* bitarr);
+    void bit_array_sort_bits(BIT_ARRAY* bitarr)
 
 Put all the 1s before all the 0s
 
-    void bit_array_rev_sort_bits(BIT_ARRAY* bitarr);
+    void bit_array_rev_sort_bits(BIT_ARRAY* bitarr)
 
 
-String functions
-----------------
+String and printing functions
+-----------------------------
 
 To convert to/from string representations of an array, '1' and '0' are used by
 default as on and off.
@@ -169,49 +173,52 @@ default as on and off.
 Create a bit array from a string of '0's and '1's e.g. "01001010110".
 Remember to free the result.
 
-    BIT_ARRAY* bit_array_from_str(const char* bitstr);
+    BIT_ARRAY* bit_array_from_str(const char* bitstr)
 
 Construct a BIT_ARRAY from a substring with given on and off characters.
+Reverse reads from highest to lowest -- this is useful for loading binary numbers.
 
     BIT_ARRAY* bit_array_from_substr(const char* str, size_t len,
-                                     char on, char off);
+                                     char on, char off, char reverse)
 
 To string method. Takes a char array to write to.
 `str` must be bitarr->num_of_bits+1 in length.
 Terminates string with '\0'.
 
-    char* bit_array_to_str(const BIT_ARRAY* bitarr, char* str);
+    char* bit_array_to_str(const BIT_ARRAY* bitarr, char* str)
 
 Get a string representations for a given region, using given on/off characters.
 Does not null-terminate string.
+Reverse prints from highest to lowest -- this is useful for writing binary numbers.
 
     void bit_array_to_substr(const BIT_ARRAY* bitarr, char* str,
                              bit_index_t start, bit_index_t length,
-                             char on, char off);
+                             char on, char off, char reverse)
 
 Print this array to a file stream.  Prints '0's and '1'.  Doesn't print newline.
 
-    void bit_array_print(const BIT_ARRAY* bitarr, FILE* fout);
+    void bit_array_print(const BIT_ARRAY* bitarr, FILE* fout)
 
 Print a string representations for a given region, using given on/off characters.
+Reverse prints from highest to lowest -- this is useful printing for binary numbers
 
     void bit_array_print_substr(const BIT_ARRAY* bitarr, FILE* fout,
                                 bit_index_t start, bit_index_t length,
-                                char on, char off);
+                                char on, char off, char reverse)
 
 Clone/copy
 ----------
 
 Copy a BIT_ARRAY struct and the data it holds - returns pointer to new object
 
-    BIT_ARRAY* bit_array_clone(const BIT_ARRAY* bitarr);
+    BIT_ARRAY* bit_array_clone(const BIT_ARRAY* bitarr)
 
 Copy bits from one array to another.
 Destination and source can be the same bit_array and src/dst regions can overlap
 
     void bit_array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
                         const BIT_ARRAY* src, bit_index_t srcindx,
-                        bit_index_t length);
+                        bit_index_t length)
 
 Logic operators
 ---------------
@@ -219,14 +226,14 @@ Logic operators
 Destination and source bit arrays must be of the same length, however they may
 point to the same object
 
-    void bit_array_and(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
-    void bit_array_or(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
-    void bit_array_xor(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
-    void bit_array_not(BIT_ARRAY* dest, const BIT_ARRAY* src);
+    void bit_array_and(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
+    void bit_array_or(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
+    void bit_array_xor(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
+    void bit_array_not(BIT_ARRAY* dest, const BIT_ARRAY* src)
 
 'Flip' the bits in a particular regions -- apply `not`
 
-    void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t len);
+    void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t len)
 
 Compare two bit arrays by value stored. Returns:
 * 1 iff bitarr1 > bitarr2
@@ -236,13 +243,13 @@ Compare two bit arrays by value stored. Returns:
 Arrays do not have to be the same length
 (e.g. 101 (5) > 00000011 (3) [lsb at right hand side]).
 
-    int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
+    int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
 
 
 Shift array left/right with a given `fill` (0 or 1)
 
-    void bit_array_shift_right(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
-    void bit_array_shift_left(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
+    void bit_array_shift_right(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
+    void bit_array_shift_left(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
 
 
 Adding / Subtracting
@@ -256,23 +263,23 @@ to be the same length. `src1`, `src2` and `dst` can all be the same or different
 `BIT_ARRAY`s. If `dst` is shorter than either of `src1` or `src2`, it is enlarged
 to be as long as the longest.
 
-    void bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
+    void bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 
 Subtract on BIT_ARRAY from another. `src1`, `src2` and `dst` can all be the same
 or different `BIT_ARRAY`s. If dst is shorter than src1, it will be extended to
 be as long as `src1`. `src1` must be greater than or equal to `src2` (`src1 >= src2`).
 
-    void bit_array_subtract(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
+    void bit_array_subtract(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 
 Add one to a `BIT_ARRAY`.
 If `dst` is too small it will be resized to hold the highest set bit.
 
-    void bit_array_increment(BIT_ARRAY* bitarr);
+    void bit_array_increment(BIT_ARRAY* bitarr)
 
 Subtract one to a `BIT_ARRAY`. If there is an underflow, bit array will be set
 to all 0s and 0 is returned. Returns 1 on success, 0 if there was an underflow.
 
-    char bit_array_decrement(BIT_ARRAY* bitarr);
+    char bit_array_decrement(BIT_ARRAY* bitarr)
 
 
 Read/Write bit_array to a file
@@ -283,21 +290,28 @@ Number of bytes of data is: (int)((num_of_bits + 7) / 8) -- i.e. roundup(num_of_
 
 Saves bit array to a file.  Returns the number of bytes written
 
-    bit_index_t bit_array_save(const BIT_ARRAY* bitarr, FILE* f);
+    bit_index_t bit_array_save(const BIT_ARRAY* bitarr, FILE* f)
 
 Reads bit array from a file.  Returns bit array or NULL on failure
 
-    BIT_ARRAY* bit_array_load(FILE* f);
+    BIT_ARRAY* bit_array_load(FILE* f)
 
 Coming soon
 -----------
 
 Under development
 
-    void bit_array_cycle_right(BIT_ARRAY* bitarr, const bit_index_t dist);
-    void bit_array_cycle_left(BIT_ARRAY* bitarr, const bit_index_t dist);
-    void bit_array_reverse(BIT_ARRAY* bitarr);
-    void bit_array_reverse_region(BIT_ARRAY* bitarr, bit_index_t start_indx, bit_index_t length);
+    void bit_array_cycle_right(BIT_ARRAY* bitarr, const bit_index_t dist)
+    void bit_array_cycle_left(BIT_ARRAY* bitarr, const bit_index_t dist)
+
+    void bit_array_reverse(BIT_ARRAY* bitarr)
+    void bit_array_reverse_region(BIT_ARRAY* bitarr, bit_index_t start_indx, bit_index_t length)
+    
+    void bit_array_interleave(BIT_ARRAY* dst, BIT_ARRAY* src1, BIT_ARRAY* src2)
+    
+    uint64_t bit_array_hash(BIT_ARRAY* bitarr)
+    
+    void bit_array_next_lexicographic(BIT_ARRAY* bitarr)
 
 Revised BSD License
 ===================

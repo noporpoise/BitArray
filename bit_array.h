@@ -125,6 +125,8 @@ char bit_array_find_first_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
 // If no bit is set result is not changed
 char bit_array_find_last_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
 
+// Parity - returns 1 if odd number of bits set, 0 if even
+char bit_array_parity(BIT_ARRAY* bitarr);
 
 //
 // Sorting
@@ -141,30 +143,33 @@ void bit_array_rev_sort_bits(BIT_ARRAY* bitarr);
 // String and printing methods
 //
 
+// Construct a BIT_ARRAY from a string. Remember to free the result.
+BIT_ARRAY* bit_array_from_str(const char* bitstr);
+
+// Construct a BIT_ARRAY from a substring with given on and off characters.
+// Reverse reads from highest to lowest -- this is useful for loading binary numbers
+BIT_ARRAY* bit_array_from_substr(const char* str, size_t len,
+                                 char on, char off, char reverse);
+
 // Takes a char array to write to.  `str` must be bitarr->num_of_bits+1 in length
 // Terminates string with '\0'
 char* bit_array_to_str(const BIT_ARRAY* bitarr, char* str);
 
 // Get a string representations for a given region, using given on/off characters.
 // Does not null-terminate string.
+// Reverse prints from highest to lowest -- this is useful for writing binary numbers
 void bit_array_to_substr(const BIT_ARRAY* bitarr, char* str,
                          bit_index_t start, bit_index_t length,
-                         char on, char off);
+                         char on, char off, char reverse);
 
 // Print this array to a file stream.  Prints '0's and '1'.  Doesn't print newline.
 void bit_array_print(const BIT_ARRAY* bitarr, FILE* fout);
 
 // Print a string representations for a given region, using given on/off characters.
+// Reverse prints from highest to lowest -- this is useful for printing binary numbers
 void bit_array_print_substr(const BIT_ARRAY* bitarr, FILE* fout,
                             bit_index_t start, bit_index_t length,
-                            char on, char off);
-
-// Construct a BIT_ARRAY from a string. Remember to free the result.
-BIT_ARRAY* bit_array_from_str(const char* bitstr);
-
-// Construct a BIT_ARRAY from a substring with given on and off characters.
-BIT_ARRAY* bit_array_from_substr(const char* str, size_t len,
-                                 char on, char off);
+                            char on, char off, char reverse);
 
 //
 // Clone and copy
@@ -252,6 +257,7 @@ BIT_ARRAY* bit_array_load(FILE* f);
 // DO NOT USE -- they contain bugs!
 //
 
+// Equivalent to 3 reverse region calls
 //void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t dist);
 //void bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t dist);
 
@@ -259,5 +265,25 @@ BIT_ARRAY* bit_array_load(FILE* f);
 //void bit_array_reverse_region(BIT_ARRAY* bitarr,
 //                              bit_index_t start_indx,
 //                              bit_index_t end_indx);
+
+// dst cannot point to the same bit array as src1 or src2
+// src1, src2 may point to the same bit array
+// abcd 1234 -> a1b2c3d4
+// 0011 0000 -> 00001010
+// 1111 0000 -> 10101010
+// 0101 1010 -> 01100110
+//void bit_array_interleave(BIT_ARRAY* dst, BIT_ARRAY* src1, BIT_ARRAY* src2);
+
+// hash value returned as an unsigned 64 bit int
+// Using bob jenkins hash
+//uint64_t bit_array_hash(BIT_ARRAY* bitarr);
+
+// Given a bit array find the next lexicographic orginisation of the bits
+// Number of possible combinations given by (size choose bits_set)
+// 00011 -> 00101 -> 00110 -> 01001 -> 01010 ->
+// 01100 -> 10001 -> 10010 -> 10100 -> 11000
+//void bit_array_next_lexicographic(BIT_ARRAY* bitarr);
+
+// mod_div ? log2?
 
 #endif

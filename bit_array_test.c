@@ -37,6 +37,8 @@ void test_arithmetic()
 {
   printf("== testing arithmetic ==\n");
 
+  char tmp[101];
+
   BIT_ARRAY* arr1 = bit_array_create(100);
   BIT_ARRAY* arr2 = bit_array_create(100);
 
@@ -48,55 +50,37 @@ void test_arithmetic()
     bit_array_set_bit(arr2, i+1);
   }
 
-  printf("Init:\narr1: ");
-  bit_array_print(arr1, stdout);
-  printf("\n");
-  printf("arr2: ");
-  bit_array_print(arr2, stdout);
-  printf("\n");
-
+  printf("Init:\n");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
+  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
 
   printf("Increment: arr1++\n");
   bit_array_increment(arr1);
-  printf("arr1: ");
-  bit_array_print(arr1, stdout);
-  printf("\n");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
   printf("Decrement: arr1--\n");
   bit_array_decrement(arr1);
-  printf("arr1: ");
-  bit_array_print(arr1, stdout);
-  printf("\n");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
   printf("Add: arr1 = arr1 + arr2\n");
   bit_array_add(arr1, arr1, arr2);
-  printf("arr1: ");
-  bit_array_print(arr1, stdout);
-  printf("\n");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
   printf("Subtract: arr1 = arr1 - arr2\n");
   bit_array_subtract(arr1, arr1, arr2);
-  printf("arr1: ");
-  bit_array_print(arr1, stdout);
-  printf("\n");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
   printf("Subtract: arr1 = arr1 - arr1\n");
   bit_array_subtract(arr1, arr1, arr1);
-  printf("arr1: ");
-  bit_array_print(arr1, stdout);
-  printf("\n");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
   printf("Add: arr1 = arr1 + arr2\n");
   bit_array_add(arr1, arr1, arr2);
-  printf("arr1: ");
-  bit_array_print(arr1, stdout);
-  printf("\n");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
   printf("Add: arr1 = arr1 + arr2\n");
   bit_array_add(arr1, arr1, arr2);
-  printf("arr1: ");
-  bit_array_print(arr1, stdout);
-  printf("\n");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
   bit_array_free(arr1);
   bit_array_free(arr2);
@@ -108,37 +92,36 @@ void test_complement_region()
 {
   printf("== testing complement_region ==\n");
 
+  char tmp[101];
   BIT_ARRAY* arr = bit_array_create(100);
 
   printf("complement 0,100:\n");
   bit_array_complement_region(arr,0,100);
-  bit_array_print(arr, stdout);
-  printf("\n");
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
 
   printf("complement 0,0:\n");
   bit_array_complement_region(arr,0,0);
-  bit_array_print(arr, stdout);
-  printf("\n");
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
 
   printf("complement 1,1:\n");
   bit_array_complement_region(arr,1,1);
-  bit_array_print(arr, stdout);
-  printf("\n");
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
 
   printf("complement 3,1:\n");
   bit_array_complement_region(arr,3,1);
-  bit_array_print(arr, stdout);
-  printf("\n");
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
 
   printf("complement 20,80:\n");
   bit_array_complement_region(arr,20,80);
-  bit_array_print(arr, stdout);
-  printf("\n");
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
 
   printf("complement 0,64:\n");
   bit_array_complement_region(arr,0,64);
-  bit_array_print(arr, stdout);
-  printf("\n");
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
+
+  printf("complement 64,26:\n");
+  bit_array_complement_region(arr,64,36);
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
 
   bit_array_free(arr);
 
@@ -146,11 +129,109 @@ void test_complement_region()
 }
 
 
+void _print_first_last_bit_set(BIT_ARRAY* arr)
+{
+  bit_index_t first_bit = 65, last_bit = 65;
+
+  char bit_set = bit_array_find_first_set_bit(arr, &first_bit);
+  bit_array_find_last_set_bit(arr, &last_bit);
+
+  if(bit_set)
+    printf("First bit set: %i, last bit set: %i\n", (int)first_bit, (int)last_bit);
+  else
+    printf("First bit set: -, last bit set: -\n");
+}
 
 
+void test_first_last_bit_set()
+{
+  printf("== testing first and last bit set ==\n");
 
+  char tmp[101];
+  BIT_ARRAY* arr = bit_array_create(100);
 
+  printf("Initialise 100:\n");
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
 
+  printf("Set bits 0,5,24,64,80,99:\n");
+  bit_array_set_bits(arr, 6, 0, 5, 24, 64, 80, 99);
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
+  _print_first_last_bit_set(arr);
+
+  printf("Clear bits 0,99:\n");
+  bit_array_clear_bits(arr, 2, 0, 99);
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
+  _print_first_last_bit_set(arr);
+
+  printf("Clear bits 5,80:\n");
+  bit_array_clear_bits(arr, 2, 5, 80);
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
+  _print_first_last_bit_set(arr);
+
+  printf("Clear bits 24,64:\n");
+  bit_array_clear_bits(arr, 2, 24, 64);
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
+  _print_first_last_bit_set(arr);
+
+  printf("Set only bit 0:\n");
+  bit_array_set_bit(arr, 0);
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
+  _print_first_last_bit_set(arr);
+
+  const int len = 9;
+  bit_index_t set[len] = {0, 1, 31, 62, 63, 64, 65, 98, 99};
+  int i;
+
+  for(i = 0; i < len; i++)
+  {
+    bit_index_t pos = set[i];
+    printf("Set only bit %i:\n", (int)pos);
+    bit_array_clear_all(arr);
+    bit_array_set_bit(arr, pos);
+    printf("arr: %s\n", bit_array_to_str(arr, tmp));
+    _print_first_last_bit_set(arr);
+  }
+
+  bit_array_free(arr);
+
+  printf("== End of testing first and last bit set ==\n\n");
+}
+
+void test_parity()
+{
+  printf("== testing parity ==\n");
+
+  char tmp[101];
+  BIT_ARRAY* arr = bit_array_create(100);
+
+  printf("Initialise 100:\n");
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
+  printf("  parity: %i\n", (int)bit_array_parity(arr));
+
+  printf("Set bits 0,5,24,64,80,99:\n");
+  bit_array_set_bits(arr, 6, 0, 5, 24, 64, 80, 99);
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
+  printf("  parity: %i\n", (int)bit_array_parity(arr));
+
+  printf("Clear bits 24:\n");
+  bit_array_clear_bit(arr, 24);
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
+  printf("  parity: %i\n", (int)bit_array_parity(arr));
+
+  printf("Clear bits 99:\n");
+  bit_array_clear_bit(arr, 99);
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
+  printf("  parity: %i\n", (int)bit_array_parity(arr));
+
+  printf("Clear bits 0:\n");
+  bit_array_clear_bit(arr, 0);
+  printf("arr: %s\n", bit_array_to_str(arr, tmp));
+  printf("  parity: %i\n", (int)bit_array_parity(arr));
+
+  bit_array_free(arr);
+
+  printf("== End of testing parity ==\n\n");
+}
 
 
 //
@@ -159,43 +240,39 @@ void test_complement_region()
 
 void test_zero_length_arrays()
 {
+  printf("== Testing zero length arrays ==\n");
+
   BIT_ARRAY* arr1 = bit_array_create(0);
   BIT_ARRAY* arr2 = bit_array_create(10);
 
-  printf("Initial arr1[length:0] arr2[length:10]:\n");
-  bit_array_print(arr1, stdout);
-  printf("\n");
-  bit_array_print(arr2, stdout);
-  printf("\n");
+  char tmp[101];
 
-  printf("Resize arr2 to 0:\n");
+  printf("Initial arr1[length:0] arr2[length:10]\n");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
+  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
+
+  printf("--\nResize arr2 to 0\n");
   bit_array_resize(arr2, 0);
-  bit_array_print(arr1, stdout);
-  printf("\n");
-  bit_array_print(arr2, stdout);
-  printf("\n");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
+  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
 
-  printf("And:\n");
+  printf("--\nAnd (arr1, arr2)\n");
   bit_array_and(arr1, arr1, arr2);
-  bit_array_print(arr1, stdout);
-  printf("\n");
-  bit_array_print(arr2, stdout);
-  printf("\n");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
+  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
 
-  printf("Not arr1:\n");
-  bit_array_not(arr1, arr1);
-  bit_array_print(arr1, stdout);
-  printf("\n");
+  printf("--\nNot (arr1)\n");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
-  printf("And:\n");
+  printf("--\nAnd (arr1, arr2)\n");
   bit_array_and(arr1, arr1, arr2);
-  bit_array_print(arr1, stdout);
-  printf("\n");
-  bit_array_print(arr2, stdout);
-  printf("\n");
+  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
+  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
 
   bit_array_free(arr1);
   bit_array_free(arr2);
+
+  printf("== End of testing zero length arrays ==\n\n");
 }
 
 void test_multiple_actions()
@@ -478,7 +555,9 @@ int main(int argc, char* argv[])
 
   test_complement_region();
   test_arithmetic();
+  test_first_last_bit_set();
   test_zero_length_arrays();
+  test_parity();
   //test_multiple_actions();
 
   printf(" THE END.\n");
