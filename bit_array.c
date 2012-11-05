@@ -506,10 +506,8 @@ bit_index_t bit_array_length(const BIT_ARRAY* bit_arr)
   return bit_arr->num_of_bits;
 }
 
-// Enlarge or shrink the size of a bit array
-// Shrinking will free some memory if it is large
-// Enlarging an array will add zeros to the end of it
-// returns 1 on success, 0 on failure
+// Change the size of a bit array. Enlarging an array will add zeros
+// to the end of it. Returns 1 on success, 0 on failure (e.g. not enough memory)
 char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
 {
   bit_index_t old_num_of_bits = bitarr->num_of_bits;

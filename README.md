@@ -7,6 +7,8 @@ License: revised BSD
 
 Isaac Turner <turner.isaac@gmail.com>
 
+{:toc}
+
 About
 =====
 
@@ -39,7 +41,8 @@ Add to your compiler arguments
     BIT_ARR_PATH=path/to/bit_array/
     gcc ... -I$(BIT_ARR_PATH) -L$(BIT_ARR_PATH) -libbitarr
 
-You can then call the following methods:
+Basics
+------
 
 Constructor - create a new bit array of length nbits
 
@@ -53,10 +56,8 @@ Get length of bit array
 
     bit_index_t bit_array_length(const BIT_ARRAY* bit_arr)
 
-Enlarge or shrink the size of a bit array. 
-Shrinking will free some memory if it is large.
-Enlarging an array will add zeros to the end of it.
-Returns 1 on success, 0 on failure
+Change the size of a bit array. Enlarging an array will add zeros to
+the end of it. Returns 1 on success, 0 on failure (e.g. not enough memory)
 
     char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
 
@@ -83,15 +84,15 @@ Set multiple bits at once.
 
     void bit_array_set_bits(BIT_ARRAY* bitarr, size_t n, ...)
     
-    // e.g.
-    bit_array_set_bits(bitarr, 3, {1,20,31})
+    // e.g. set bits 1,20,31:
+    bit_array_set_bits(bitarr, 3, 1,20,31)
 
 Clear multiple bits at once.
 
     void bit_array_clear_bits(BIT_ARRAY* bitarr, size_t n, ...)
 
-    // e.g.
-    bit_array_clear_bits(bitarr, 3, {1,20,31})
+    // e.g. clear bits 1,20,31:
+    bit_array_clear_bits(bitarr, 3, 1,20,31)
 
 Set all bits in this array to 0
 
@@ -101,12 +102,12 @@ Set all bits in this array to 1
 
     void bit_array_set_all(BIT_ARRAY* bitarr)
 
-Clear all the bits in a region
+Clear all the bits in the region `start` to `start+length-1` inclusive
 
     void bit_array_clear_region(BIT_ARRAY* bitarr,
                                 bit_index_t start, bit_index_t length)
 
-Set all the bits in a region
+Set all the bits in the region `start` to `start+length-1` inclusive
 
     void bit_array_set_region(BIT_ARRAY* bitarr,
                               bit_index_t start, bit_index_t length)
