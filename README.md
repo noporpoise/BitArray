@@ -323,8 +323,9 @@ Reads bit array from a file.  Returns bit array or NULL on failure
 Hash Value
 ----------
 
-Get a hash value for this array. Pass seed as 0 on first call, pass previous
+Get a hash value for this array. Pass `seed` as `0` on first call, pass previous
 hash value if rehashing due to a collision. Uses Bob Jenkins hash lookup3 function
+-- see http://burtleburtle.net/bob/hash/index.html
 
     uint64_t bit_array_hash(const BIT_ARRAY* bitarr, uint64_t seed)
 
