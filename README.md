@@ -271,8 +271,8 @@ In other words, two arrays a,b,c,d and 1,2,3,4 -> a,1,b,2,c,3,d,4. Examples:
 * 1111 0000 -> 10101010
 * 0101 1010 -> 01100110
 
-`dst` cannot point to the same bit array as `src1` or `src2`
-`src1`, `src2` may point to the same bit array
+`dst` cannot point to the same bit array as `src1` or `src2`. However `src1` and
+`src2` may point to the same bit array.
 
     void bit_array_interleave(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 
@@ -328,6 +328,12 @@ hash value if rehashing due to a collision. Uses Bob Jenkins hash lookup3 functi
 -- see http://burtleburtle.net/bob/hash/index.html
 
     uint64_t bit_array_hash(const BIT_ARRAY* bitarr, uint64_t seed)
+
+Constants
+---------
+
+`BIT_INDEX_MIN` and `BIT_INDEX_MAX` define the min and max values of datatype
+`bit_index_t`.  These are defined as `0` and `2^63 - 1`.
 
 Coming soon
 -----------
