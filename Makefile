@@ -19,4 +19,4 @@ all: clean
 	$(CC) $(CFLAGS) -o bit_array_generate bit_array_generate.c
 
 clean:
-	rm -rf  *.o libbitarr.a bit_array_test *.dSYM *.greg
+	rm -rf  *.o libbitarr.a bit_array_test bit_array_generate *.dSYM *.greg
