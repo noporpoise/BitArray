@@ -36,6 +36,11 @@
 #include <string.h> // memset
 
 #include "bit_array.h"
+#include "lookup3.h"
+
+//
+// Tables of constants
+//
 
 // byte reverse look up table
 static const word_t reverse_table[256] = 
@@ -1823,6 +1828,27 @@ BIT_ARRAY* bit_array_load(FILE* f)
   return bitarr;
 }
 
+//
+// Hash function
+//
+
+// Pass seed as 0 on first call, pass previous hash value if rehashing due
+// to a collision
+// Using bob jenkins hash lookup3
+uint64_t bit_array_hash(const BIT_ARRAY* bitarr, uint64_t seed)
+{
+  uint32_t *pc = (uint32_t*)&seed;
+  uint32_t *pb = pc+1;
+
+  // Round up length to number 32bit words
+  hashword2((uint32_t*)bitarr->words, (bitarr->num_of_bits + 31) / 32, pc, pb);
+
+  // XOR with array length. This ensures arrays with different length but same
+  // contents have different hash values
+  seed ^= bitarr->num_of_bits;
+
+  return seed;
+}
 
 
 //
@@ -1924,6 +1950,12 @@ void bit_array_reverse(BIT_ARRAY* bitarr)
   8
  7890123456
 */
+ /*
+Approaches:
+1) Reverse each sections (0..p,p+1..n), then reverse the whole array
+2) Rotate words using GCD, so only a right shift needed, loop through 0..n
+   doing right shift
+ */
 void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
 {
   bit_index_t cycle = cycle_dist % bitarr->num_of_bits;

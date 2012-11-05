@@ -365,6 +365,48 @@ void test_compare2()
   printf("== End of testing compare ==\n\n");
 }
 
+void test_hash()
+{
+
+  printf("== Testing hash ==\n");
+
+  BIT_ARRAY* arr = bit_array_create(0);
+  char str[200];
+
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+  printf("hash: %lu\n", (unsigned long)bit_array_hash(arr, 0));
+  printf("--\n");
+
+  bit_array_resize(arr, 10);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+  printf("hash: %lu\n", (unsigned long)bit_array_hash(arr, 0));
+  printf("--\n");
+
+  bit_array_set_bits(arr, 3, 5,7,9);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+  printf("hash: %lu\n", (unsigned long)bit_array_hash(arr, 0));
+  printf("--\n");
+
+  bit_array_resize(arr, 80);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+  printf("hash: %lu\n", (unsigned long)bit_array_hash(arr, 0));
+  printf("--\n");
+
+  bit_array_set_bits(arr, 3, 50,57,59);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+  printf("hash: %lu\n", (unsigned long)bit_array_hash(arr, 0));
+  printf("--\n");
+
+  bit_array_resize(arr, 1000);
+  printf("len: %lu\n", (unsigned long)bit_array_length(arr));
+  printf("hash: %lu\n", (unsigned long)bit_array_hash(arr, 0));
+  printf("--\n");
+
+  bit_array_free(arr);
+
+  printf("== End of testing hash ==\n\n");
+}
+
 //
 // Aggregate testing
 //
@@ -693,6 +735,7 @@ int main(int argc, char* argv[])
   test_interleave();
   test_compare();
   test_compare2();
+  test_hash();
 
   //test_multiple_actions();
 

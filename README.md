@@ -320,6 +320,14 @@ Reads bit array from a file.  Returns bit array or NULL on failure
 
     BIT_ARRAY* bit_array_load(FILE* f)
 
+Hash Value
+----------
+
+Get a hash value for this array. Pass seed as 0 on first call, pass previous
+hash value if rehashing due to a collision. Uses Bob Jenkins hash lookup3 function
+
+    uint64_t bit_array_hash(const BIT_ARRAY* bitarr, uint64_t seed)
+
 Coming soon
 -----------
 
@@ -330,8 +338,6 @@ Under development
 
     void bit_array_reverse(BIT_ARRAY* bitarr)
     void bit_array_reverse_region(BIT_ARRAY* bitarr, bit_index_t start_indx, bit_index_t length)
-    
-    uint64_t bit_array_hash(BIT_ARRAY* bitarr)
     
     void bit_array_next_lexicographic(BIT_ARRAY* bitarr)
 

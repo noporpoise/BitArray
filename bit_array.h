@@ -273,6 +273,15 @@ bit_index_t bit_array_save(const BIT_ARRAY* bitarr, FILE* f);
 BIT_ARRAY* bit_array_load(FILE* f);
 
 //
+// Hash function
+//
+
+// Pass seed as 0 on first call, pass previous hash value if rehashing due
+// to a collision
+// Using bob jenkins hash lookup3
+uint64_t bit_array_hash(const BIT_ARRAY* bitarr, uint64_t seed);
+
+//
 // Experimental (here for development)
 // DO NOT USE -- they contain bugs!
 //
@@ -285,10 +294,6 @@ BIT_ARRAY* bit_array_load(FILE* f);
 //void bit_array_reverse_region(BIT_ARRAY* bitarr,
 //                              bit_index_t start_indx,
 //                              bit_index_t end_indx);
-
-// hash value returned as an unsigned 64 bit int
-// Using bob jenkins hash
-//uint64_t bit_array_hash(BIT_ARRAY* bitarr);
 
 // Given a bit array find the next lexicographic orginisation of the bits
 // Number of possible combinations given by (size choose bits_set)
