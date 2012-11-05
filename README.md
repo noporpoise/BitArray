@@ -1,5 +1,3 @@
-~toc~
-
 **C code for bit arrays**
 =========================
 
