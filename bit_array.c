@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h> // memset
+#include <assert.h>
 
 #include "bit_array.h"
 #include "lookup3.h"
@@ -163,7 +164,7 @@ void print_trace()
   size_t i;
 
   size = backtrace(array, 10);
-  strings = backtrace_symbols (array, size);
+  strings = backtrace_symbols (array, (int)size);
 
   fprintf(stderr, "Obtained %zd stack frames.\n", size);
 
@@ -524,6 +525,8 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
 
   if(new_num_of_words > bitarr->capacity_in_words)
   {
+    assert(bitarr->capacity_in_words > 0);
+
     // Need to change the amount of memory used
     size_t old_capacity_in_bytes = bitarr->capacity_in_words * sizeof(word_t);
     bitarr->capacity_in_words *= 2;
@@ -883,7 +886,13 @@ void bit_array_from_substr(BIT_ARRAY* bitarr, const char* str, size_t len,
 
   if(bitarr->num_of_bits != len)
   {
-    bit_array_resize(bitarr, len);
+    if(!bit_array_resize(bitarr, len))
+    {
+      fprintf(stderr, "%s:%i:bit_array_from_substr(): Ran out of memory\n",
+              __FILE__, __LINE__);
+      errno = ENOMEM;
+      exit(EXIT_FAILURE);
+    }
   }
 
   bit_array_clear_all(bitarr);
@@ -1118,7 +1127,13 @@ void bit_array_and(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 
   if(dst->num_of_bits < max_bits)
   {
-    bit_array_resize(dst, max_bits);
+    if(!bit_array_resize(dst, max_bits))
+    {
+      fprintf(stderr, "%s:%i:bit_array_and(): Ran out of memory\n",
+              __FILE__, __LINE__);
+      errno = ENOMEM;
+      exit(EXIT_FAILURE);
+    }
   }
 
   word_addr_t num_of_words1 = nwords(src1->num_of_bits);
@@ -1154,7 +1169,13 @@ void bit_array_or_xor(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* sr
 
   if(dst->num_of_bits < max_bits)
   {
-    bit_array_resize(dst, max_bits);
+    if(!bit_array_resize(dst, max_bits))
+    {
+      fprintf(stderr, "%s:%i:bit_array_or_xor(): Ran out of memory\n",
+              __FILE__, __LINE__);
+      errno = ENOMEM;
+      exit(EXIT_FAILURE);
+    }
   }
 
   word_addr_t num_of_words1 = nwords(src1->num_of_bits);
@@ -1211,11 +1232,18 @@ void bit_array_xor(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
   bit_array_or_xor(dst, src1, src2, 1);
 }
 
+// If dst is longer than src, top bits are set to 1
 void bit_array_not(BIT_ARRAY* dst, const BIT_ARRAY* src)
 {
   if(dst->num_of_bits < src->num_of_bits)
   {
-    bit_array_resize(dst, src->num_of_bits);
+    if(!bit_array_resize(dst, src->num_of_bits))
+    {
+      fprintf(stderr, "%s:%i:bit_array_not(): Ran out of memory\n",
+              __FILE__, __LINE__);
+      errno = ENOMEM;
+      exit(EXIT_FAILURE);
+    }
   }
 
   word_addr_t src_words = nwords(src->num_of_bits);
@@ -1228,6 +1256,7 @@ void bit_array_not(BIT_ARRAY* dst, const BIT_ARRAY* src)
     dst->words[i] = ~(src->words[i]);
   }
 
+  // Set remaining words to 1s
   for(i = src_words; i < dst_words; i++)
   {
     dst->words[i] = WORD_MAX;
@@ -1353,7 +1382,18 @@ int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
     }
   }
 
-  return (bitarr1->num_of_bits - bitarr2->num_of_bits);
+  if(bitarr1->num_of_bits > bitarr2->num_of_bits)
+  {
+    return 1;
+  }
+  else if(bitarr1->num_of_bits < bitarr2->num_of_bits)
+  {
+    return -1;
+  }
+  else
+  {
+    return 0;
+  }
 }
 
 // Compare two bit arrays by value stored, with index 0 being the Most
@@ -1396,7 +1436,18 @@ int bit_array_other_endian_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr
     }
   }
 
-  return (bitarr1->num_of_bits - bitarr2->num_of_bits);
+  if(bitarr1->num_of_bits > bitarr2->num_of_bits)
+  {
+    return 1;
+  }
+  else if(bitarr1->num_of_bits < bitarr2->num_of_bits)
+  {
+    return -1;
+  }
+  else
+  {
+    return 0;
+  }
 }
 
 void bit_array_set_word64(BIT_ARRAY* bitarr, bit_index_t start, uint64_t word)
@@ -1508,7 +1559,13 @@ void bit_array_interleave(BIT_ARRAY* dst, const BIT_ARRAY* src1,
 
   if(dst->num_of_bits < 2 * src1->num_of_bits)
   {
-    bit_array_resize(dst, 2 * src1->num_of_bits);
+    if(!bit_array_resize(dst, 2 * src1->num_of_bits))
+    {
+      fprintf(stderr, "%s:%i:bit_array_interleave(): Ran out of memory\n",
+              __FILE__, __LINE__);
+      errno = ENOMEM;
+      exit(EXIT_FAILURE);
+    }
   }
 
   word_addr_t i, j;
@@ -1606,8 +1663,9 @@ void _bit_array_arithmetic(BIT_ARRAY* dst,
         // Need to resize for the carry bit
         if(!bit_array_resize(dst, dst->num_of_bits+1))
         {
-          fprintf(stderr, "%s:%i:_bit_array_arithmetic(): ran out of memory\n",
+          fprintf(stderr, "%s:%i:_bit_array_arithmetic(): Ran out of memory\n",
                   __FILE__, __LINE__);
+          errno = ENOMEM;
           exit(EXIT_FAILURE);
         }
       }
@@ -1637,8 +1695,9 @@ void bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
   {
     if(!bit_array_resize(dst, max_src_bits))
     {
-      fprintf(stderr, "%s:%i:bit_array_add(): ran out of memory\n",
+      fprintf(stderr, "%s:%i:bit_array_add(): Ran out of memory\n",
               __FILE__, __LINE__);
+      errno = ENOMEM;
       exit(EXIT_FAILURE);
     }
   }
@@ -1668,8 +1727,9 @@ void bit_array_subtract(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* 
   {
     if(!bit_array_resize(dst, src1->num_of_bits))
     {
-      fprintf(stderr, "%s:%i:bit_array_subtract(): ran out of memory\n",
+      fprintf(stderr, "%s:%i:bit_array_subtract(): Ran out of memory\n",
               __FILE__, __LINE__);
+      errno = ENOMEM;
       exit(EXIT_FAILURE);
     }
   }
@@ -1721,7 +1781,14 @@ void bit_array_increment(BIT_ARRAY* bitarr)
     else
     {
       // Bit array full, need another word
-      bit_array_resize(bitarr, bitarr->num_of_bits + 1);
+      if(!bit_array_resize(bitarr, bitarr->num_of_bits + 1))
+      {
+        fprintf(stderr, "%s:%i:bit_array_increment(): Ran out of memory\n",
+                __FILE__, __LINE__);
+        errno = ENOMEM;
+        exit(EXIT_FAILURE);
+      }
+
       bitarr->words[num_of_words-1] = 0;
       bitarr->words[num_of_words] = 1;
     }
