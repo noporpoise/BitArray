@@ -407,6 +407,85 @@ void test_hash()
   printf("== End of testing hash ==\n\n");
 }
 
+void test_reverse()
+{
+  printf("== Testing reverse ==\n");
+
+  BIT_ARRAY* arr = bit_array_create(0);
+  char str[200];
+
+  printf("Initialise length 0; reverse\n");
+  bit_array_reverse(arr);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("resize length 10; reverse\n");
+  bit_array_resize(arr, 10);
+  bit_array_reverse(arr);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Set bits 2,3,9\n");
+  bit_array_set_bits(arr, 3, 2,3,9);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+  printf("Reverse\n");
+  bit_array_reverse(arr);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("resize length 80; reverse\n");
+  bit_array_resize(arr, 80);
+  bit_array_reverse(arr);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  bit_array_free(arr);
+
+  printf("== End of testing reverse ==\n\n");
+}
+
+void test_toggle()
+{
+  printf("== Testing toggle ==\n");
+
+  BIT_ARRAY* arr = bit_array_create(0);
+  char str[200];
+
+  printf("Initialise length 0; toggle all\n");
+  bit_array_toggle_all(arr);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Initialise length 0; toggle region 0-0\n");
+  bit_array_toggle_region(arr, 0, 0);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("resize length 10; set bits 2,3,6,9\n");
+  bit_array_resize(arr, 10);
+  bit_array_set_bits(arr, 4, 2,3,6,9);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Toggle region 3-8 [start: 3, len:6]\n");
+  bit_array_toggle_region(arr, 3, 6);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Toggle all\n");
+  bit_array_toggle_all(arr);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("resize length 80; set bits 0,20,50,62,64,70,75,79\n");
+  bit_array_resize(arr, 80);
+  bit_array_set_bits(arr, 8, 0,20,50,62,64,70,75,79);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Toggle region 20-74 [start: 25, len:50]\n");
+  bit_array_toggle_region(arr, 25, 50);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Toggle all\n");
+  bit_array_toggle_all(arr);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  bit_array_free(arr);
+
+  printf("== End of testing toggle ==\n\n");
+}
+
 //
 // Aggregate testing
 //
@@ -736,6 +815,8 @@ int main(int argc, char* argv[])
   test_compare();
   test_compare2();
   test_hash();
+  test_reverse();
+  test_toggle();
 
   //test_multiple_actions();
 

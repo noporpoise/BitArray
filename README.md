@@ -15,7 +15,8 @@ efficient implementation for C/C++.  Arrays can be enlarged or shrunk as needed.
 
 Bit arrays are initialised to zero when created or extended.  All operations
 have their bounds checked - an "Out of bounds" error is printed if you try to
-access a bit with index >= length.
+access a bit with index >= length. Arrays of length 0 are permitted. Indices
+must be >= 0. This implementation is not thread-safe.
 
 Please get in touch if you have suggestions / requests / bugs.  
 
@@ -66,39 +67,48 @@ Get the value of a bit (returns 0 or 1)
 
     char bit_array_get_bit(const BIT_ARRAY* bitarr, bit_index_t b)
 
-Set a bit (to 1) at position b
+Set a bit (to 1) at position `b`
 
     void bit_array_set_bit(BIT_ARRAY* bitarr, bit_index_t b)
 
-Clear a bit (to 0) at position b
+Clear a bit (to 0) at position `b`
 
     void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b)
+
+Toggle a bit. If bit is 0 change to 1; if bit is 1 change to 0.
+
+    void bit_array_toggle_bit(BIT_ARRAY* bitarr, bit_index_t b);
 
 Assign a value to a bit.  If `c != 0` then set bit; otherwise clear bit.
 
     void bit_array_assign_bit(BIT_ARRAY* bitarr, bit_index_t b, char c)
+
+Set, clear and toggle several bits
+----------------------------------
 
 Set multiple bits at once. 
 
     void bit_array_set_bits(BIT_ARRAY* bitarr, size_t n, ...)
     
     // e.g. set bits 1,20,31:
-    bit_array_set_bits(bitarr, 3, 1,20,31)
+    bit_array_set_bits(bitarr, 3, 1,20,31);
 
 Clear multiple bits at once.
 
     void bit_array_clear_bits(BIT_ARRAY* bitarr, size_t n, ...)
 
     // e.g. clear bits 1,20,31:
-    bit_array_clear_bits(bitarr, 3, 1,20,31)
+    bit_array_clear_bits(bitarr, 3, 1,20,31);
 
-Set all bits in this array to 0
+Toggle multiple bits at once
 
-    void bit_array_clear_all(BIT_ARRAY* bitarr)
+    void bit_array_toggle_bits(BIT_ARRAY* bitarr, size_t n, ...);
 
-Set all bits in this array to 1
+    // e.g. toggle bits 1,20,31:
+    bit_array_toggle_bits(bitarr, 3, 1,20,31);
 
-    void bit_array_set_all(BIT_ARRAY* bitarr)
+Set, clear and toggle a region
+------------------------------
 
 Clear all the bits in the region `start` to `start+length-1` inclusive
 
@@ -109,6 +119,29 @@ Set all the bits in the region `start` to `start+length-1` inclusive
 
     void bit_array_set_region(BIT_ARRAY* bitarr,
                               bit_index_t start, bit_index_t length)
+
+Toggle all the bits in a region
+
+    void bit_array_toggle_region(BIT_ARRAY* bitarr,
+                                 bit_index_t start, bit_index_t length)
+
+Set, clear and toggle all bits
+------------------------------
+
+Set all bits in this array to 0
+
+    void bit_array_clear_all(BIT_ARRAY* bitarr)
+
+Set all bits in this array to 1
+
+    void bit_array_set_all(BIT_ARRAY* bitarr)
+
+Set all 1 bits to 0, and all 0 bits to 1 -- i.e. flip all the bits
+
+    void bit_array_toggle_all(BIT_ARRAY* bitarr)
+
+Get / set a word
+----------------
 
 Get a word of a given size.  First bit is in the least significant bit position
 start index must be within the range of the bit array (0 <= x < length)
@@ -275,6 +308,15 @@ In other words, two arrays a,b,c,d and 1,2,3,4 -> a,1,b,2,c,3,d,4. Examples:
 
     void bit_array_interleave(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 
+Reverse
+-------
+
+Reverse the whole array or part of it
+
+    void bit_array_reverse(BIT_ARRAY* bitarr)
+    void bit_array_reverse_region(BIT_ARRAY* bitarr,
+                                  bit_index_t start, bit_index_t length)
+
 Adding / Subtracting
 --------------------
 
@@ -342,10 +384,9 @@ Under development
     void bit_array_cycle_right(BIT_ARRAY* bitarr, const bit_index_t dist)
     void bit_array_cycle_left(BIT_ARRAY* bitarr, const bit_index_t dist)
 
-    void bit_array_reverse(BIT_ARRAY* bitarr)
-    void bit_array_reverse_region(BIT_ARRAY* bitarr, bit_index_t start_indx, bit_index_t length)
-    
     void bit_array_next_lexicographic(BIT_ARRAY* bitarr)
+
+    void bit_array_random(BIT_ARRAY* bitarr, double prob)
 
 Revised BSD License
 ===================
@@ -375,7 +416,4 @@ Development
 
 To do:
 * cycle left / right
-* reverse array, reverse region
-
-Also:
-* write more test cases for each method (test cases to go in bit_array_test.c)
+* write more test cases (test cases to go in bit_array_test.c)

@@ -39,6 +39,10 @@ typedef uint8_t word_offset_t; // Offset within a 64 bit word
 
 extern const bit_index_t BIT_INDEX_MIN, BIT_INDEX_MAX;
 
+//
+// Basics: Constructor, destructor, get length, resize
+//
+
 // Constructor - create a new bit array of length nbits
 BIT_ARRAY* bit_array_create(bit_index_t nbits);
 
@@ -54,7 +58,7 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits);
 
 
 //
-// Get and set bits
+// Get, set, clear, assign and toggle individual bits
 //
 
 // Get the value of a bit (returns 0 or 1)
@@ -66,32 +70,63 @@ void bit_array_set_bit(BIT_ARRAY* bitarr, bit_index_t b);
 // clear a bit (to 0) at position b
 void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b);
 
+// If bit is 0 -> 1, if bit is 1 -> 0
+void bit_array_toggle_bit(BIT_ARRAY* bitarr, bit_index_t b);
+
 // If char c != 0, set bit; otherwise clear bit
 void bit_array_assign_bit(BIT_ARRAY* bitarr, bit_index_t b, char c);
 
+
+//
+// Set, clear and toggle several bits at once
+//
+
 // Set multiple bits at once. 
-// usage: bit_array_set_bits(bitarr, 3, {1,20,31});
+// e.g. set bits 1, 20 & 31: bit_array_set_bits(bitarr, 3, 1,20,31);
 void bit_array_set_bits(BIT_ARRAY* bitarr, size_t n, ...);
 
 // Clear multiple bits at once.
-// usage: bit_array_clear_bits(bitarr, 3, {1,20,31});
+// e.g. clear bits 1, 20 & 31: bit_array_clear_bits(bitarr, 3, 1,20,31);
 void bit_array_clear_bits(BIT_ARRAY* bitarr, size_t n, ...);
 
-// Set all bits in this array to 0
-void bit_array_clear_all(BIT_ARRAY* bitarr);
+// Toggle multiple bits at once
+// e.g. toggle bits 1, 20 & 31: bit_array_toggle_bits(bitarr, 3, 1,20,31);
+void bit_array_toggle_bits(BIT_ARRAY* bitarr, size_t n, ...);
 
-// Set all bits in this array to 1
-void bit_array_set_all(BIT_ARRAY* bitarr);
-
-// Clear all the bits in a region
-void bit_array_clear_region(BIT_ARRAY* bitarr,
-                            bit_index_t start, bit_index_t length);
+//
+// Set, clear and toggle all bits in a region
+//
 
 // Set all the bits in a region
 void bit_array_set_region(BIT_ARRAY* bitarr,
                           bit_index_t start, bit_index_t length);
 
-// Get a word of a given size.  First bit is in the least significant bit position
+// Clear all the bits in a region
+void bit_array_clear_region(BIT_ARRAY* bitarr,
+                            bit_index_t start, bit_index_t length);
+
+// Toggle all the bits in a region
+void bit_array_toggle_region(BIT_ARRAY* bitarr,
+                             bit_index_t start, bit_index_t length);
+
+//
+// Set, clear and toggle all bits at once
+//
+
+// Set all bits in this array to 1
+void bit_array_set_all(BIT_ARRAY* bitarr);
+
+// Set all bits in this array to 0
+void bit_array_clear_all(BIT_ARRAY* bitarr);
+
+// Set all 1 bits to 0, and all 0 bits to 1
+void bit_array_toggle_all(BIT_ARRAY* bitarr);
+
+//
+// Get / set a word of a given size
+//
+
+// First bit is in the least significant bit position
 // start index must be within the range of the bit array (0 <= x < length)
 uint64_t bit_array_word64(const BIT_ARRAY* bitarr, bit_index_t start);
 uint32_t bit_array_word32(const BIT_ARRAY* bitarr, bit_index_t start);
@@ -127,6 +162,7 @@ char bit_array_find_last_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
 // Parity - returns 1 if odd number of bits set, 0 if even
 char bit_array_parity(const BIT_ARRAY* bitarr);
 
+
 //
 // Sorting
 //
@@ -146,29 +182,33 @@ void bit_array_rev_sort_bits(BIT_ARRAY* bitarr);
 void bit_array_from_str(BIT_ARRAY* bitarr, const char* bitstr);
 
 // Construct a BIT_ARRAY from a substring with given on and off characters.
-// Reverse reads from highest to lowest -- this is useful for loading binary numbers
+// Reverse reads from highest to lowest -- this is useful for loading binary
+// numbers
 void bit_array_from_substr(BIT_ARRAY* bitarr, const char* str, size_t len,
                            char on, char off, char reverse);
 
-// Takes a char array to write to.  `str` must be bitarr->num_of_bits+1 in length
-// Terminates string with '\0'
+// Takes a char array to write to.  `str` must be bitarr->num_of_bits+1 in
+// length. Terminates string with '\0'
 char* bit_array_to_str(const BIT_ARRAY* bitarr, char* str);
 
-// Get a string representations for a given region, using given on/off characters.
-// Does not null-terminate string.
-// Reverse prints from highest to lowest -- this is useful for writing binary numbers
+// Get a string representations for a given region, using given on/off
+// characters. Does not null-terminate string. Reverse prints from highest to
+// lowest -- this is useful for writing binary numbers
 void bit_array_to_substr(const BIT_ARRAY* bitarr, char* str,
                          bit_index_t start, bit_index_t length,
                          char on, char off, char reverse);
 
-// Print this array to a file stream.  Prints '0's and '1'.  Doesn't print newline.
+// Print this array to a file stream.  Prints '0's and '1'.  Doesn't print
+// newline.
 void bit_array_print(const BIT_ARRAY* bitarr, FILE* fout);
 
-// Print a string representations for a given region, using given on/off characters.
-// Reverse prints from highest to lowest -- this is useful for printing binary numbers
+// Print a string representations for a given region, using given on/off
+// characters. Reverse prints from highest to lowest -- this is useful for
+// printing binary numbers
 void bit_array_print_substr(const BIT_ARRAY* bitarr, FILE* fout,
                             bit_index_t start, bit_index_t length,
                             char on, char off, char reverse);
+
 
 //
 // Clone and copy
@@ -198,7 +238,8 @@ void bit_array_xor(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2
 void bit_array_not(BIT_ARRAY* dest, const BIT_ARRAY* src);
 
 // `Flip' the bits in a particular regions -- apply `not`
-void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t len);
+void bit_array_complement_region(BIT_ARRAY* dst,
+                                 bit_index_t start, bit_index_t len);
 
 // cmp functions return:
 //   1 iff bitarr1 > bitarr2
@@ -215,27 +256,33 @@ int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
 // Example: 10.. > 01.. [index 0 is MSB at left hand side]
 int bit_array_other_endian_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
 
+
 //
-// Shift left/right
+// Shift, interleave, reverse
 //
 
 // Shift array left/right.  If fill is zero, filled with 0, otherwise 1
 void bit_array_shift_right(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
 void bit_array_shift_left (BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
 
-//
 // Interleave
-//
 // dst cannot point to the same bit array as src1 or src2
 // src1, src2 may point to the same bit array
 // abcd 1234 -> a1b2c3d4
 // 0011 0000 -> 00001010
 // 1111 0000 -> 10101010
 // 0101 1010 -> 01100110
-void bit_array_interleave(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
+void bit_array_interleave(BIT_ARRAY* dst,
+                          const BIT_ARRAY* src1, const BIT_ARRAY* src2);
+
+// Reverse the whole array or part of it
+void bit_array_reverse(BIT_ARRAY* bitarr);
+void bit_array_reverse_region(BIT_ARRAY* bitarr,
+                              bit_index_t start, bit_index_t length);
+
 
 //
-// Adding
+// Adding and substracting
 //
 
 // src1, src2 and dst can all be the same BIT_ARRAY
@@ -256,6 +303,7 @@ void bit_array_increment(BIT_ARRAY* bitarr);
 //   (i.e. called with an array of all zeros)
 char bit_array_decrement(BIT_ARRAY* bitarr);
 
+
 //
 // Read/Write bit_array to a file
 //
@@ -270,6 +318,7 @@ bit_index_t bit_array_save(const BIT_ARRAY* bitarr, FILE* f);
 // Reads bit array from a file
 // returns bit array or NULL on failure
 BIT_ARRAY* bit_array_load(FILE* f);
+
 
 //
 // Hash function
@@ -288,11 +337,6 @@ uint64_t bit_array_hash(const BIT_ARRAY* bitarr, uint64_t seed);
 // Equivalent to 3 reverse region calls
 //void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t dist);
 //void bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t dist);
-
-//void bit_array_reverse(BIT_ARRAY* bitarr);
-//void bit_array_reverse_region(BIT_ARRAY* bitarr,
-//                              bit_index_t start_indx,
-//                              bit_index_t end_indx);
 
 // Given a bit array find the next lexicographic orginisation of the bits
 // Number of possible combinations given by (size choose bits_set)
