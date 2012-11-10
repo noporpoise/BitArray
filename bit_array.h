@@ -330,6 +330,16 @@ BIT_ARRAY* bit_array_load(FILE* f);
 uint64_t bit_array_hash(const BIT_ARRAY* bitarr, uint64_t seed);
 
 //
+// Randomness
+//
+
+// Set bits randomly with probability prob : 0 <= prob <= 1
+void bit_array_random(BIT_ARRAY* bitarr, float prob);
+
+// Shuffle the bits in an array randomly
+void bit_array_shuffle(BIT_ARRAY* bitarr);
+
+//
 // Experimental (here for development)
 // DO NOT USE -- they contain bugs!
 //

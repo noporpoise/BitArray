@@ -370,6 +370,21 @@ hash value if rehashing due to a collision. Uses Bob Jenkins hash lookup3 functi
 
     uint64_t bit_array_hash(const BIT_ARRAY* bitarr, uint64_t seed)
 
+Randomness
+----------
+
+Set bits randomly with probability prob : `0 <= prob <= 1`
+
+    void bit_array_random(BIT_ARRAY* bitarr, float prob)
+
+Shuffle the bits in an array randomly
+
+    void bit_array_shuffle(BIT_ARRAY* bitarr)
+
+    // e.g. If you want exactly 9 random bits set in an array, use:
+    bit_array_set_region(arr, 0, 9);
+    bit_array_shuffle();
+
 Constants
 ---------
 
@@ -385,8 +400,6 @@ Under development
     void bit_array_cycle_left(BIT_ARRAY* bitarr, const bit_index_t dist)
 
     void bit_array_next_lexicographic(BIT_ARRAY* bitarr)
-
-    void bit_array_random(BIT_ARRAY* bitarr, double prob)
 
 Revised BSD License
 ===================

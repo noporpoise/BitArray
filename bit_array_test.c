@@ -27,6 +27,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 #include "bit_array.h"
 
 //
@@ -486,6 +487,122 @@ void test_toggle()
   printf("== End of testing toggle ==\n\n");
 }
 
+
+void test_shuffle()
+{
+  printf("== Testing shuffle ==\n");
+
+  BIT_ARRAY* arr = bit_array_create(0);
+  char str[200];
+
+  printf("Initialise length 0; shuffle\n");
+  bit_array_shuffle(arr);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+
+  printf("resize length 10; set bits 2,3,6,9\n");
+  bit_array_resize(arr, 10);
+  bit_array_set_bits(arr, 4, 2,3,6,9);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+
+  printf("Shuffle\n");
+  bit_array_shuffle(arr);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  bit_array_shuffle(arr);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  bit_array_shuffle(arr);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+
+  printf("resize length 80; clear all; set bits 0-15 [start:0, len: 16]\n");
+  bit_array_resize(arr, 80);
+  bit_array_clear_all(arr);
+  bit_array_set_region(arr, 0, 16);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+
+  printf("Shuffle\n");
+  bit_array_shuffle(arr);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  bit_array_shuffle(arr);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  bit_array_shuffle(arr);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+
+  printf("Clear all; set bits 0-69 [start:0, len: 70]\n");
+  bit_array_clear_all(arr);
+  bit_array_set_region(arr, 0, 70);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+
+  printf("Shuffle\n");
+  bit_array_shuffle(arr);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  bit_array_shuffle(arr);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  bit_array_shuffle(arr);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  bit_array_shuffle(arr);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  bit_array_shuffle(arr);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  bit_array_shuffle(arr);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+
+  bit_array_free(arr);
+
+  printf("== End of testing shuffle ==\n\n");
+}
+
+// used in test_random
+void _print_random_arr(BIT_ARRAY* arr, float *rates, int num_rates, char *tmp)
+{
+  int i, j;
+
+  for(i = 0; i < num_rates; i++)
+  {
+    float rate = rates[i];
+
+    printf("Random %f\n", rate);
+
+    // 4 repetitions
+    for(j = 0; j < 4; j++)
+    {
+      bit_array_random(arr, rate);
+      printf("arr: %s [%i]\n", bit_array_to_str(arr, tmp),
+                               (int)bit_array_num_bits_set(arr));
+    }
+  }
+}
+
+void test_random()
+{
+  printf("== Testing random ==\n");
+
+  BIT_ARRAY* arr = bit_array_create(0);
+  char str[200];
+
+  const int num_rates = 4;
+  float rates[] = {0.0, 0.1, 0.5, 1.0};
+
+  printf("Initialise length 0; random\n");
+  bit_array_random(arr, 0.1);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+
+  printf("resize length 10; set bits 2,3,6,9\n");
+  bit_array_resize(arr, 10);
+  bit_array_set_bits(arr, 4, 2,3,6,9);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+
+  _print_random_arr(arr, rates, num_rates, str);
+
+  printf("resize length 80; clear all\n");
+  bit_array_resize(arr, 80);
+  bit_array_clear_all(arr);
+
+  _print_random_arr(arr, rates, num_rates, str);
+
+  bit_array_free(arr);
+
+  printf("== End of testing random ==\n\n");
+}
+
 //
 // Aggregate testing
 //
@@ -817,6 +934,8 @@ int main(int argc, char* argv[])
   test_hash();
   test_reverse();
   test_toggle();
+  test_shuffle();
+  test_random();
 
   //test_multiple_actions();
 

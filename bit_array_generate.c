@@ -79,6 +79,7 @@ uint16_t morton(uint8_t b)
   return r;
 }
 
+// a is either 0 or 1, and is how much to shift by
 void generate_morton(char a)
 {
   int i;
@@ -94,6 +95,61 @@ void generate_morton(char a)
   printf("\n};\n\n");
 }
 
+unsigned int next_permutation(unsigned int v) 
+{
+  unsigned int t = v | (v - 1); // t gets v's least significant 0 bits set to 1
+  // Next set to 1 the most significant bit to change, 
+  // set to 0 the least significant ones, and add the necessary 1 bits.
+  return (t + 1) | (((~t & -~t) - 1) >> (__builtin_ctz(v) + 1));  
+}
+
+long bang(int k)
+{
+  long r = k;
+  for(k--; k > 1; k--)
+  {
+    r *= k;
+  }
+  return r;
+}
+
+void generate_shuffle()
+{
+  int i;
+
+  printf("static const uint8_t shuffle_permutations[9] = {1");
+
+  for(i = 1; i < 8; i++)
+  {
+    // n! / ((n-k)!k!)
+    long combinations = bang(8) / (bang(8-i)*bang(i));
+    printf(", %li", combinations);
+  }
+
+  printf(", 1};\n");
+
+  printf("static const uint8_t shuffle[9][70] = {\n");
+
+  for(i = 0; i <= 8; i++)
+  {
+    printf(" // %i bits set\n", i);
+    unsigned char init = i == 0 ? 0 : (0x1 << i) - 1;
+
+    printf(" {0x%02X", (int)init);
+
+    unsigned int c = next_permutation(init);
+    int num;
+
+    for(num = 1; num < 70; c = next_permutation(c), num++)
+    {
+      printf(num % 10 == 0 ? ",\n  " : ", ");
+      printf("0x%02X", c <= 255 ? (int)c : 0);
+    }
+
+    printf(i < 8 ? "},\n" : "}};\n\n");
+  }
+}
+
 int main()
 {
   printf("// byte reverse look up table\n");
@@ -102,4 +158,6 @@ int main()
   generate_morton(0);
   printf("// Morton table for interleaving bytes, shifted left 1 bit\n");
   generate_morton(1);
+  printf("// Tables for shuffling\n");
+  generate_shuffle();
 }

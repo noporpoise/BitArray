@@ -35,6 +35,8 @@
 #include <errno.h>
 #include <string.h> // memset
 #include <assert.h>
+#include <time.h> // needed for rand()
+#include <unistd.h>  // need for getpid() function
 
 #include "bit_array.h"
 #include "lookup3.h"
@@ -154,6 +156,7 @@ static const word_t morton_table1[256] =
   0xAA80, 0xAA82, 0xAA88, 0xAA8A, 0xAAA0, 0xAAA2, 0xAAA8, 0xAAAA,
 };
 
+
 #ifdef DEBUG
 #include <execinfo.h>
 void print_trace()
@@ -209,6 +212,9 @@ struct BIT_ARRAY {
   // not for adding every word.  Initial size is INIT_CAPACITY_WORDS.
   word_addr_t capacity_in_words;
 };
+
+// Have we initialised with srand() ?
+char rand_initiated = 0;
 
 // Index of word
 word_addr_t bindex(bit_index_t b) { return (b / WORD_SIZE); }
@@ -1826,6 +1832,10 @@ void bit_array_reverse_region(BIT_ARRAY* bitarr,
 
   word = (rev & mask) | (word & ~mask);
   _bit_array_set_word_cyclic(bitarr, left, word);
+
+  #ifdef DEBUG
+  _bit_array_check_top_word(bitarr);
+  #endif
 }
 
 void bit_array_reverse(BIT_ARRAY* bitarr)
@@ -1834,6 +1844,105 @@ void bit_array_reverse(BIT_ARRAY* bitarr)
   {
     bit_array_reverse_region(bitarr, 0, bitarr->num_of_bits);
   }
+}
+
+//
+// Random
+//
+
+// Set bits randomly with probability prob : 0 <= prob <= 1
+void bit_array_random(BIT_ARRAY* bitarr, float prob)
+{
+  if(prob == 1)
+  {
+    bit_array_set_all(bitarr);
+    return;
+  }
+
+  // rand() generates number between 0 and RAND_MAX inclusive
+  // therefore we want to check if rand() <= p
+  long p = RAND_MAX * prob;
+
+  if(!rand_initiated)
+  {
+    // Initialise random number generator
+    srand(time(NULL) + getpid());
+    rand_initiated = 1;
+  }
+
+  word_addr_t w;
+  word_offset_t o;
+
+  word_addr_t num_of_words = nwords(bitarr->num_of_bits);
+
+  // Initialise to zero
+  memset(bitarr->words, 0x0, num_of_words * sizeof(word_t));
+
+  for(w = 0; w < num_of_words - 1; w++)
+  {
+    for(o = 0; o < WORD_SIZE; o++)
+    {
+      if(rand() <= p)
+      {
+        bitarr->words[w] |= ((word_t)0x1 << o);
+      }
+    }
+  }
+
+  // Top word
+  word_offset_t bits_in_last_word = _bits_in_top_word(bitarr->num_of_bits);
+  w = num_of_words - 1;
+
+  for(o = 0; o < bits_in_last_word; o++)
+  {
+    if(rand() <= p)
+    {
+      bitarr->words[w] |= ((word_t)0x1 << o);
+    }
+  }
+
+  #ifdef DEBUG
+  _bit_array_check_top_word(bitarr);
+  #endif
+}
+
+// Shuffle the bits in an array randomly
+void bit_array_shuffle(BIT_ARRAY* bitarr)
+{
+  if(bitarr->num_of_bits == 0)
+    return;
+
+  if(!rand_initiated)
+  {
+    // Initialise random number generator
+    srand(time(NULL) + getpid());
+    rand_initiated = 1;
+  }
+
+  bit_index_t i, j;
+
+  for(i = bitarr->num_of_bits - 1; i > 0; i--)
+  {
+    j = (bit_index_t)rand() % i;
+  
+    // Swap i and j
+    char x = (bitarr->words[bindex(i)] >> boffset(i)) & 0x1;
+    char y = (bitarr->words[bindex(j)] >> boffset(j)) & 0x1;
+
+    if(!y)
+      bitarr->words[bindex(i)] &= ~((word_t)0x1 << boffset(i));
+    else
+      bitarr->words[bindex(i)] |= (word_t)0x1 << boffset(i);
+  
+    if(!x)
+      bitarr->words[bindex(j)] &= ~((word_t)0x1 << boffset(j));
+    else
+      bitarr->words[bindex(j)] |= (word_t)0x1 << boffset(j);
+  }
+
+  #ifdef DEBUG
+  _bit_array_check_top_word(bitarr);
+  #endif
 }
 
 //
