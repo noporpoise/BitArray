@@ -251,8 +251,8 @@ Destination and source can be the same bit_array and src/dst regions can overlap
                         const BIT_ARRAY* src, bit_index_t srcindx,
                         bit_index_t length)
 
-Logic operators
----------------
+Logic operators and shifts
+--------------------------
 
 Destination and source bit arrays must be of the same length, however they may
 point to the same object
@@ -265,6 +265,41 @@ point to the same object
 'Flip' the bits in a particular regions -- apply `not`
 
     void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t len)
+
+Shift array left/right with a given `fill` (0 or 1)
+
+    void bit_array_shift_right(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
+    void bit_array_shift_left(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
+
+Circular or cycle shifts.  Bits wrap around once shifted off the end
+
+    void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t dist)
+    void bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t dist)
+
+Interleave bits
+---------------
+Copy bits from two arrays into another, alternating between taking a bit from each.
+In other words, two arrays a,b,c,d and 1,2,3,4 -> a,1,b,2,c,3,d,4. Examples:
+* 0011 0000 -> 00001010
+* 1111 0000 -> 10101010
+* 0101 1010 -> 01100110
+
+`dst` cannot point to the same bit array as `src1` or `src2`. However `src1` and
+`src2` may point to the same bit array.
+
+    void bit_array_interleave(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
+
+Reverse
+-------
+
+Reverse the whole array or part of it.
+
+    void bit_array_reverse(BIT_ARRAY* bitarr)
+    void bit_array_reverse_region(BIT_ARRAY* bitarr,
+                                  bit_index_t start, bit_index_t length)
+
+Comparing
+---------
 
 Compare two bit arrays by value stored, with index 0 being the Least
 Significant Bit (LSB). Returns:
@@ -289,33 +324,6 @@ Example: 10.. > 01.. [index 0 is MSB at left hand side]
 
     int bit_array_other_endian_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
 
-
-Shift array left/right with a given `fill` (0 or 1)
-
-    void bit_array_shift_right(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
-    void bit_array_shift_left(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
-
-Interleave bits
----------------
-Copy bits from two arrays into another, alternating between taking a bit from each.
-In other words, two arrays a,b,c,d and 1,2,3,4 -> a,1,b,2,c,3,d,4. Examples:
-* 0011 0000 -> 00001010
-* 1111 0000 -> 10101010
-* 0101 1010 -> 01100110
-
-`dst` cannot point to the same bit array as `src1` or `src2`. However `src1` and
-`src2` may point to the same bit array.
-
-    void bit_array_interleave(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
-
-Reverse
--------
-
-Reverse the whole array or part of it
-
-    void bit_array_reverse(BIT_ARRAY* bitarr)
-    void bit_array_reverse_region(BIT_ARRAY* bitarr,
-                                  bit_index_t start, bit_index_t length)
 
 Adding / Subtracting
 --------------------
@@ -396,10 +404,7 @@ Coming soon
 
 Under development
 
-    void bit_array_cycle_right(BIT_ARRAY* bitarr, const bit_index_t dist)
-    void bit_array_cycle_left(BIT_ARRAY* bitarr, const bit_index_t dist)
-
-    void bit_array_next_lexicographic(BIT_ARRAY* bitarr)
+    void bit_array_next_permutation(BIT_ARRAY* bitarr)
 
 Revised BSD License
 ===================
@@ -428,5 +433,5 @@ Development
 ===========
 
 To do:
-* cycle left / right
 * write more test cases (test cases to go in bit_array_test.c)
+* optimisations?

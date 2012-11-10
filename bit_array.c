@@ -2268,6 +2268,46 @@ uint64_t bit_array_hash(const BIT_ARRAY* bitarr, uint64_t seed)
 // Experimental - development - full of bugs
 //
 
+void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
+{
+  if(bitarr->num_of_bits == 0)
+  {
+    return;
+  }
+
+  cycle_dist = cycle_dist % bitarr->num_of_bits;
+
+  if(cycle_dist == 0)
+  {
+    return;
+  }
+
+  bit_index_t mid = bitarr->num_of_bits - cycle_dist;
+  bit_array_reverse_region(bitarr, 0, mid);
+  bit_array_reverse_region(bitarr, mid, cycle_dist);
+  bit_array_reverse(bitarr);
+}
+
+void bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
+{
+  if(bitarr->num_of_bits == 0)
+  {
+    return;
+  }
+
+  cycle_dist = cycle_dist % bitarr->num_of_bits;
+
+  if(cycle_dist == 0)
+  {
+    return;
+  }
+
+  bit_index_t len = bitarr->num_of_bits - cycle_dist;
+  bit_array_reverse_region(bitarr, 0, cycle_dist);
+  bit_array_reverse_region(bitarr, cycle_dist, len);
+  bit_array_reverse(bitarr);
+}
+
 /*
  data =0123456789
  word =2
@@ -2292,7 +2332,7 @@ Approaches:
 2) Rotate words using GCD, so only a right shift needed, loop through 0..n
    doing right shift
  */
-void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
+void dev_bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
 {
   bit_index_t cycle = cycle_dist % bitarr->num_of_bits;
 
@@ -2402,7 +2442,7 @@ void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
   #endif
 }
 
-void bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
+void dev_bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
 {
   bit_array_cycle_right(bitarr, bitarr->num_of_bits - cycle_dist);
 

@@ -265,6 +265,10 @@ int bit_array_other_endian_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr
 void bit_array_shift_right(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
 void bit_array_shift_left (BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
 
+// Cyclic shift
+void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t dist);
+void bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t dist);
+
 // Interleave
 // dst cannot point to the same bit array as src1 or src2
 // src1, src2 may point to the same bit array
@@ -279,7 +283,6 @@ void bit_array_interleave(BIT_ARRAY* dst,
 void bit_array_reverse(BIT_ARRAY* bitarr);
 void bit_array_reverse_region(BIT_ARRAY* bitarr,
                               bit_index_t start, bit_index_t length);
-
 
 //
 // Adding and substracting
@@ -343,10 +346,6 @@ void bit_array_shuffle(BIT_ARRAY* bitarr);
 // Experimental (here for development)
 // DO NOT USE -- they contain bugs!
 //
-
-// Equivalent to 3 reverse region calls
-//void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t dist);
-//void bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t dist);
 
 // Given a bit array find the next lexicographic orginisation of the bits
 // Number of possible combinations given by (size choose bits_set)

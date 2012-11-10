@@ -603,6 +603,76 @@ void test_random()
   printf("== End of testing random ==\n\n");
 }
 
+// Test cyclic shift / circular shift
+void test_cycle()
+{
+  printf("== Testing circular shift ==\n");
+
+  BIT_ARRAY* arr = bit_array_create(0);
+  char str[200];
+
+  printf("Initialise length 0; shift left 3 shift right 0\n");
+  bit_array_cycle_left(arr, 3);
+  bit_array_cycle_right(arr, 0);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("resize length 10; set bits 2,3,6,9\n");
+  bit_array_resize(arr, 10);
+  bit_array_set_bits(arr, 4, 2,3,6,9);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+
+  printf("shift left 3\n");
+  bit_array_cycle_left(arr, 3);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("shift left 0\n");
+  bit_array_cycle_left(arr, 0);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("shift right 3\n");
+  bit_array_cycle_right(arr, 3);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("shift right 0\n");
+  bit_array_cycle_right(arr, 0);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("shift left 25\n");
+  bit_array_cycle_left(arr, 25);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("shift right 25\n");
+  bit_array_cycle_right(arr, 25);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("resize length 80; set bits 10, 12, 28, 32, 39, 63, 64, 79\n");
+  bit_array_resize(arr, 80);
+  bit_array_set_bits(arr, 8, 10, 12, 28, 32, 39, 63, 64, 79);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("shift right 25; then left 65\n");
+  bit_array_cycle_right(arr, 65);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+  bit_array_cycle_left(arr, 65);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  int i;
+  printf("Clear all; set even bits\n");
+  bit_array_clear_all(arr);
+  for(i = 0; i < 80; i += 2) bit_array_set_bit(arr, i);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+  
+  printf("shift left 1; then right 1\n");
+  bit_array_cycle_left(arr, 1);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+  bit_array_cycle_right(arr, 1);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  bit_array_free(arr);
+
+  printf("== End of testing circular shift ==\n\n");
+}
+
 //
 // Aggregate testing
 //
@@ -936,6 +1006,7 @@ int main(int argc, char* argv[])
   test_toggle();
   test_shuffle();
   test_random();
+  test_cycle();
 
   //test_multiple_actions();
 
