@@ -121,7 +121,7 @@ Set all the bits in the region `start` to `start+length-1` inclusive
     void bit_array_set_region(BIT_ARRAY* bitarr,
                               bit_index_t start, bit_index_t length)
 
-Toggle all the bits in a region
+Toggle all the bits in the region `start` to `start+length-1` inclusive
 
     void bit_array_toggle_region(BIT_ARRAY* bitarr,
                                  bit_index_t start, bit_index_t length)
@@ -137,7 +137,7 @@ Set all bits in this array to 1
 
     void bit_array_set_all(BIT_ARRAY* bitarr)
 
-Set all 1 bits to 0, and all 0 bits to 1 -- i.e. flip all the bits
+Set all 1 bits to 0, and all 0 bits to 1 (i.e. flip all the bits)
 
     void bit_array_toggle_all(BIT_ARRAY* bitarr)
 
@@ -170,7 +170,7 @@ e.g. 10101 vs 00111 => hamming distance 2 (XOR is 10010)
     bit_index_t bit_array_hamming_distance(const BIT_ARRAY* arr1,
                                            const BIT_ARRAY* arr2)
 
-Get the number of bits not set (length - hamming weight)
+Get the number of bits not set (`length - hamming weight`)
 
     bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr)
 
@@ -211,7 +211,7 @@ Put all the 0s before all the 1s
 
 Put all the 1s before all the 0s
 
-    void bit_array_rev_sort_bits(BIT_ARRAY* bitarr)
+    void bit_array_sort_bits_rev(BIT_ARRAY* bitarr)
 
 
 String and printing functions
@@ -279,10 +279,6 @@ point to the same object
     void bit_array_or(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
     void bit_array_xor(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
     void bit_array_not(BIT_ARRAY* dest, const BIT_ARRAY* src)
-
-'Flip' the bits in a particular regions -- apply `not`
-
-    void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t len)
 
 Shift array left/right with a given `fill` (0 or 1)
 
@@ -377,7 +373,8 @@ Read/Write bit_array to a file
 ------------------------------
 
 File format is [8 bytes: for number of elements in array][data].
-Number of bytes of data is: (int)((num_of_bits + 7) / 8) -- i.e. roundup(num_of_bits/8)
+Number of bytes of data is: `(int)((num_of_bits + 7) / 8)` -- i.e.
+`roundup(num_of_bits/8)`
 
 Saves bit array to a file.  Returns the number of bytes written
 
@@ -392,14 +389,14 @@ Hash Value
 
 Get a hash value for this array. Pass `seed` as `0` on first call, pass previous
 hash value if rehashing due to a collision. Uses Bob Jenkins hash lookup3 function
--- see http://burtleburtle.net/bob/hash/index.html
+(http://burtleburtle.net/bob/hash/index.html)
 
     uint64_t bit_array_hash(const BIT_ARRAY* bitarr, uint64_t seed)
 
 Randomness
 ----------
 
-Set bits randomly with probability prob : `0 <= prob <= 1`
+Set bits randomly with probability prob (where `0 <= prob <= 1`)
 
     void bit_array_random(BIT_ARRAY* bitarr, float prob)
 
@@ -408,21 +405,14 @@ Shuffle the bits in an array randomly
     void bit_array_shuffle(BIT_ARRAY* bitarr)
 
     // e.g. If you want exactly 9 random bits set in an array, use:
-    bit_array_set_region(arr, 0, 9);
-    bit_array_shuffle();
+    bit_array_set_region(arr, 0, 9); // set the first 9 bits
+    bit_array_shuffle(arr);          // shuffle the array
 
 Constants
 ---------
 
 `BIT_INDEX_MIN` and `BIT_INDEX_MAX` define the min and max values of datatype
 `bit_index_t`.  These are defined as `0` and `2^63 - 1`.
-
-Coming soon
------------
-
-Under development
-
-    void bit_array_next_permutation(BIT_ARRAY* bitarr)
 
 Revised BSD License
 ===================
@@ -451,5 +441,5 @@ Development
 ===========
 
 To do:
-* write more test cases (test cases to go in bit_array_test.c)
-* optimisations?
+* write more test cases
+* optimisations

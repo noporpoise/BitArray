@@ -177,7 +177,7 @@ char bit_array_parity(const BIT_ARRAY* bitarr);
 void bit_array_sort_bits(BIT_ARRAY* bitarr);
 
 // Put all the 1s before all the 0s
-void bit_array_rev_sort_bits(BIT_ARRAY* bitarr);
+void bit_array_sort_bits_rev(BIT_ARRAY* bitarr);
 
 
 //
