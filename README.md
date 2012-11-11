@@ -75,7 +75,8 @@ Clear a bit (to 0) at position `b`
 
     void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b)
 
-Toggle a bit. If bit is 0 change to 1; if bit is 1 change to 0.
+Toggle a bit. If bit is 0 change to 1; if bit is 1 change to 0. Also known as
+a complement function.
 
     void bit_array_toggle_bit(BIT_ARRAY* bitarr, bit_index_t b);
 

@@ -226,7 +226,7 @@ static word_t __inline windows_parity(word_t w)
 #define PARITY(x) __builtin_parityl(x)
 #endif
 
-// DEV: consider these instead?
+// A possible faster way to combine two words with a mask
 //#define MASK_MERGE(a,b,abits) ((a & abits) | (b & ~abits))
 #define MASK_MERGE(a,b,abits) (b ^ ((a ^ b) & abits))
 
@@ -306,7 +306,6 @@ void _bit_array_check_top_word(BIT_ARRAY* bitarr)
             (int)num_of_bits_in_top_word, (unsigned long)word_index);
     _bit_array_print_word(top_word, stderr);
     fprintf(stderr, "\n");
-    print_trace();
     exit(EXIT_FAILURE);
   }
 }
@@ -431,7 +430,6 @@ void _bit_array_set_word_cyclic(BIT_ARRAY* bitarr, bit_index_t start, word_t wor
     word_offset_t bits_remaining = MIN(WORD_SIZE - bits_set, start);
     word_t mask = BIT_MASK(bits_remaining);
 
-    //bitarr->words[0] = (word & mask) | (bitarr->words[0] & ~mask);
     bitarr->words[0] = MASK_MERGE(word, bitarr->words[0], mask);
   }
 }
@@ -471,7 +469,6 @@ void _bit_array_fill_region(BIT_ARRAY* bitarr,
   {
     word_t mask = BIT_MASK(bits_remaining);
     word_t dest_word = _bit_array_get_word(bitarr, pos);
-    // word_t fill_word = (fill & mask) | (dest_word & ~mask);
     word_t fill_word = MASK_MERGE(fill, dest_word, mask);
 
     _bit_array_set_word(bitarr, pos, fill_word);
@@ -1328,7 +1325,6 @@ void bit_array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
       word_t dst_word = _bit_array_get_word(dst, dstindx+i*WORD_SIZE);
 
       word_t mask = BIT_MASK(bits_in_last_word);
-      // word_t word = (dst_word & ~mask) | (src_word & mask);
       word_t word = MASK_MERGE(src_word, dst_word, mask);
 
       _bit_array_set_word(dst, dstindx+num_of_full_words*WORD_SIZE, word);
@@ -1358,7 +1354,6 @@ void bit_array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
       word_t dst_word = _bit_array_get_word(dst, dstindx);
 
       word_t mask = BIT_MASK(bits_in_last_word);
-      // word_t word = (dst_word & ~mask) | (src_word & mask);
       word_t word = MASK_MERGE(src_word, dst_word, mask);
       _bit_array_set_word(dst, dstindx, word);
     }
@@ -1520,84 +1515,6 @@ void bit_array_not(BIT_ARRAY* dst, const BIT_ARRAY* src)
   }
 
   _mask_top_word(dst, dst_words);
-
-  #ifdef DEBUG
-  _bit_array_check_top_word(dst);
-  #endif
-}
-
-// Flip bits is a region
-void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t len)
-{
-  if(start + len > dst->num_of_bits)
-  {
-    fprintf(stderr, "%s:%i: Error -- bit_array_complement_region(%lu,%lu) out "
-                    "of bounds [length: %lu]\n", __FILE__, __LINE__,
-            (unsigned long)start, (unsigned long)len,
-            (unsigned long)dst->num_of_bits);
-
-    exit(EXIT_FAILURE);
-  }
-  else if(len == 0)
-  {
-    return;
-  }
-
-  word_t w, mask;
-
-  word_addr_t first_word = start/WORD_SIZE;
-  bit_index_t first_word_index = first_word * WORD_SIZE;
-  word_offset_t bits_in_first_word = first_word_index + WORD_SIZE - start;
-
-  if(bits_in_first_word >= len)
-  {
-    // All bits are in the first word
-    w = dst->words[first_word];
-    mask = BIT_MASK(len) << (WORD_SIZE - bits_in_first_word);
-    // dst->words[first_word] = (w & ~mask) | (~w & mask);
-    dst->words[first_word] = MASK_MERGE(~w, w, mask);
-
-    // Mask top word
-    _mask_top_word(dst, nwords(dst->num_of_bits));
-
-    return;
-  }
-
-  if(bits_in_first_word < WORD_SIZE)
-  {
-    // Deal with first partial word
-    w = dst->words[first_word];
-    mask = BIT_MASK(bits_in_first_word) << (WORD_SIZE - bits_in_first_word);
-    // dst->words[first_word] = (w & ~mask) | (~w & mask);
-    dst->words[first_word] = MASK_MERGE(~w, w, mask);
-    first_word++;
-  }
-
-  word_addr_t last_word = (start+len)/WORD_SIZE;
-  bit_index_t last_word_index = last_word * WORD_SIZE;
-  word_offset_t bits_in_last_word = len - last_word_index;
-
-  //printf("last word: %i, last word index: %i, bits in last word: %i\n",
-  //       (int)last_word, (int)last_word_index, (int)bits_in_last_word);
-
-  word_addr_t i;
-  for(i = first_word; i < last_word; i++)
-  {
-    // Deal with whole words
-    dst->words[i] = ~dst->words[i];
-  }
-
-  if(bits_in_last_word > 0)
-  {
-    // Deal with last partial word
-    w = dst->words[last_word];
-    mask = BIT_MASK(bits_in_last_word);
-    // dst->words[last_word] = (w & ~mask) | (~w & mask);
-    dst->words[last_word] = MASK_MERGE(~w, w, mask);
-  }
-
-  // Mask top word
-  _mask_top_word(dst, nwords(dst->num_of_bits));
 
   #ifdef DEBUG
   _bit_array_check_top_word(dst);
@@ -2016,7 +1933,6 @@ void bit_array_reverse_region(BIT_ARRAY* bitarr,
   rev >>= WORD_SIZE - length;
   word_t mask = BIT_MASK(length);
 
-  // word = (rev & mask) | (word & ~mask);
   word = MASK_MERGE(rev, word, mask);
 
   _bit_array_set_word_cyclic(bitarr, left, word);

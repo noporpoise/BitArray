@@ -89,47 +89,6 @@ void test_arithmetic()
   printf("== End of testing arithmetic ==\n\n");
 }
 
-void test_complement_region()
-{
-  printf("== testing complement_region ==\n");
-
-  char tmp[101];
-  BIT_ARRAY* arr = bit_array_create(100);
-
-  printf("complement 0,100:\n");
-  bit_array_complement_region(arr,0,100);
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-
-  printf("complement 0,0:\n");
-  bit_array_complement_region(arr,0,0);
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-
-  printf("complement 1,1:\n");
-  bit_array_complement_region(arr,1,1);
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-
-  printf("complement 3,1:\n");
-  bit_array_complement_region(arr,3,1);
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-
-  printf("complement 20,80:\n");
-  bit_array_complement_region(arr,20,80);
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-
-  printf("complement 0,64:\n");
-  bit_array_complement_region(arr,0,64);
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-
-  printf("complement 64,26:\n");
-  bit_array_complement_region(arr,64,36);
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-
-  bit_array_free(arr);
-
-  printf("== End of testing complement_region ==\n\n");
-}
-
-
 void _print_first_last_bit_set(BIT_ARRAY* arr)
 {
   bit_index_t first_bit = 65, last_bit = 65;
@@ -478,8 +437,41 @@ void test_toggle()
   bit_array_toggle_region(arr, 25, 50);
   printf("arr: %s\n", bit_array_to_str(arr, str));
 
+  printf("Resize 100; reset\n");
+  bit_array_resize(arr, 100);
+  bit_array_clear_all(arr);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
   printf("Toggle all\n");
   bit_array_toggle_all(arr);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("toggle 0,100:\n");
+  bit_array_toggle_region(arr,0,100);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("toggle 0,0:\n");
+  bit_array_toggle_region(arr,0,0);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("toggle 1,1:\n");
+  bit_array_toggle_region(arr,1,1);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("toggle 3,1:\n");
+  bit_array_toggle_region(arr,3,1);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("toggle 20,80:\n");
+  bit_array_toggle_region(arr,20,80);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("toggle 0,64:\n");
+  bit_array_toggle_region(arr,0,64);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("toggle 64,26:\n");
+  bit_array_toggle_region(arr,64,36);
   printf("arr: %s\n", bit_array_to_str(arr, str));
 
   bit_array_free(arr);
@@ -497,53 +489,69 @@ void test_shuffle()
 
   printf("Initialise length 0; shuffle\n");
   bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                          (int)bit_array_num_bits_set(arr));
 
   printf("resize length 10; set bits 2,3,6,9\n");
   bit_array_resize(arr, 10);
   bit_array_set_bits(arr, 4, 2,3,6,9);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
 
   printf("Shuffle\n");
   bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
   bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
   bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
 
   printf("resize length 80; clear all; set bits 0-15 [start:0, len: 16]\n");
   bit_array_resize(arr, 80);
   bit_array_clear_all(arr);
   bit_array_set_region(arr, 0, 16);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
 
   printf("Shuffle\n");
   bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
   bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
   bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
 
   printf("Clear all; set bits 0-69 [start:0, len: 70]\n");
   bit_array_clear_all(arr);
   bit_array_set_region(arr, 0, 70);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
 
   printf("Shuffle\n");
   bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
   bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
   bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
   bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
   bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
   bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
 
   bit_array_free(arr);
 
@@ -583,12 +591,14 @@ void test_random()
 
   printf("Initialise length 0; random\n");
   bit_array_random(arr, 0.1);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
 
   printf("resize length 10; set bits 2,3,6,9\n");
   bit_array_resize(arr, 10);
   bit_array_set_bits(arr, 4, 2,3,6,9);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
 
   _print_random_arr(arr, rates, num_rates, str);
 
@@ -619,7 +629,8 @@ void test_cycle()
   printf("resize length 10; set bits 2,3,6,9\n");
   bit_array_resize(arr, 10);
   bit_array_set_bits(arr, 4, 2,3,6,9);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str), (int)bit_array_num_bits_set(arr));
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
 
   printf("shift left 3\n");
   bit_array_cycle_left(arr, 3);
@@ -650,7 +661,7 @@ void test_cycle()
   bit_array_set_bits(arr, 8, 10, 12, 28, 32, 39, 63, 64, 79);
   printf("arr: %s\n", bit_array_to_str(arr, str));
 
-  printf("shift right 25; then left 65\n");
+  printf("shift right 65; then back left 65\n");
   bit_array_cycle_right(arr, 65);
   printf("arr: %s\n", bit_array_to_str(arr, str));
   bit_array_cycle_left(arr, 65);
@@ -695,7 +706,7 @@ void test_next_permutation()
   for(i = 0; i < 3; i++)
   {
     bit_array_next_permutation(arr);
-    printf("%i) arr: %s\n", i, bit_array_to_str(arr, str));
+    printf("%3i) arr: %s\n", i, bit_array_to_str(arr, str));
   }
 
   printf("Set 1 bit\n");
@@ -706,7 +717,7 @@ void test_next_permutation()
   for(i = 0; i < 12; i++)
   {
     bit_array_next_permutation(arr);
-    printf("%i) arr: %s\n", i, bit_array_to_str(arr, str));
+    printf("%3i) arr: %s\n", i, bit_array_to_str(arr, str));
   }
 
   printf("Clear all; set bits 0,1\n");
@@ -719,7 +730,7 @@ void test_next_permutation()
   for(i = 0; i < 50; i++)
   {
     bit_array_next_permutation(arr);
-    printf("%i) arr: %s\n", i, bit_array_to_str(arr, str));
+    printf("%3i) arr: %s\n", i, bit_array_to_str(arr, str));
   }
 
   printf("Resize length 80; set bit 0\n");
@@ -732,7 +743,7 @@ void test_next_permutation()
   for(i = 0; i < 100; i++)
   {
     bit_array_next_permutation(arr);
-    printf("%i) arr: %s\n", i, bit_array_to_str(arr, str));
+    printf("%3i) arr: %s\n", i, bit_array_to_str(arr, str));
   }
 
   printf("Resize to 180; set bits 10-149\n");
@@ -1136,7 +1147,6 @@ int main(int argc, char* argv[])
   printf("  Example operations on bit_array C library:\n\n");
 
   // Test functions
-  test_complement_region();
   test_arithmetic();
   test_first_last_bit_set();
   test_zero_length_arrays();

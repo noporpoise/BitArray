@@ -70,7 +70,7 @@ void bit_array_set_bit(BIT_ARRAY* bitarr, bit_index_t b);
 // clear a bit (to 0) at position b
 void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b);
 
-// If bit is 0 -> 1, if bit is 1 -> 0
+// If bit is 0 -> 1, if bit is 1 -> 0.  Same as complement.
 void bit_array_toggle_bit(BIT_ARRAY* bitarr, bit_index_t b);
 
 // If char c != 0, set bit; otherwise clear bit
@@ -247,7 +247,13 @@ void bit_array_not(BIT_ARRAY* dest, const BIT_ARRAY* src);
 void bit_array_complement_region(BIT_ARRAY* dst,
                                  bit_index_t start, bit_index_t len);
 
-// cmp functions return:
+//
+// Comparisons
+//
+
+// Note: (bit_array_cmp(a,b) == 0) <=> (bit_array_other_endian_cmp(a,b) == 0)
+
+// comparison functions return:
 //   1 iff bitarr1 > bitarr2
 //   0 iff bitarr1 == bitarr2
 //  -1 iff bitarr1 < bitarr2
@@ -357,15 +363,8 @@ void bit_array_shuffle(BIT_ARRAY* bitarr);
 void bit_array_next_permutation(BIT_ARRAY* bitarr);
 
 //
-// Experimental (here for development)
-// DO NOT USE -- they contain bugs!
+// Coming soon
 //
-
-// Given a bit array find the next lexicographic orginisation of the bits
-// Number of possible combinations given by (size choose bits_set)
-// 00011 -> 00101 -> 00110 -> 01001 -> 01010 ->
-// 01100 -> 10001 -> 10010 -> 10100 -> 11000
-//void bit_array_next_lexicographic(BIT_ARRAY* bitarr);
 
 // mod_div ? log2?
 
