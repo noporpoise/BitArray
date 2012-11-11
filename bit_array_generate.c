@@ -104,7 +104,7 @@ unsigned int next_permutation(unsigned int v)
   return (t+1) | (((~t & (t+1)) - 1) >> (__builtin_ctz(v) + 1));
 }
 
-long bang(int k)
+long factorial(int k)
 {
   long r = k;
   for(k--; k > 1; k--)
@@ -122,8 +122,8 @@ void generate_shuffle()
 
   for(i = 1; i < 8; i++)
   {
-    // n! / ((n-k)!k!)
-    long combinations = bang(8) / (bang(8-i)*bang(i));
+    // nCk = n! / ((n-k)!k!)
+    long combinations = factorial(8) / (factorial(8-i)*factorial(i));
     printf(", %li", combinations);
   }
 
@@ -151,21 +151,8 @@ void generate_shuffle()
   }
 }
 
-char* binary_to_str(uint8_t *d, size_t len, char *str)
-{
-  size_t i;
-  for(i = 0; i < len; i++)
-  {
-    uint8_t bit = (d[i/8] >> (i % 8)) & 0x1;
-    str[i] = bit ? '1' : '0';
-  }
-  str[len] = '\0';
-  return str;
-}
-
 int main()
 {
-  /*
   printf("// byte reverse look up table\n");
   generate_reverse();
   printf("// Morton table for interleaving bytes\n");
@@ -174,13 +161,4 @@ int main()
   generate_morton(1);
   printf("// Tables for shuffling\n");
   generate_shuffle();
-  */
-  int i;
-  char tmp[100];
-  unsigned int x = 0x3;
-  for(i = 0; i < 500; i++)
-  {
-    printf("%2i: %s\n", i, binary_to_str((uint8_t*)&x, 32, tmp));
-    x = next_permutation(x);
-  }
 }

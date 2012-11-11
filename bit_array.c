@@ -38,6 +38,11 @@
 #include <time.h> // needed for rand()
 #include <unistd.h>  // need for getpid() function
 
+// Windows includes
+#if defined(_WIN32)
+#include <intrin.h>
+#endif
+
 #include "bit_array.h"
 #include "lookup3.h"
 
@@ -156,28 +161,6 @@ static const word_t morton_table1[256] =
   0xAA80, 0xAA82, 0xAA88, 0xAA8A, 0xAAA0, 0xAAA2, 0xAAA8, 0xAAAA,
 };
 
-
-#ifdef DEBUG
-#include <execinfo.h>
-void print_trace()
-{
-  void *array[10];
-  size_t size;
-  char **strings;
-  size_t i;
-
-  size = backtrace(array, 10);
-  strings = backtrace_symbols (array, (int)size);
-
-  fprintf(stderr, "Obtained %zd stack frames.\n", size);
-
-  for(i = 0; i < size; i++)
-    fprintf(stderr, "%s\n", strings[i]);
-
-  free(strings);
-}
-#endif
-
 const bit_index_t BIT_INDEX_MIN = 0;
 const bit_index_t BIT_INDEX_MAX = ~(bit_index_t)0;
 
@@ -202,8 +185,6 @@ const bit_index_t BIT_INDEX_MAX = ~(bit_index_t)0;
 //POPCOUNT is number of bits set
 
 #if defined(_WIN32)
-#include <intrin.h>
-
 static word_t __inline windows_ctz(word_t x)
 {
   word_offset_t r = 0;
@@ -247,7 +228,7 @@ static word_t __inline windows_parity(word_t w)
 
 // DEV: consider these instead?
 //#define MASK_MERGE(a,b,abits) ((a & abits) | (b & ~abits))
-//#define MASK_MERGE(a,b,abits) (b ^ ((a ^ b) & abits))
+#define MASK_MERGE(a,b,abits) (b ^ ((a ^ b) & abits))
 
 struct BIT_ARRAY {
   word_t* words;
@@ -450,7 +431,8 @@ void _bit_array_set_word_cyclic(BIT_ARRAY* bitarr, bit_index_t start, word_t wor
     word_offset_t bits_remaining = MIN(WORD_SIZE - bits_set, start);
     word_t mask = BIT_MASK(bits_remaining);
 
-    bitarr->words[0] = (word & mask) | (bitarr->words[0] & ~mask);
+    //bitarr->words[0] = (word & mask) | (bitarr->words[0] & ~mask);
+    bitarr->words[0] = MASK_MERGE(word, bitarr->words[0], mask);
   }
 }
 
@@ -489,7 +471,8 @@ void _bit_array_fill_region(BIT_ARRAY* bitarr,
   {
     word_t mask = BIT_MASK(bits_remaining);
     word_t dest_word = _bit_array_get_word(bitarr, pos);
-    word_t fill_word = (fill & mask) | (dest_word & ~mask);
+    // word_t fill_word = (fill & mask) | (dest_word & ~mask);
+    word_t fill_word = MASK_MERGE(fill, dest_word, mask);
 
     _bit_array_set_word(bitarr, pos, fill_word);
   }
@@ -1345,7 +1328,8 @@ void bit_array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
       word_t dst_word = _bit_array_get_word(dst, dstindx+i*WORD_SIZE);
 
       word_t mask = BIT_MASK(bits_in_last_word);
-      word_t word = (dst_word & ~mask) | (src_word & mask);
+      // word_t word = (dst_word & ~mask) | (src_word & mask);
+      word_t word = MASK_MERGE(src_word, dst_word, mask);
 
       _bit_array_set_word(dst, dstindx+num_of_full_words*WORD_SIZE, word);
     }
@@ -1374,7 +1358,8 @@ void bit_array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
       word_t dst_word = _bit_array_get_word(dst, dstindx);
 
       word_t mask = BIT_MASK(bits_in_last_word);
-      word_t word = (dst_word & ~mask) | (src_word & mask);
+      // word_t word = (dst_word & ~mask) | (src_word & mask);
+      word_t word = MASK_MERGE(src_word, dst_word, mask);
       _bit_array_set_word(dst, dstindx, word);
     }
   }
@@ -1569,7 +1554,8 @@ void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t 
     // All bits are in the first word
     w = dst->words[first_word];
     mask = BIT_MASK(len) << (WORD_SIZE - bits_in_first_word);
-    dst->words[first_word] = (w & ~mask) | (~w & mask);
+    // dst->words[first_word] = (w & ~mask) | (~w & mask);
+    dst->words[first_word] = MASK_MERGE(~w, w, mask);
 
     // Mask top word
     _mask_top_word(dst, nwords(dst->num_of_bits));
@@ -1582,7 +1568,8 @@ void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t 
     // Deal with first partial word
     w = dst->words[first_word];
     mask = BIT_MASK(bits_in_first_word) << (WORD_SIZE - bits_in_first_word);
-    dst->words[first_word] = (w & ~mask) | (~w & mask);
+    // dst->words[first_word] = (w & ~mask) | (~w & mask);
+    dst->words[first_word] = MASK_MERGE(~w, w, mask);
     first_word++;
   }
 
@@ -1605,7 +1592,8 @@ void bit_array_complement_region(BIT_ARRAY* dst, bit_index_t start, bit_index_t 
     // Deal with last partial word
     w = dst->words[last_word];
     mask = BIT_MASK(bits_in_last_word);
-    dst->words[last_word] = (w & ~mask) | (~w & mask);
+    // dst->words[last_word] = (w & ~mask) | (~w & mask);
+    dst->words[last_word] = MASK_MERGE(~w, w, mask);
   }
 
   // Mask top word
@@ -1758,6 +1746,140 @@ void bit_array_shift_left(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
 }
 
 //
+// Cycle
+//
+
+void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
+{
+  if(bitarr->num_of_bits == 0)
+  {
+    return;
+  }
+
+  cycle_dist = cycle_dist % bitarr->num_of_bits;
+
+  if(cycle_dist == 0)
+  {
+    return;
+  }
+
+  bit_index_t mid = bitarr->num_of_bits - cycle_dist;
+  bit_array_reverse_region(bitarr, 0, mid);
+  bit_array_reverse_region(bitarr, mid, cycle_dist);
+  bit_array_reverse(bitarr);
+}
+
+void bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
+{
+  if(bitarr->num_of_bits == 0)
+  {
+    return;
+  }
+
+  cycle_dist = cycle_dist % bitarr->num_of_bits;
+
+  if(cycle_dist == 0)
+  {
+    return;
+  }
+
+  bit_index_t len = bitarr->num_of_bits - cycle_dist;
+  bit_array_reverse_region(bitarr, 0, cycle_dist);
+  bit_array_reverse_region(bitarr, cycle_dist, len);
+  bit_array_reverse(bitarr);
+}
+
+//
+// Next permutation
+//
+
+word_t _next_permutation(word_t v) 
+{
+  // From http://graphics.stanford.edu/~seander/bithacks.html#NextBitPermutation
+  word_t t = v | (v - 1); // t gets v's least significant 0 bits set to 1
+  // Next set to 1 the most significant bit to change, 
+  // set to 0 the least significant ones, and add the necessary 1 bits.
+  return (t+1) | (((~t & (t+1)) - 1) >> (TRAILING_ZEROS(v) + 1));
+}
+
+// Get the next permutation of an array with a fixed size and given number of
+// bits set.  Also known as next lexicographic permutation.
+// Given a bit array find the next lexicographic orginisation of the bits
+// Number of possible combinations given by (size choose bits_set) i.e. nCk
+// 00011 -> 00101 -> 00110 -> 01001 -> 01010 ->
+// 01100 -> 10001 -> 10010 -> 10100 -> 11000 -> 00011 (back to start)
+void bit_array_next_permutation(BIT_ARRAY* bitarr)
+{
+  if(bitarr->num_of_bits == 0)
+  {
+    return;
+  }
+
+  word_addr_t w;
+  word_addr_t num_of_words = nwords(bitarr->num_of_bits);
+  word_offset_t bits_in_last_word = _bits_in_top_word(bitarr->num_of_bits);
+
+  char carry = 0;
+
+  for(w = 0; w < num_of_words; w++)
+  {
+    // Bits in this word that we are using
+    // WORD_SIZE for all but the last word
+    word_offset_t wsize = (w == num_of_words - 1 ? bits_in_last_word : WORD_SIZE);
+
+    if(POPCOUNT(bitarr->words[w]) + TRAILING_ZEROS(bitarr->words[w]) == wsize)
+    {
+      // Bits in this word cannot be moved forward
+      carry = 1;
+    }
+    else if(carry)
+    {
+      // 0111 -> 1000, 1000 -> 1001
+      word_t tmp = bitarr->words[w] + 1;
+
+      // Count bits previously set
+      bit_index_t bits_previously_set = POPCOUNT(bitarr->words[w]);
+
+      // set new word
+      bitarr->words[w] = tmp;
+
+      // note: w in unsigned
+      // Zero words while counting bits set
+      while(w > 0)
+      {
+        bits_previously_set += POPCOUNT(bitarr->words[w-1]);
+        bitarr->words[w-1] = 0;
+        w--;
+      }
+
+      // Set bits at the beginning
+      bit_array_set_region(bitarr, 0, bits_previously_set - POPCOUNT(tmp));
+
+      carry = 0;
+      break;
+    }
+    else if(bitarr->words[w] > 0)
+    {
+      bitarr->words[w] = _next_permutation(bitarr->words[w]);
+      break;
+    }
+  }
+
+  if(carry)
+  {
+    // Loop around
+    bit_index_t num_bits_set = bit_array_num_bits_set(bitarr);
+    bit_array_clear_all(bitarr);
+    bit_array_set_region(bitarr, 0, num_bits_set);
+  }
+
+  #ifdef DEBUG
+  _bit_array_check_top_word(bitarr);
+  #endif
+}
+
+
+//
 // Interleave
 //
 
@@ -1888,15 +2010,15 @@ void bit_array_reverse_region(BIT_ARRAY* bitarr,
     return;
   }
 
-  // printf("left: %i, right: %i, len: %i\n", (int)left, (int)right, (int)length);
-
   // Remaining bits
   word_t word = _bit_array_get_word_cyclic(bitarr, left);
   word_t rev = _bit_array_reverse_word(word);
   rev >>= WORD_SIZE - length;
   word_t mask = BIT_MASK(length);
 
-  word = (rev & mask) | (word & ~mask);
+  // word = (rev & mask) | (word & ~mask);
+  word = MASK_MERGE(rev, word, mask);
+
   _bit_array_set_word_cyclic(bitarr, left, word);
 
   #ifdef DEBUG
@@ -2327,280 +2449,4 @@ uint64_t bit_array_hash(const BIT_ARRAY* bitarr, uint64_t seed)
   seed ^= bitarr->num_of_bits;
 
   return seed;
-}
-
-
-//
-// Experimental - development - full of bugs
-//
-
-void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
-{
-  if(bitarr->num_of_bits == 0)
-  {
-    return;
-  }
-
-  cycle_dist = cycle_dist % bitarr->num_of_bits;
-
-  if(cycle_dist == 0)
-  {
-    return;
-  }
-
-  bit_index_t mid = bitarr->num_of_bits - cycle_dist;
-  bit_array_reverse_region(bitarr, 0, mid);
-  bit_array_reverse_region(bitarr, mid, cycle_dist);
-  bit_array_reverse(bitarr);
-}
-
-void bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
-{
-  if(bitarr->num_of_bits == 0)
-  {
-    return;
-  }
-
-  cycle_dist = cycle_dist % bitarr->num_of_bits;
-
-  if(cycle_dist == 0)
-  {
-    return;
-  }
-
-  bit_index_t len = bitarr->num_of_bits - cycle_dist;
-  bit_array_reverse_region(bitarr, 0, cycle_dist);
-  bit_array_reverse_region(bitarr, cycle_dist, len);
-  bit_array_reverse(bitarr);
-}
-
-//
-// Next permutation
-//
-word_t _next_permutation(word_t v) 
-{
-  // From http://graphics.stanford.edu/~seander/bithacks.html#NextBitPermutation
-  word_t t = v | (v - 1); // t gets v's least significant 0 bits set to 1
-  // Next set to 1 the most significant bit to change, 
-  // set to 0 the least significant ones, and add the necessary 1 bits.
-  return (t+1) | (((~t & (t+1)) - 1) >> (TRAILING_ZEROS(v) + 1));
-}
-
-// Get the next permutation of an array with a fixed size and given number of
-// bits set.  Also known as next lexicographic permutation.
-// Given a bit array find the next lexicographic orginisation of the bits
-// Number of possible combinations given by (size choose bits_set) i.e. nCk
-// 00011 -> 00101 -> 00110 -> 01001 -> 01010 ->
-// 01100 -> 10001 -> 10010 -> 10100 -> 11000 -> 00011 (back to start)
-void bit_array_next_permutation(BIT_ARRAY* bitarr)
-{
-  if(bitarr->num_of_bits == 0)
-  {
-    return;
-  }
-
-  word_addr_t w;
-  word_addr_t num_of_words = nwords(bitarr->num_of_bits);
-  word_offset_t bits_in_last_word = _bits_in_top_word(bitarr->num_of_bits);
-
-  char carry = 0;
-
-  for(w = 0; w < num_of_words; w++)
-  {
-    // Bits in this word that we are using
-    // WORD_SIZE for all but the last word
-    word_offset_t wsize = (w == num_of_words - 1 ? bits_in_last_word : WORD_SIZE);
-
-    if(POPCOUNT(bitarr->words[w]) + TRAILING_ZEROS(bitarr->words[w]) == wsize)
-    {
-      // Bits in this word cannot be moved forward
-      carry = 1;
-    }
-    else if(carry)
-    {
-      // 0111 -> 1000, 1000 -> 1001
-      word_t tmp = bitarr->words[w] + 1;
-
-      // Count bits previously set
-      bit_index_t bits_previously_set = POPCOUNT(bitarr->words[w]);
-
-      // set new word
-      bitarr->words[w] = tmp;
-
-      // note: w in unsigned
-      // Zero words while counting bits set
-      while(w > 0)
-      {
-        bits_previously_set += POPCOUNT(bitarr->words[w-1]);
-        bitarr->words[w-1] = 0;
-        w--;
-      }
-
-      // Set bits at the beginning
-      bit_array_set_region(bitarr, 0, bits_previously_set - POPCOUNT(tmp));
-
-      carry = 0;
-      break;
-    }
-    else if(bitarr->words[w] > 0)
-    {
-      bitarr->words[w] = _next_permutation(bitarr->words[w]);
-      break;
-    }
-  }
-
-  if(carry)
-  {
-    // Loop around
-    bit_index_t num_bits_set = bit_array_num_bits_set(bitarr);
-    bit_array_clear_all(bitarr);
-    bit_array_set_region(bitarr, 0, num_bits_set);
-  }
-
-  #ifdef DEBUG
-  _bit_array_check_top_word(bitarr);
-  #endif
-}
-
-/*
- data =0123456789
- word =2
- shift=3
- 
- + => starting pos
-
- 0123456789
- 7890123456
- ..|..|..|.
- 0123456789
- +  01
-       34 6
- 7
-   +  2  5
-  8
- 7890123456
-*/
- /*
-Approaches:
-1) Reverse each sections (0..p,p+1..n), then reverse the whole array
-2) Rotate words using GCD, so only a right shift needed, loop through 0..n
-   doing right shift
- */
-void dev_bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
-{
-  bit_index_t cycle = cycle_dist % bitarr->num_of_bits;
-
-  if(cycle == 0)
-  {
-    return;
-  }
-  else if(bitarr->num_of_bits <= (bit_index_t)(2 * WORD_SIZE))
-  {
-    // cycle < WORD_SIZE
-
-    bit_index_t cpy_from, cpy_to, cpy_length;
-    word_t tmp, mask;
-
-    if(cycle <= (bit_index_t)WORD_SIZE)
-    {
-      // cycle is small
-      cpy_from = 0;
-      cpy_to = cycle;
-      cpy_length = bitarr->num_of_bits - cycle;
-
-      tmp = _bit_array_get_word(bitarr, cpy_to);
-      bit_array_copy(bitarr, cpy_to, bitarr, cpy_from, cpy_length);
-
-      mask = BIT_MASK(cpy_to);
-      bitarr->words[0] = (tmp & mask) | (bitarr->words[0] & ~mask);
-    }
-    else
-    {
-      // cycle is big
-      cpy_from = bitarr->num_of_bits - cycle;
-      cpy_to = 0;
-      cpy_length = cycle;
-
-      word_offset_t top_word_offset = cycle - WORD_SIZE;
-      tmp = bitarr->words[0] << top_word_offset;
-      bit_array_copy(bitarr, cpy_to, bitarr, cpy_from, cpy_length);
-
-      mask = BIT_MASK(cpy_from) << top_word_offset;
-
-      bitarr->words[1] = (tmp & mask) | (bitarr->words[1] & ~mask);
-      _mask_top_word(bitarr, 2);
-    }
-  }
-  else
-  {
-    word_addr_t num_of_full_words_in_cycle = cycle / WORD_SIZE;
-    word_addr_t i;
-
-    word_t mask = BIT_MASK(cycle - num_of_full_words_in_cycle*WORD_SIZE);
-
-    for(i = 0; i <= num_of_full_words_in_cycle; i++)
-    {
-      bit_index_t cycle_offset = i * num_of_full_words_in_cycle * WORD_SIZE;
-      bit_index_t move_from = cycle_offset;
-      bit_index_t move_to = move_from + cycle;
-
-      word_t last_word = _bit_array_get_word_cyclic(bitarr, move_from);
-
-      while(1)
-      {
-        word_t next_word = _bit_array_get_word_cyclic(bitarr, move_to);
-
-        if(i == num_of_full_words_in_cycle)
-        {
-          last_word = (last_word & mask) | (next_word & ~mask);
-        }
-
-        _bit_array_set_word_cyclic(bitarr, move_to, last_word);
-
-        #ifdef DEBUG
-        printf("\n");
-        printf("move_from: %i; word: ", (int)move_from);
-        _bit_array_print_word(last_word, stdout);
-        printf("\n");
-        
-        printf("move_to: %i; word: ", (int)move_to);
-        _bit_array_print_word(next_word, stdout);
-        printf("\n");
-
-        bit_array_print(bitarr, stdout);
-        printf("\n");
-        #endif
-
-        if(move_to < move_from)
-        {
-          break;
-        }
-
-        last_word = next_word;
-        move_from = move_to;
-        move_to += cycle;
-        
-        if(move_to >= bitarr->num_of_bits)
-        {
-          // Cycle round
-          move_to -= bitarr->num_of_bits;
-        }
-      }
-    }
-
-    
-  }
-
-  #ifdef DEBUG
-  _bit_array_check_top_word(bitarr);
-  #endif
-}
-
-void dev_bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
-{
-  bit_array_cycle_right(bitarr, bitarr->num_of_bits - cycle_dist);
-
-  #ifdef DEBUG
-  _bit_array_check_top_word(bitarr);
-  #endif
 }
