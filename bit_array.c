@@ -47,6 +47,19 @@
 #include "lookup3.h"
 
 //
+// Structs
+//
+
+struct BIT_ARRAY
+{
+  word_t* words;
+  bit_index_t num_of_bits;
+  // For more efficient allocation we use realloc only to double size --
+  // not for adding every word.  Initial size is INIT_CAPACITY_WORDS.
+  word_addr_t capacity_in_words;
+};
+
+//
 // Tables of constants
 //
 
@@ -164,6 +177,10 @@ static const word_t morton_table1[256] =
 const bit_index_t BIT_INDEX_MIN = 0;
 const bit_index_t BIT_INDEX_MAX = ~(bit_index_t)0;
 
+//
+// Macros
+//
+
 #define MIN(a, b)  (((a) <= (b)) ? (a) : (b))
 #define MAX(a, b)  (((a) >= (b)) ? (a) : (b))
 
@@ -177,7 +194,7 @@ const bit_index_t BIT_INDEX_MAX = ~(bit_index_t)0;
 
 // word of all 1s
 #define WORD_MAX  (~(word_t)0)
-// WORD_MAX >> (WORD_SIZE-(length)) gives WORD_MAX if length is 0 -- have to check
+// WORD_MAX >> (WORD_SIZE-(length)) gives WORD_MAX if length is 0: need to check
 #define BIT_MASK(length) (word_t)(length == 0 ? 0 : WORD_MAX >> (WORD_SIZE-(length)))
 
 //TRAILING_ZEROS is number of least significant zeros
@@ -230,16 +247,22 @@ static word_t __inline windows_parity(word_t w)
 //#define MASK_MERGE(a,b,abits) ((a & abits) | (b & ~abits))
 #define MASK_MERGE(a,b,abits) (b ^ ((a ^ b) & abits))
 
-struct BIT_ARRAY {
-  word_t* words;
-  bit_index_t num_of_bits;
-  // For more efficient allocation we use realloc only to double size --
-  // not for adding every word.  Initial size is INIT_CAPACITY_WORDS.
-  word_addr_t capacity_in_words;
-};
-
 // Have we initialised with srand() ?
 char rand_initiated = 0;
+
+void _seed_rand()
+{
+  if(!rand_initiated)
+  {
+    // Initialise random number generator
+    srand(time(NULL) + getpid());
+    rand_initiated = 1;
+  }
+}
+
+//
+// Common internal functions
+//
 
 // Index of word
 word_addr_t bindex(bit_index_t b) { return (b / WORD_SIZE); }
@@ -310,10 +333,6 @@ void _bit_array_check_top_word(BIT_ARRAY* bitarr)
   }
 }
 #endif
-
-//
-// Internal functions
-//
 
 // Reverse a word
 word_t _bit_array_reverse_word(word_t word)
@@ -1967,12 +1986,7 @@ void bit_array_random(BIT_ARRAY* bitarr, float prob)
   // therefore we want to check if rand() <= p
   long p = RAND_MAX * prob;
 
-  if(!rand_initiated)
-  {
-    // Initialise random number generator
-    srand(time(NULL) + getpid());
-    rand_initiated = 1;
-  }
+  _seed_rand();
 
   word_addr_t w;
   word_offset_t o;
@@ -2016,12 +2030,7 @@ void bit_array_shuffle(BIT_ARRAY* bitarr)
   if(bitarr->num_of_bits == 0)
     return;
 
-  if(!rand_initiated)
-  {
-    // Initialise random number generator
-    srand(time(NULL) + getpid());
-    rand_initiated = 1;
-  }
+  _seed_rand();
 
   bit_index_t i, j;
 
