@@ -144,6 +144,12 @@ void bit_array_set_word64(BIT_ARRAY* bitarr, bit_index_t start, uint64_t word);
 // Get the number of bits set (hamming weight)
 bit_index_t bit_array_num_bits_set(const BIT_ARRAY* bitarr);
 
+// Get the number of bits set in on array and not the other.  This is equivalent
+// to hamming weight of the XOR when the two arrays are the same length.
+// e.g. 10101 vs 00111 => hamming distance 2 (XOR is 10010)
+bit_index_t bit_array_hamming_distance(const BIT_ARRAY* arr1,
+                                       const BIT_ARRAY* arr2);
+
 // Get the number of bits not set (length - hamming weight)
 bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr);
 
@@ -341,6 +347,14 @@ void bit_array_random(BIT_ARRAY* bitarr, float prob);
 
 // Shuffle the bits in an array randomly
 void bit_array_shuffle(BIT_ARRAY* bitarr);
+
+// Get the next permutation of an array with a fixed size and given number of
+// bits set.  Also known as next lexicographic permutation.
+// Given a bit array find the next lexicographic orginisation of the bits
+// Number of possible combinations given by (size choose bits_set) i.e. nCk
+// 00011 -> 00101 -> 00110 -> 01001 -> 01010 ->
+// 01100 -> 10001 -> 10010 -> 10100 -> 11000 -> 00011 (back to start)
+void bit_array_next_permutation(BIT_ARRAY* bitarr);
 
 //
 // Experimental (here for development)

@@ -673,6 +673,149 @@ void test_cycle()
   printf("== End of testing circular shift ==\n\n");
 }
 
+void test_next_permutation()
+{
+  printf("== Testing next permutation ==\n");
+
+  BIT_ARRAY* arr = bit_array_create(0);
+  char str[200];
+  int i;
+
+  printf("Initialise length 0\n");
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+  printf("Permute\n");
+  bit_array_next_permutation(arr);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Resize length 10\n");
+  bit_array_resize(arr, 10);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Permute x 3\n");
+  for(i = 0; i < 3; i++)
+  {
+    bit_array_next_permutation(arr);
+    printf("%i) arr: %s\n", i, bit_array_to_str(arr, str));
+  }
+
+  printf("Set 1 bit\n");
+  bit_array_set_bit(arr, 0);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Permute x 12\n");
+  for(i = 0; i < 12; i++)
+  {
+    bit_array_next_permutation(arr);
+    printf("%i) arr: %s\n", i, bit_array_to_str(arr, str));
+  }
+
+  printf("Clear all; set bits 0,1\n");
+  bit_array_clear_all(arr);
+  bit_array_set_bit(arr, 0);
+  bit_array_set_bit(arr, 1);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Permute x 50\n");
+  for(i = 0; i < 50; i++)
+  {
+    bit_array_next_permutation(arr);
+    printf("%i) arr: %s\n", i, bit_array_to_str(arr, str));
+  }
+
+  printf("Resize length 80; set bit 0\n");
+  bit_array_resize(arr, 80);
+  bit_array_clear_all(arr);
+  bit_array_set_bit(arr, 0);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Permute x 100\n");
+  for(i = 0; i < 100; i++)
+  {
+    bit_array_next_permutation(arr);
+    printf("%i) arr: %s\n", i, bit_array_to_str(arr, str));
+  }
+
+  printf("Resize to 180; set bits 10-149\n");
+  bit_array_resize(arr, 180);
+  bit_array_clear_all(arr);
+  bit_array_set_region(arr, 10, 150);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Permute\n");
+  bit_array_next_permutation(arr);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Clear all; set bits 10-179\n");
+  bit_array_clear_all(arr);
+  bit_array_set_region(arr, 10, 170);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Permute\n");
+  bit_array_next_permutation(arr);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Clear all; set bit 63\n");
+  bit_array_clear_all(arr);
+  bit_array_set_bit(arr, 63);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Permute\n");
+  bit_array_next_permutation(arr);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Clear all; set bits 63, 64\n");
+  bit_array_clear_all(arr);
+  bit_array_set_bit(arr, 63);
+  bit_array_set_bit(arr, 64);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Permute\n");
+  bit_array_next_permutation(arr);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  bit_array_free(arr);
+
+  printf("== End of testing next permutation ==\n\n");
+}
+
+void _print_hamming_values(BIT_ARRAY* arr1, BIT_ARRAY* arr2)
+{
+  char str[200];
+
+  printf("arr1: %s [%i]\n",
+         bit_array_to_str(arr1, str), (int)bit_array_num_bits_set(arr1));
+  printf("arr2: %s [%i]\n",
+         bit_array_to_str(arr2, str), (int)bit_array_num_bits_set(arr2));
+  printf(" hamming distance: %i\n", (int)bit_array_hamming_distance(arr1, arr2));
+}
+
+void test_hamming_weight()
+{
+  printf("== Testing hamming weight ==\n");
+
+  BIT_ARRAY* arr1 = bit_array_create(0);
+  BIT_ARRAY* arr2 = bit_array_create(0);
+
+  _print_hamming_values(arr1, arr2);
+  bit_array_resize(arr1, 10);
+  _print_hamming_values(arr1, arr2);
+  bit_array_set_bits(arr1, 3, 0, 2, 7);
+  _print_hamming_values(arr1, arr2);
+  bit_array_resize(arr2, 10);
+  _print_hamming_values(arr1, arr2);
+  bit_array_set_bits(arr2, 3, 0, 2, 7);
+  _print_hamming_values(arr1, arr2);
+  bit_array_resize(arr1, 80);
+  bit_array_set_region(arr1, 50, 20);
+  _print_hamming_values(arr1, arr2);
+  _print_hamming_values(arr2, arr1);
+
+  bit_array_free(arr1);
+  bit_array_free(arr2);
+
+  printf("== End of testing hamming weight ==\n\n");
+}
+
 //
 // Aggregate testing
 //
@@ -1007,6 +1150,8 @@ int main(int argc, char* argv[])
   test_shuffle();
   test_random();
   test_cycle();
+  test_next_permutation();
+  test_hamming_weight();
 
   //test_multiple_actions();
 

@@ -197,13 +197,57 @@ const bit_index_t BIT_INDEX_MAX = ~(bit_index_t)0;
 // WORD_MAX >> (WORD_SIZE-(length)) gives WORD_MAX if length is 0 -- have to check
 #define BIT_MASK(length) (word_t)(length == 0 ? 0 : WORD_MAX >> (WORD_SIZE-(length)))
 
+//TRAILING_ZEROS is number of least significant zeros
+//LEADING_ZEROS is number of most significant zeros
+//POPCOUNT is number of bits set
+
 #if defined(_WIN32)
-#define TRAILING_ZEROS(x) _BitScanForward(x)
-#define LEADING_ZEROS(x) _BitScanReverse(x)
+#include <intrin.h>
+
+static word_t __inline windows_ctz(word_t x)
+{
+  word_offset_t r = 0;
+  _BitScanReverse64(&r, x);
+  return r;
+}
+
+static word_t __inline windows_clz(word_t x)
+{
+  word_offset_t r = 0;
+  _BitScanForward64(&r, x);
+  return r;
+}
+
+static word_t __inline windows_popcount(word_t w)
+{
+  w = w - ((w >> 1) & (word_t)~(word_t)0/3);
+  w = (w & (word_t)~(word_t)0/15*3) + ((w >> 2) & (word_t)~(word_t)0/15*3);
+  w = (w + (w >> 4)) & (word_t)~(word_t)0/255*15;
+  c = (word_t)(w * ((word_t)~(word_t)0/255)) >> (sizeof(T) - 1) * CHAR_BIT;
+}
+
+static word_t __inline windows_parity(word_t w)
+{
+  w ^= w >> 1;
+  w ^= w >> 2;
+  w = (w & 0x1111111111111111UL) * 0x1111111111111111UL;
+  return (w >> 60) & 1;
+}
+
+#define TRAILING_ZEROS(x) windows_ctz(x)
+#define LEADING_ZEROS(x) windows_clz(x)
+#define POPCOUNT(x) windows_popcountl(x)
+#define PARITY(x) windows_parity(x)
 #else
 #define TRAILING_ZEROS(x) __builtin_ctzl(x)
 #define LEADING_ZEROS(x) __builtin_clzl(x)
+#define POPCOUNT(x) __builtin_popcountl(x)
+#define PARITY(x) __builtin_parityl(x)
 #endif
+
+// DEV: consider these instead?
+//#define MASK_MERGE(a,b,abits) ((a & abits) | (b & ~abits))
+//#define MASK_MERGE(a,b,abits) (b ^ ((a ^ b) & abits))
 
 struct BIT_ARRAY {
   word_t* words;
@@ -989,7 +1033,7 @@ char bit_array_parity(const BIT_ARRAY* bitarr)
 
   for(w = 0; w < num_words; w++)
   {
-    parity ^= __builtin_parityl(bitarr->words[w]);
+    parity ^= PARITY(bitarr->words[w]);
   }
 
   return (char)parity;
@@ -1007,23 +1051,45 @@ bit_index_t bit_array_num_bits_set(const BIT_ARRAY* bitarr)
   {
     if(bitarr->words[i] > 0)
     {
-      num_of_bits_set += __builtin_popcountl(bitarr->words[i]);
-      
-      /*
-      // Use if not using GCC or __builtin_popcount not available
-      bit_index_t j;
-      for(j = 0; j < WORD_SIZE; j++)
-      {
-        if((bitarr->words[i] >> (word_t)j) & (word_t)0x1)
-        {
-          num_of_bits_set++;
-        }
-      }
-      */
+      num_of_bits_set += POPCOUNT(bitarr->words[i]);
     }
   }
 
   return num_of_bits_set;
+}
+
+
+// Get the number of bits set in on array and not the other.  This is equivalent
+// to hamming weight of the XOR when the two arrays are the same length.
+// e.g. 10101 vs 00111 => hamming distance 2 (XOR is 10010)
+bit_index_t bit_array_hamming_distance(const BIT_ARRAY* arr1,
+                                       const BIT_ARRAY* arr2)
+{
+  word_addr_t num_of_words1 = nwords(arr1->num_of_bits);
+  word_addr_t num_of_words2 = nwords(arr2->num_of_bits);
+
+  word_addr_t min_words = MIN(num_of_words1, num_of_words2);
+  word_addr_t max_words = MAX(num_of_words1, num_of_words2);
+
+  bit_index_t hamming_distance = 0;
+  word_addr_t i;
+
+  for(i = 0; i < min_words; i++)
+  {
+    hamming_distance += POPCOUNT(arr1->words[i] ^ arr2->words[i]);
+  }
+
+  if(min_words != max_words)
+  {
+    const BIT_ARRAY* long_arr = (num_of_words1 > num_of_words2 ? arr1 : arr2);
+
+    for(i = min_words; i < max_words; i++)
+    {
+      hamming_distance += POPCOUNT(long_arr->words[i]);
+    }
+  }
+
+  return hamming_distance;
 }
 
 // Get the number of bits not set (1 - hamming weight)
@@ -2306,6 +2372,94 @@ void bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
   bit_array_reverse_region(bitarr, 0, cycle_dist);
   bit_array_reverse_region(bitarr, cycle_dist, len);
   bit_array_reverse(bitarr);
+}
+
+//
+// Next permutation
+//
+word_t _next_permutation(word_t v) 
+{
+  // From http://graphics.stanford.edu/~seander/bithacks.html#NextBitPermutation
+  word_t t = v | (v - 1); // t gets v's least significant 0 bits set to 1
+  // Next set to 1 the most significant bit to change, 
+  // set to 0 the least significant ones, and add the necessary 1 bits.
+  return (t+1) | (((~t & (t+1)) - 1) >> (TRAILING_ZEROS(v) + 1));
+}
+
+// Get the next permutation of an array with a fixed size and given number of
+// bits set.  Also known as next lexicographic permutation.
+// Given a bit array find the next lexicographic orginisation of the bits
+// Number of possible combinations given by (size choose bits_set) i.e. nCk
+// 00011 -> 00101 -> 00110 -> 01001 -> 01010 ->
+// 01100 -> 10001 -> 10010 -> 10100 -> 11000 -> 00011 (back to start)
+void bit_array_next_permutation(BIT_ARRAY* bitarr)
+{
+  if(bitarr->num_of_bits == 0)
+  {
+    return;
+  }
+
+  word_addr_t w;
+  word_addr_t num_of_words = nwords(bitarr->num_of_bits);
+  word_offset_t bits_in_last_word = _bits_in_top_word(bitarr->num_of_bits);
+
+  char carry = 0;
+
+  for(w = 0; w < num_of_words; w++)
+  {
+    // Bits in this word that we are using
+    // WORD_SIZE for all but the last word
+    word_offset_t wsize = (w == num_of_words - 1 ? bits_in_last_word : WORD_SIZE);
+
+    if(POPCOUNT(bitarr->words[w]) + TRAILING_ZEROS(bitarr->words[w]) == wsize)
+    {
+      // Bits in this word cannot be moved forward
+      carry = 1;
+    }
+    else if(carry)
+    {
+      // 0111 -> 1000, 1000 -> 1001
+      word_t tmp = bitarr->words[w] + 1;
+
+      // Count bits previously set
+      bit_index_t bits_previously_set = POPCOUNT(bitarr->words[w]);
+
+      // set new word
+      bitarr->words[w] = tmp;
+
+      // note: w in unsigned
+      // Zero words while counting bits set
+      while(w > 0)
+      {
+        bits_previously_set += POPCOUNT(bitarr->words[w-1]);
+        bitarr->words[w-1] = 0;
+        w--;
+      }
+
+      // Set bits at the beginning
+      bit_array_set_region(bitarr, 0, bits_previously_set - POPCOUNT(tmp));
+
+      carry = 0;
+      break;
+    }
+    else if(bitarr->words[w] > 0)
+    {
+      bitarr->words[w] = _next_permutation(bitarr->words[w]);
+      break;
+    }
+  }
+
+  if(carry)
+  {
+    // Loop around
+    bit_index_t num_bits_set = bit_array_num_bits_set(bitarr);
+    bit_array_clear_all(bitarr);
+    bit_array_set_region(bitarr, 0, num_bits_set);
+  }
+
+  #ifdef DEBUG
+  _bit_array_check_top_word(bitarr);
+  #endif
 }
 
 /*

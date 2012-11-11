@@ -162,6 +162,13 @@ Get the number of bits set (hamming weight)
 
     bit_index_t bit_array_num_bits_set(const BIT_ARRAY* bitarr)
 
+Get the number of bits set in on array and not the other.  This is equivalent
+to hamming weight of the XOR of the two arrays.
+e.g. 10101 vs 00111 => hamming distance 2 (XOR is 10010)
+
+    bit_index_t bit_array_hamming_distance(const BIT_ARRAY* arr1,
+                                           const BIT_ARRAY* arr2)
+
 Get the number of bits not set (length - hamming weight)
 
     bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr)
@@ -183,6 +190,16 @@ If no bit is set result is not changed and zero is returned.
 Get parity: returns 1 if odd number of bits set, 0 if even.
 
     char bit_array_parity(const BIT_ARRAY* bitarr)
+
+Get the next permutation of an array with a fixed size and given number of
+bits set.  Also known as next lexicographic permutation.
+Given a bit array find the next lexicographic orginisation of the bits
+Number of possible combinations given by `size choose bits_set` where `bits_set`
+is the result of `bit_array_num_bits_set(bitarr)`. Example:
+00011 -> 00101 -> 00110 -> 01001 -> 01010 ->
+01100 -> 10001 -> 10010 -> 10100 -> 11000 -> 00011 (back to start)
+
+    void bit_array_next_permutation(BIT_ARRAY* bitarr);
 
 Sorting
 -------
