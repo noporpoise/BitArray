@@ -262,7 +262,7 @@ void _seed_rand()
   if(!rand_initiated)
   {
     // Initialise random number generator
-    srand(time(NULL) + getpid());
+    srand((unsigned int)time(NULL) + getpid());
     rand_initiated = 1;
   }
 }
