@@ -1325,10 +1325,15 @@ void bit_array_print_substr(const BIT_ARRAY* bitarr, FILE* fout,
 // Clone and copy
 //
 
+// Returns NULL if cannot malloc
 BIT_ARRAY* bit_array_clone(const BIT_ARRAY* bitarr)
 {
   BIT_ARRAY* cpy = bit_array_create(bitarr->num_of_bits);
-  bit_array_resize(cpy, bitarr->num_of_bits);
+
+  if(cpy == NULL)
+  {
+    return NULL;
+  }
 
   // Copy across bits
   memcpy(cpy->words, bitarr->words, bitarr->num_of_words * sizeof(word_t));
