@@ -1,5 +1,5 @@
 /*
- bit_array.c
+ bit_generate.c
  project: bit array C library
  url: https://github.com/noporpoise/BitArray/
  Adapted from: http://stackoverflow.com/a/2633584/431087
@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h> // memset
+#include <stdint.h>
 
 #include "bit_array.h"
 
@@ -62,9 +63,9 @@ void generate_reverse()
     if(i % 8 == 0 && i > 0)
       printf("\n ");
 
-    printf(" 0x%02X,", reverse(i));
+    printf(" 0x%02X%c", reverse(i), i == 255 ? '\n' : ',');
   }
-  printf("\n};\n\n");
+  printf("};\n\n");
 }
 
 uint16_t morton(uint8_t b)
@@ -90,9 +91,13 @@ void generate_morton(char a)
       printf("\n ");
 
     uint16_t m = morton(i);
-    printf(" 0x%04X,", a ? m << 1 : m);
+
+    if(a)
+      m <<= 1;
+
+    printf(" 0x%04X%c", m, i == 255 ? '\n' : ',');
   }
-  printf("\n};\n\n");
+  printf("};\n\n");
 }
 
 unsigned int next_permutation(unsigned int v) 
@@ -147,7 +152,7 @@ void generate_shuffle()
       printf("0x%02X", c <= 255 ? (int)c : 0);
     }
 
-    printf(i < 8 ? "},\n" : "}};\n\n");
+    printf(i < 8 ? "},\n" : "}\n};\n\n");
   }
 }
 
