@@ -2233,17 +2233,18 @@ void bit_array_add(BIT_ARRAY* bitarr, unsigned long value)
   }
 }
 
-// If there is an underflow, bit array will throw an error
-void bit_array_subtract(BIT_ARRAY* bitarr, unsigned long value)
+// If value is greater than bitarr, bitarr is not changed and 0 is returned
+// Returns 1 on success, 0 if value > bitarr
+char bit_array_subtract(BIT_ARRAY* bitarr, unsigned long value)
 {
   if(value == 0)
   {
-    return;
+    return 1;
   }
   else if(bitarr->words[0] >= value)
   {
     bitarr->words[0] -= value;
-    return;
+    return 1;
   }
 
   word_addr_t i;
@@ -2263,11 +2264,14 @@ void bit_array_subtract(BIT_ARRAY* bitarr, unsigned long value)
       // -1 since we've already deducted 1
       bitarr->words[0] -= value - 1;
 
-      return;
+      return 1;
     }
   }
 
   // subtract value is greater than array
+  return 0;
+
+  /*
   unsigned long arr_value;
   bit_array_as_num(bitarr, &arr_value);
 
@@ -2276,6 +2280,7 @@ void bit_array_subtract(BIT_ARRAY* bitarr, unsigned long value)
           __FILE__, __LINE__, value, arr_value);
   errno = ENOMEM;
   exit(EXIT_FAILURE);
+  */
 }
 
 //

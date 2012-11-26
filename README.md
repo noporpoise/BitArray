@@ -343,9 +343,11 @@ Arithmetic
 ----------
 
 To be interpretted as a number, bit at index 0 is treated as the least
-significant bit.  Get the value of this number in an unsigned long
+significant bit.  
 
-    // Returns 1 on sucess, 0 if value in array is too big
+Get the value of this number in an unsigned long.
+Returns 1 on sucess, 0 if value in array is too big.
+
     char bit_array_as_num(BIT_ARRAY* bitarr, unsigned long* result)
 
 Compare (1 iff bitarr > value; 0 iff bitarr == value; -1 iff bitarr < value):
@@ -356,10 +358,10 @@ Add to an array.  `bitarr` will be extended if needed.
 
     void bit_array_add(BIT_ARRAY* bitarr, unsigned long value)
 
-Subtract from an array.  If there is an underflow an error will be reported and
-exit wil be called
+Subtract from an array. If `value` is greater than `bitarr`, `bitarr` is not
+changed and `0` is returned. Returns `1` on success, `0` if `value > bitarr`
 
-    void bit_array_subtract(BIT_ARRAY* bitarr, unsigned long value)
+    char bit_array_subtract(BIT_ARRAY* bitarr, unsigned long value)
 
 Add two bit arrays together and store the result.  `src1` and `src2` do not have
 to be the same length. `src1`, `src2` and `dst` can all be the same or different

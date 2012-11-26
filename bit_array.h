@@ -311,10 +311,9 @@ int bit_array_compare_num(BIT_ARRAY* bitarr, unsigned long value);
 // bitarr will be extended if needed
 void bit_array_add(BIT_ARRAY* bitarr, unsigned long value);
 
-// If there is an underflow, bit array will be set to all 0s and 0 is returned
-// Returns 1 on success, 0 if there was an underflow
-//   (i.e. called with an array of all zeros)
-void bit_array_subtract(BIT_ARRAY* bitarr, unsigned long value);
+// If value is greater than bitarr, bitarr is not changed and 0 is returned
+// Returns 1 on success, 0 if value > bitarr
+char bit_array_subtract(BIT_ARRAY* bitarr, unsigned long value);
 
 
 //
