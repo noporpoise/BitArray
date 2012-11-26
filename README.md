@@ -78,7 +78,7 @@ Clear a bit (to 0) at position `b`
 Toggle a bit. If bit is 0 change to 1; if bit is 1 change to 0. Also known as
 a complement function.
 
-    void bit_array_toggle_bit(BIT_ARRAY* bitarr, bit_index_t b);
+    void bit_array_toggle_bit(BIT_ARRAY* bitarr, bit_index_t b)
 
 Assign a value to a bit.  If `c != 0` then set bit; otherwise clear bit.
 
@@ -103,7 +103,7 @@ Clear multiple bits at once.
 
 Toggle multiple bits at once
 
-    void bit_array_toggle_bits(BIT_ARRAY* bitarr, size_t n, ...);
+    void bit_array_toggle_bits(BIT_ARRAY* bitarr, size_t n, ...)
 
     // e.g. toggle bits 1,20,31:
     bit_array_toggle_bits(bitarr, 3, 1,20,31);
@@ -200,7 +200,7 @@ is the result of `bit_array_num_bits_set(bitarr)`. Example:
 00011 -> 00101 -> 00110 -> 01001 -> 01010 ->
 01100 -> 10001 -> 10010 -> 10100 -> 11000 -> 00011 (back to start)
 
-    void bit_array_next_permutation(BIT_ARRAY* bitarr);
+    void bit_array_next_permutation(BIT_ARRAY* bitarr)
 
 Sorting
 -------
@@ -339,34 +339,40 @@ Example: 10.. > 01.. [index 0 is MSB at left hand side]
     int bit_array_other_endian_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
 
 
-Adding / Subtracting
---------------------
+Arithmetic
+----------
 
 To be interpretted as a number, bit at index 0 is treated as the least
-significant bit.
+significant bit.  Get the value of this number in an unsigned long
+
+    // Returns 1 on sucess, 0 if value in array is too big
+    char bit_array_as_num(BIT_ARRAY* bitarr, unsigned long* result)
+
+Compare (1 iff bitarr > value; 0 iff bitarr == value; -1 iff bitarr < value):
+
+    int bit_array_compare_num(BIT_ARRAY* bitarr, unsigned long value)
+
+Add to an array.  `bitarr` will be extended if needed.
+
+    void bit_array_add(BIT_ARRAY* bitarr, unsigned long value)
+
+Subtract from an array.  If there is an underflow an error will be reported and
+exit wil be called
+
+    void bit_array_subtract(BIT_ARRAY* bitarr, unsigned long value)
 
 Add two bit arrays together and store the result.  `src1` and `src2` do not have
 to be the same length. `src1`, `src2` and `dst` can all be the same or different
 `BIT_ARRAY`s. If `dst` is shorter than either of `src1` or `src2`, it is enlarged
 to be as long as the longest.
 
-    void bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
+    void bit_array_sum(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 
 Subtract on BIT_ARRAY from another. `src1`, `src2` and `dst` can all be the same
 or different `BIT_ARRAY`s. If dst is shorter than src1, it will be extended to
 be as long as `src1`. `src1` must be greater than or equal to `src2` (`src1 >= src2`).
 
-    void bit_array_subtract(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
-
-Add one to a `BIT_ARRAY`.
-If `dst` is too small it will be resized to hold the highest set bit.
-
-    void bit_array_increment(BIT_ARRAY* bitarr)
-
-Subtract one to a `BIT_ARRAY`. If there is an underflow, bit array will be set
-to all 0s and 0 is returned. Returns 1 on success, 0 if there was an underflow.
-
-    char bit_array_decrement(BIT_ARRAY* bitarr)
+    void bit_array_difference(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 
 
 Read/Write bit_array to a file
@@ -441,5 +447,8 @@ Development
 ===========
 
 To do:
+* _multiply
+* _div
+* _mod
 * write more test cases
 * optimisations

@@ -297,27 +297,41 @@ void bit_array_reverse_region(BIT_ARRAY* bitarr,
                               bit_index_t start, bit_index_t length);
 
 //
-// Adding and substracting
+// Arithmetic
+//
+
+// Returns 1 on sucess, 0 if value in array is too big
+char bit_array_as_num(BIT_ARRAY* bitarr, unsigned long* result);
+
+// 1 iff bitarr > value
+// 0 iff bitarr == value
+// -1 iff bitarr < value
+int bit_array_compare_num(BIT_ARRAY* bitarr, unsigned long value);
+
+// bitarr will be extended if needed
+void bit_array_add(BIT_ARRAY* bitarr, unsigned long value);
+
+// If there is an underflow, bit array will be set to all 0s and 0 is returned
+// Returns 1 on success, 0 if there was an underflow
+//   (i.e. called with an array of all zeros)
+void bit_array_subtract(BIT_ARRAY* bitarr, unsigned long value);
+
+
+//
+// Arithmetic between arrays
 //
 
 // src1, src2 and dst can all be the same BIT_ARRAY
 // If dst is shorter than either of src1, src2, it is enlarged
-void bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
+void bit_array_sum(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 
 // dst = src1 - src2
 // src1, src2 and dst can all be the same BIT_ARRAY
 // If dst is shorter than src1, it will be extended to be as long as src1
 // src1 must be greater than or equal to src2 (src1 >= src2)
-void bit_array_subtract(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
-
-// bitarr will be extended if needed
-void bit_array_increment(BIT_ARRAY* bitarr);
-
-// If there is an underflow, bit array will be set to all 0s and 0 is returned
-// Returns 1 on success, 0 if there was an underflow
-//   (i.e. called with an array of all zeros)
-char bit_array_decrement(BIT_ARRAY* bitarr);
-
+void bit_array_difference(BIT_ARRAY* dst,
+                          const BIT_ARRAY* src1,
+                          const BIT_ARRAY* src2);
 
 //
 // Read/Write bit_array to a file
@@ -367,5 +381,8 @@ void bit_array_next_permutation(BIT_ARRAY* bitarr);
 //
 
 // mod_div ? log2?
+// Multiply
+//void bit_array_multiply(BIT_ARRAY* bitarr, unsigned long factor);
+//void bit_array_multiply(BIT_ARRAY* bitarr, src1, src2);
 
 #endif

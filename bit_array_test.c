@@ -56,31 +56,31 @@ void test_arithmetic()
   printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
 
   printf("Increment: arr1++\n");
-  bit_array_increment(arr1);
+  bit_array_add(arr1, 1);
   printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
   printf("Decrement: arr1--\n");
-  bit_array_decrement(arr1);
+  bit_array_subtract(arr1, 1);
   printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
-  printf("Add: arr1 = arr1 + arr2\n");
-  bit_array_add(arr1, arr1, arr2);
+  printf("Sum: arr1 = arr1 + arr2\n");
+  bit_array_sum(arr1, arr1, arr2);
   printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
-  printf("Subtract: arr1 = arr1 - arr2\n");
-  bit_array_subtract(arr1, arr1, arr2);
+  printf("Difference: arr1 = arr1 - arr2\n");
+  bit_array_difference(arr1, arr1, arr2);
   printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
-  printf("Subtract: arr1 = arr1 - arr1\n");
-  bit_array_subtract(arr1, arr1, arr1);
+  printf("Difference: arr1 = arr1 - arr1\n");
+  bit_array_difference(arr1, arr1, arr1);
   printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
-  printf("Add: arr1 = arr1 + arr2\n");
-  bit_array_add(arr1, arr1, arr2);
+  printf("Sum: arr1 = arr1 + arr2\n");
+  bit_array_sum(arr1, arr1, arr2);
   printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
-  printf("Add: arr1 = arr1 + arr2\n");
-  bit_array_add(arr1, arr1, arr2);
+  printf("Sum: arr1 = arr1 + arr2\n");
+  bit_array_sum(arr1, arr1, arr2);
   printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
   bit_array_free(arr1);

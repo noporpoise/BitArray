@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <limits.h> // ULONG_MAX
 #include <errno.h>
 #include <string.h> // memset
 #include <assert.h>
@@ -2133,7 +2134,152 @@ void bit_array_shuffle(BIT_ARRAY* bitarr)
 }
 
 //
-// Adding / Subtracting
+// Arithmetic
+//
+
+// Returns 1 on sucess, 0 if value in array is too big
+char bit_array_as_num(BIT_ARRAY* bitarr, unsigned long* result)
+{
+  word_addr_t w;
+
+  for(w = bitarr->num_of_words-1; w > 0; w--)
+  {
+    if(w > 0)
+    {
+      return 0;
+    }
+  }
+
+  if(bitarr->words[0] > ULONG_MAX)
+  {
+    return 0;
+  }
+
+  *result = bitarr->words[0];
+  return 1;
+}
+
+
+// 1 iff bitarr > value
+// 0 iff bitarr == value
+// -1 iff bitarr < value
+int bit_array_compare_num(BIT_ARRAY* bitarr, unsigned long value)
+{
+  if(bitarr->words[0] > value)
+  {
+    return 1;
+  }
+
+  word_addr_t i;
+  for(i = 1; i < bitarr->num_of_words; i++)
+  {
+    if(bitarr->words[i] > 0)
+    {
+      return 1;
+    }
+  }
+
+  // All words above words[0] are == 0
+  // words[0] is not > value
+  return (bitarr->words[0] == value ? 0 : -1);
+}
+
+void bit_array_add(BIT_ARRAY* bitarr, unsigned long value)
+{
+  char carry = 0;
+  word_addr_t i;
+
+  for(i = 0; i < bitarr->num_of_words; i++)
+  {
+    if(WORD_MAX - bitarr->words[i] < value)
+    {
+      carry = 1;
+      bitarr->words[i] += value;
+    }
+    else
+    {
+      // Carry is absorbed
+      bitarr->words[i] += value;
+      carry = 0;
+      break;
+    }
+  }
+
+  if(carry)
+  {
+    // Bit array full, need another bit after all words filled
+    if(!bit_array_resize(bitarr, bitarr->num_of_words * WORD_SIZE + 1))
+    {
+      fprintf(stderr, "%s:%i:bit_array_increment(): Ran out of memory\n",
+              __FILE__, __LINE__);
+      errno = ENOMEM;
+      exit(EXIT_FAILURE);
+    }
+
+    // Set top word to 1
+    bitarr->words[bitarr->num_of_words-1] = 1;
+  }
+  else
+  {
+    word_t final_word = bitarr->words[bitarr->num_of_words-1];
+    word_offset_t expected_bits = _bits_in_top_word(bitarr->num_of_bits);
+    word_offset_t actual_bits = WORD_SIZE - LEADING_ZEROS(final_word);
+
+    if(actual_bits > expected_bits)
+    {
+      // num_of_bits has increased -- num_of_words has not
+      bitarr->num_of_bits += (actual_bits - expected_bits);
+    }
+  }
+}
+
+// If there is an underflow, bit array will throw an error
+void bit_array_subtract(BIT_ARRAY* bitarr, unsigned long value)
+{
+  if(value == 0)
+  {
+    return;
+  }
+  else if(bitarr->words[0] >= value)
+  {
+    bitarr->words[0] -= value;
+    return;
+  }
+
+  word_addr_t i;
+
+  for(i = 1; i < bitarr->num_of_words; i++)
+  {
+    if(bitarr->words[i] > 0)
+    {
+      // deduct one
+      bitarr->words[i]--;
+
+      for(; i > 0; i--)
+      {
+        bitarr->words[i-1] = WORD_MAX;
+      }
+
+      // -1 since we've already deducted 1
+      bitarr->words[0] -= value - 1;
+
+      return;
+    }
+  }
+
+  // subtract value is greater than array
+  unsigned long arr_value;
+  bit_array_as_num(bitarr, &arr_value);
+
+  fprintf(stderr, "%s:%i:bit_array_substract(): subtract value is greater "
+                  "than array value [%lu > %lu]\n",
+          __FILE__, __LINE__, value, arr_value);
+  errno = ENOMEM;
+  exit(EXIT_FAILURE);
+}
+
+//
+// Arithmetic between bit arrays
 //
 
 // src1, src2 and dst can all be the same BIT_ARRAY
@@ -2216,7 +2362,7 @@ void _bit_array_arithmetic(BIT_ARRAY* dst,
 
 // src1, src2 and dst can all be the same BIT_ARRAY
 // If dst is shorter than either of src1, src2, it is enlarged
-void bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
+void bit_array_sum(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 {
   bit_index_t max_src_bits = MAX(src1->num_of_bits, src2->num_of_bits);
 
@@ -2224,7 +2370,7 @@ void bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
   {
     if(!bit_array_resize(dst, max_src_bits))
     {
-      fprintf(stderr, "%s:%i:bit_array_add(): Ran out of memory\n",
+      fprintf(stderr, "%s:%i:bit_array_sum(): Ran out of memory\n",
               __FILE__, __LINE__);
       errno = ENOMEM;
       exit(EXIT_FAILURE);
@@ -2238,7 +2384,9 @@ void bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 // src1, src2 and dst can all be the same BIT_ARRAY
 // If dst is shorter than src1, it will be extended to be as long as src1
 // src1 must be greater than or equal to src2 (src1 >= src2)
-void bit_array_subtract(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
+void bit_array_difference(BIT_ARRAY* dst,
+                          const BIT_ARRAY* src1,
+                          const BIT_ARRAY* src2)
 {
   // subtraction by method of complements:
   // a - b = a + ~b + 1 = src1 + ~src2 +1
@@ -2247,7 +2395,7 @@ void bit_array_subtract(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* 
   if(bit_array_cmp(src1, src2) < 0)
   {
     // Error
-    fprintf(stderr, "%s:%i:bit_array_subtract(): bit_array_substract "
+    fprintf(stderr, "%s:%i:bit_array_difference(): bit_array_substract "
                     "requires src1 >= src2\n", __FILE__, __LINE__);
     exit(EXIT_FAILURE);
   }
@@ -2256,7 +2404,7 @@ void bit_array_subtract(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* 
   {
     if(!bit_array_resize(dst, src1->num_of_bits))
     {
-      fprintf(stderr, "%s:%i:bit_array_subtract(): Ran out of memory\n",
+      fprintf(stderr, "%s:%i:bit_array_difference(): Ran out of memory\n",
               __FILE__, __LINE__);
       errno = ENOMEM;
       exit(EXIT_FAILURE);
@@ -2266,95 +2414,6 @@ void bit_array_subtract(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* 
   _bit_array_arithmetic(dst, src1, src2, 1);
 }
 
-// Add one to a bit array
-// If dst is too small it will be resized to hold the highest set bit
-void bit_array_increment(BIT_ARRAY* bitarr)
-{
-  char carry = 1;
-
-  word_addr_t i;
-  for(i = 0; i < bitarr->num_of_words-1; i++)
-  {
-    if(bitarr->words[i] == WORD_MAX)
-    {
-      // Carry continues
-      bitarr->words[i] = 0;
-    }
-    else
-    {
-      // Carry is absorbed
-      bitarr->words[i]++;
-      carry = 0;
-      break;
-    }
-  }
-
-  // Deal with last word
-  if(carry)
-  {
-    word_offset_t bits_in_last_word = _bits_in_top_word(bitarr->num_of_bits);
-    word_t mask = BIT_MASK(bits_in_last_word);
-    word_t final_word = bitarr->words[bitarr->num_of_words-1];
-
-    if(final_word < mask)
-    {
-      bitarr->words[bitarr->num_of_words-1] = final_word + 1;
-    }
-    else if(bits_in_last_word < WORD_SIZE)
-    {
-      bitarr->num_of_bits++;
-      bitarr->words[bitarr->num_of_words-1]++;
-    }
-    else
-    {
-      // Bit array full, need another word
-      if(!bit_array_resize(bitarr, bitarr->num_of_bits + 1))
-      {
-        fprintf(stderr, "%s:%i:bit_array_increment(): Ran out of memory\n",
-                __FILE__, __LINE__);
-        errno = ENOMEM;
-        exit(EXIT_FAILURE);
-      }
-
-      bitarr->words[bitarr->num_of_words-1] = 0;
-      bitarr->words[bitarr->num_of_words] = 1;
-    }
-  }
-
-  #ifdef DEBUG
-  _bit_array_check_top_word(bitarr);
-  #endif
-}
-
-// If there is an underflow, bit array will be set to all 0s and 0 is returned
-// Returns 1 on success, 0 if there was an underflow
-char bit_array_decrement(BIT_ARRAY* bitarr)
-{
-  word_addr_t i;
-  for(i = 0; i < bitarr->num_of_words; i++)
-  {
-    if(bitarr->words[i] > 0)
-    {
-      bitarr->words[i]--;
-
-      for(; i > 0; i--)
-      {
-        bitarr->words[i-1] = ~0;
-      }
-      
-      return 1;
-    }
-  }
-
-  // if prev_last_word == 0
-  // underflow -> number left unchanged
-
-  #ifdef DEBUG
-  _bit_array_check_top_word(bitarr);
-  #endif
-
-  return 0;
-}
 
 //
 // Read/Write from files
