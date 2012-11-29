@@ -200,7 +200,7 @@ void test_interleave()
   char tmp[201];
   BIT_ARRAY* arr1 = bit_array_create(10);
   BIT_ARRAY* arr2 = bit_array_create(10);
-  BIT_ARRAY* result = bit_array_create(25);
+  BIT_ARRAY* result = bit_array_create(0);
 
   printf("--\n");
   bit_array_set_all(arr1);
@@ -213,8 +213,10 @@ void test_interleave()
   printf("--\n");
   bit_array_clear_all(arr1);
   bit_array_set_all(arr2);
+  bit_array_resize(result, 25);
   printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
   printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
+  printf("tmp: %s\n", bit_array_to_str(result, tmp));
   printf("Interleave:\n");
   bit_array_interleave(result, arr1, arr2);
   printf("result: %s\n", bit_array_to_str(result, tmp));
@@ -442,6 +444,10 @@ void test_toggle()
   bit_array_clear_all(arr);
   printf("arr: %s\n", bit_array_to_str(arr, str));
 
+  printf("Toggle bits 0,2,3\n");
+  bit_array_toggle_bits(arr, 3, 0,2,3);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
   printf("Toggle all\n");
   bit_array_toggle_all(arr);
   printf("arr: %s\n", bit_array_to_str(arr, str));
@@ -621,7 +627,7 @@ void test_cycle()
   BIT_ARRAY* arr = bit_array_create(0);
   char str[200];
 
-  printf("Initialise length 0; shift left 3 shift right 0\n");
+  printf("Initialise length 0; cycle left 3 cycle right 0\n");
   bit_array_cycle_left(arr, 3);
   bit_array_cycle_right(arr, 0);
   printf("arr: %s\n", bit_array_to_str(arr, str));
@@ -632,27 +638,27 @@ void test_cycle()
   printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
                            (int)bit_array_num_bits_set(arr));
 
-  printf("shift left 3\n");
+  printf("cycle left 3\n");
   bit_array_cycle_left(arr, 3);
   printf("arr: %s\n", bit_array_to_str(arr, str));
 
-  printf("shift left 0\n");
+  printf("cycle left 0\n");
   bit_array_cycle_left(arr, 0);
   printf("arr: %s\n", bit_array_to_str(arr, str));
 
-  printf("shift right 3\n");
+  printf("cycle right 3\n");
   bit_array_cycle_right(arr, 3);
   printf("arr: %s\n", bit_array_to_str(arr, str));
 
-  printf("shift right 0\n");
+  printf("cycle right 0\n");
   bit_array_cycle_right(arr, 0);
   printf("arr: %s\n", bit_array_to_str(arr, str));
 
-  printf("shift left 25\n");
+  printf("cycle left 25\n");
   bit_array_cycle_left(arr, 25);
   printf("arr: %s\n", bit_array_to_str(arr, str));
 
-  printf("shift right 25\n");
+  printf("cycle right 25\n");
   bit_array_cycle_right(arr, 25);
   printf("arr: %s\n", bit_array_to_str(arr, str));
 
@@ -661,7 +667,7 @@ void test_cycle()
   bit_array_set_bits(arr, 8, 10, 12, 28, 32, 39, 63, 64, 79);
   printf("arr: %s\n", bit_array_to_str(arr, str));
 
-  printf("shift right 65; then back left 65\n");
+  printf("cycle right 65; then back left 65\n");
   bit_array_cycle_right(arr, 65);
   printf("arr: %s\n", bit_array_to_str(arr, str));
   bit_array_cycle_left(arr, 65);
@@ -673,7 +679,7 @@ void test_cycle()
   for(i = 0; i < 80; i += 2) bit_array_set_bit(arr, i);
   printf("arr: %s\n", bit_array_to_str(arr, str));
   
-  printf("shift left 1; then right 1\n");
+  printf("cycle left 1; then right 1\n");
   bit_array_cycle_left(arr, 1);
   printf("arr: %s\n", bit_array_to_str(arr, str));
   bit_array_cycle_right(arr, 1);
@@ -682,6 +688,80 @@ void test_cycle()
   bit_array_free(arr);
 
   printf("== End of testing circular shift ==\n\n");
+}
+
+// Test shift
+void test_shift()
+{
+  printf("== Testing shift ==\n");
+
+  BIT_ARRAY* arr = bit_array_create(0);
+  char str[200];
+
+  printf("Initialise length 0; shift left 3 shift fill 1\n");
+  bit_array_shift_left(arr, 3, 1);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("Shift right 0 shift fill 1\n");
+  bit_array_shift_right(arr, 0, 1);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("resize length 10; set bits 2,3,6,9\n");
+  bit_array_resize(arr, 10);
+  bit_array_set_bits(arr, 4, 2,3,6,9);
+  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
+                           (int)bit_array_num_bits_set(arr));
+
+  printf("shift left 3, fill 0\n");
+  bit_array_shift_left(arr, 3, 0);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("shift left 0, fill 0\n");
+  bit_array_shift_left(arr, 0, 0);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("shift right 3, fill 1\n");
+  bit_array_shift_right(arr, 3, 1);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("shift right 0, fill 1\n");
+  bit_array_shift_right(arr, 0, 1);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("shift left 25, fill 0\n");
+  bit_array_shift_left(arr, 25, 0);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("shift right 25, fill 0\n");
+  bit_array_shift_right(arr, 25, 0);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("resize length 80; set bits 10, 12, 28, 32, 39, 63, 64, 79\n");
+  bit_array_resize(arr, 80);
+  bit_array_set_bits(arr, 8, 10, 12, 28, 32, 39, 63, 64, 79);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  printf("shift right 65; then back left 65 [fill 0]\n");
+  bit_array_shift_right(arr, 65, 0);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+  bit_array_shift_left(arr, 65, 0);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  int i;
+  printf("Clear all; set even bits\n");
+  bit_array_clear_all(arr);
+  for(i = 0; i < 80; i += 2) bit_array_set_bit(arr, i);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+  
+  printf("shift left 1; then right 1 [fill 1]\n");
+  bit_array_shift_left(arr, 1, 1);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+  bit_array_shift_right(arr, 1, 1);
+  printf("arr: %s\n", bit_array_to_str(arr, str));
+
+  bit_array_free(arr);
+
+  printf("== End of testing shift ==\n\n");
 }
 
 void test_next_permutation()
@@ -817,6 +897,7 @@ void test_hamming_weight()
   bit_array_set_bits(arr2, 3, 0, 2, 7);
   _print_hamming_values(arr1, arr2);
   bit_array_resize(arr1, 80);
+  bit_array_clear_bit(arr1, 2);
   bit_array_set_region(arr1, 50, 20);
   _print_hamming_values(arr1, arr2);
   _print_hamming_values(arr2, arr1);
@@ -1054,8 +1135,7 @@ void test_multiple_actions()
   bit_array_print(bitarr, stdout);
   printf("\n");
 
-  /*
-  // Test cycle bits when it's ready
+  // Test cycle bits
 
   printf("Cycle right 10 bits\n");
   bit_array_cycle_right(bitarr, 10);
@@ -1080,10 +1160,8 @@ void test_multiple_actions()
   bit_array_cycle_right(bitarr, 80);
   bit_array_print(bitarr, stdout);
   printf("\n");
-  */
 
-  /*
-  // Test reverse when it's ready
+  // Test reverse
 
   printf("Reverse region [10,90]:\n");
   bit_array_reverse_region(bitarr, 10, 90);
@@ -1104,7 +1182,6 @@ void test_multiple_actions()
   bit_array_reverse_region(bitarr, 90, 10);
   bit_array_print(bitarr, stdout);
   printf("\n");
-  */
 
   // Test write/read file
   char filename[] = "/tmp/bitarrtest.bits";
@@ -1160,6 +1237,7 @@ int main(int argc, char* argv[])
   test_shuffle();
   test_random();
   test_cycle();
+  test_shift();
   test_next_permutation();
   test_hamming_weight();
 

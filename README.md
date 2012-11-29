@@ -147,10 +147,10 @@ Get / set a word
 Get a word of a given size.  First bit is in the least significant bit position
 start index must be within the range of the bit array (0 <= x < length)
 
-    uint64_t bit_array_word64(const BIT_ARRAY* bitarr, bit_index_t start)
-    uint32_t bit_array_word32(const BIT_ARRAY* bitarr, bit_index_t start)
-    uint16_t bit_array_word16(const BIT_ARRAY* bitarr, bit_index_t start)
-    uint8_t  bit_array_word8 (const BIT_ARRAY* bitarr, bit_index_t start)
+    uint64_t bit_array_get_word64(const BIT_ARRAY* bitarr, bit_index_t start)
+    uint32_t bit_array_get_word32(const BIT_ARRAY* bitarr, bit_index_t start)
+    uint16_t bit_array_get_word16(const BIT_ARRAY* bitarr, bit_index_t start)
+    uint8_t  bit_array_get_word8 (const BIT_ARRAY* bitarr, bit_index_t start)
 
 Set 64 bits at once from a particular start position
 
