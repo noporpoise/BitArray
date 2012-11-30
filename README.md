@@ -388,7 +388,7 @@ Saves bit array to a file.  Returns the number of bytes written
 
     bit_index_t bit_array_save(const BIT_ARRAY* bitarr, FILE* f)
 
-Reads bit array from a file. `bitarr` is resized and filled from data in the file.
+Reads bit array from a file. `bitarr` is resized and filled with data from the file.
 Returns 1 on success, 0 on failure.
 
     char bit_array_load(BIT_ARRAY* bitarr, FILE* f);
