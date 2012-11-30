@@ -198,7 +198,8 @@ const bit_index_t BIT_INDEX_MAX = ~(bit_index_t)0;
 
 // word of all 1s
 #define WORD_MAX  (~(word_t)0)
-// WORD_MAX >> (WORD_SIZE-(length)) gives WORD_MAX if length is 0: need to check
+// WORD_MAX >> (WORD_SIZE-(length)) gives WORD_MAX instead of 0 if length is 0
+// need to check for length == 0
 #define BIT_MASK(length) (length == 0 ? (word_t)0 : WORD_MAX >> (WORD_SIZE-(length)))
 
 #define GET_BIT(arr,i) (((arr)->words[bindex(i)] >> (boffset(i))) & 0x1)
@@ -672,7 +673,12 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
 
     // Need to change the amount of memory used
     size_t old_capacity_in_bytes = bitarr->capacity_in_words * sizeof(word_t);
-    bitarr->capacity_in_words *= 2;
+
+    while(bitarr->capacity_in_words < new_num_of_words)
+    {
+      bitarr->capacity_in_words *= 2;
+    }
+
     size_t new_capacity_in_bytes = bitarr->capacity_in_words * sizeof(word_t);
     bitarr->words = (word_t*)realloc(bitarr->words, new_capacity_in_bytes);
 
@@ -2367,27 +2373,23 @@ bit_index_t bit_array_save(const BIT_ARRAY* bitarr, FILE* f)
   return bytes_written;
 }
 
-// Reads bit array from a file. Returns bit array or NULL on failure
-BIT_ARRAY* bit_array_load(FILE* f)
+// Reads bit array from a file. bitarr is resized and filled.
+// Returns 1 on success, 0 on failure
+char bit_array_load(BIT_ARRAY* bitarr, FILE* f)
 {
   bit_index_t items_read;
 
   // Read in number of bits
   bit_index_t num_bits = 0;
-  items_read = fread(&num_bits, sizeof(bit_index_t), 1, f);
+  items_read = fread(&num_bits, 8, 1, f);
 
   if(items_read != 1)
   {
-    return NULL;
+    return 0;
   }
 
-  // Create bit_array
-  BIT_ARRAY* bitarr = bit_array_create(num_bits);
-
-  if(bitarr == NULL)
-  {
-    return NULL;
-  }
+  // Resize
+  bit_array_resize(bitarr, num_bits);
 
   // Have to calculate how many bytes are needed for the file
   // (Note: this may be different from num_of_words * sizeof(word_t))
@@ -2397,9 +2399,7 @@ BIT_ARRAY* bit_array_load(FILE* f)
 
   if(items_read != num_of_bytes_in_file)
   {
-    free(bitarr->words);
-    free(bitarr);
-    return NULL;
+    return 0;
   }
 
   // Mask top word
@@ -2409,7 +2409,7 @@ BIT_ARRAY* bit_array_load(FILE* f)
   _bit_array_check_top_word(bitarr);
   #endif
 
-  return bitarr;
+  return 1;
 }
 
 //

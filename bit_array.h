@@ -343,9 +343,9 @@ void bit_array_difference(BIT_ARRAY* dst,
 // returns the number of bytes written
 bit_index_t bit_array_save(const BIT_ARRAY* bitarr, FILE* f);
 
-// Reads bit array from a file
-// returns bit array or NULL on failure
-BIT_ARRAY* bit_array_load(FILE* f);
+// Reads bit array from a file. bitarr is resized and filled.
+// Returns 1 on success, 0 on failure
+char bit_array_load(BIT_ARRAY* bitarr, FILE* f);
 
 
 //

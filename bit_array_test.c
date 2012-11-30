@@ -5,7 +5,7 @@
  Adapted from: http://stackoverflow.com/a/2633584/431087
  author: Isaac Turner <turner.isaac@gmail.com>
 
- Copyright (c) 2011, Isaac Turner
+ Copyright (c) 2011-2012, Isaac Turner
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,63 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
 #include <time.h>
 #include "bit_array.h"
+
+//
+// Utility functions
+//
+
+void die(const char *fmt, ...)
+__attribute__((format(printf, 1, 2)))
+__attribute__((noreturn));
+
+void warn(const char *fmt, ...)
+__attribute__((format(printf, 1, 2)));
+
+void die(const char *fmt, ...)
+{
+  fflush(stdout);
+
+  // Print error
+  fprintf(stderr, "Error: ");
+
+  va_list argptr;
+  va_start(argptr, fmt);
+  vfprintf(stderr, fmt, argptr);
+  va_end(argptr);
+
+  // Check if we need to print a newline
+  if(*(fmt + strlen(fmt) - 1) != '\n')
+  {
+    fprintf(stderr, "\n");
+  }
+
+  exit(EXIT_FAILURE);
+}
+
+void warn(const char *fmt, ...)
+{
+  fflush(stdout);
+
+  // Print warning
+  fprintf(stderr, "Warning: ");
+
+  va_list argptr;
+  va_start(argptr, fmt);
+  vfprintf(stderr, fmt, argptr);
+  va_end(argptr);
+
+  // Check if we need to print a newline
+  if(*(fmt + strlen(fmt) - 1) != '\n')
+  {
+    fprintf(stderr, "\n");
+  }
+
+  fflush(stderr);
+}
 
 //
 // Testing per function
@@ -908,6 +963,75 @@ void test_hamming_weight()
   printf("== End of testing hamming weight ==\n\n");
 }
 
+void _test_save_load(BIT_ARRAY *arr1, BIT_ARRAY *arr2)
+{
+  FILE *f = fopen("test.bitarr.bin", "w");
+
+  if(f == NULL)
+  {
+    die("Couldn't open file to write: 'test.bitarr.bin'");
+  }
+
+  char *tmp = (char*)malloc(sizeof(char) * (bit_array_length(arr1)+1));
+  printf("%s\n", bit_array_to_str(arr1, tmp));
+
+  bit_array_save(arr1, f);
+  fclose(f);
+
+  f = fopen("test.bitarr.bin", "r");
+
+  if(f == NULL)
+  {
+    die("Couldn't open file to read: 'test.bitarr.bin'");
+  }
+
+  if(!bit_array_load(arr2, f))
+  {
+    warn("Load returned warning");
+  }
+
+  fclose(f);
+
+  if(bit_array_cmp(arr1, arr2) != 0)
+  {
+    printf("1>%s\n", bit_array_to_str(arr1, tmp));
+    printf("2>%s\n", bit_array_to_str(arr2, tmp));
+    die("Failed save/load");
+  }
+
+  free(tmp);
+}
+
+void test_save_load()
+{
+  printf("== Testing save / load ==\n");
+
+  BIT_ARRAY* arr1 = bit_array_create(0);
+  BIT_ARRAY* arr2 = bit_array_create(0);
+
+  printf("1) Empty:\n");
+  _test_save_load(arr1, arr2);
+
+  printf("2) ten 0s:\n");
+  bit_array_resize(arr1, 10);
+  _test_save_load(arr1, arr2);
+
+  printf("3) thousand 1s:\n");
+  bit_array_resize(arr1, 1000);
+  bit_array_set_all(arr1);
+  _test_save_load(arr1, arr2);
+
+  printf("4) 1100111010:\n");
+  bit_array_resize(arr1, 10);
+  bit_array_clear_bits(arr1, 4, 2,3,7,9);
+  _test_save_load(arr1, arr2);
+
+  bit_array_free(arr1);
+  bit_array_free(arr2);
+
+  printf("== End of testing save / load ==\n\n");
+}
+
 //
 // Aggregate testing
 //
@@ -1200,7 +1324,7 @@ void test_multiple_actions()
 
   printf("Loading bitarray in %s\n", filename);
   f = fopen(filename, "r");
-  bitarr = bit_array_load(f);
+  bit_array_load(bitarr, f);
   fclose(f);
 
   bit_array_print(bitarr, stdout);
@@ -1240,6 +1364,7 @@ int main(int argc, char* argv[])
   test_shift();
   test_next_permutation();
   test_hamming_weight();
+  test_save_load();
 
   //test_multiple_actions();
 
