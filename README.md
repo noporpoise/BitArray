@@ -225,10 +225,12 @@ Create a bit array from a string of '0's and '1's e.g. "01001010110".
     void bit_array_from_str(BIT_ARRAY* bitarr, const char* bitstr)
 
 Construct a BIT_ARRAY from a substring with given on and off characters.
-Reverse reads from highest to lowest -- this is useful for loading binary numbers.
+`left_to_right` determines the order in which bits are printed.
+Terminates string with '\0'.
 
-    void bit_array_from_substr(BIT_ARRAY* bitarr, const char* str, size_t len,
-                               char on, char off, char reverse)
+    void bit_array_from_substr(BIT_ARRAY* bitarr, bit_index_t offset,
+                               const char* str, size_t len,
+                               const char *on, const char *off, char left_to_right)
 
 To string method. Takes a char array to write to.
 `str` must be bitarr->num_of_bits+1 in length.
@@ -237,23 +239,44 @@ Terminates string with '\0'.
     char* bit_array_to_str(const BIT_ARRAY* bitarr, char* str)
 
 Get a string representations for a given region, using given on/off characters.
-Does not null-terminate string.
-Reverse prints from highest to lowest -- this is useful for writing binary numbers.
+`left_to_right` determines the order in which bits are printed.
 
-    void bit_array_to_substr(const BIT_ARRAY* bitarr, char* str,
+    void bit_array_to_substr(const BIT_ARRAY* bitarr,
                              bit_index_t start, bit_index_t length,
-                             char on, char off, char reverse)
+                             char* str, char on, char off, char left_to_right)
 
 Print this array to a file stream.  Prints '0's and '1'.  Doesn't print newline.
 
     void bit_array_print(const BIT_ARRAY* bitarr, FILE* fout)
 
 Print a string representations for a given region, using given on/off characters.
-Reverse prints from highest to lowest -- this is useful printing for binary numbers
+`left_to_right` determines the order in which bits are printed.
 
-    void bit_array_print_substr(const BIT_ARRAY* bitarr, FILE* fout,
+    void bit_array_print_substr(const BIT_ARRAY* bitarr,
                                 bit_index_t start, bit_index_t length,
-                                char on, char off, char reverse)
+                                FILE* fout, char on, char off, char left_to_right)
+
+Hexidecimal
+-----------
+
+Loads array from hex string
+Returns the number of bits loaded (will be chars rounded up to multiple of 8)
+(0 on failure)
+
+    bit_index_t bit_array_from_hex(BIT_ARRAY* bitarr, bit_index_t offset,
+                                   const char* str, size_t len)
+
+Returns number of characters written
+
+    size_t bit_array_to_hex(const BIT_ARRAY* bitarr,
+                            bit_index_t start, bit_index_t length,
+                            char* str, char uppercase)
+
+Print bit array as hex
+
+    size_t bit_array_print_hex(const BIT_ARRAY* bitarr,
+                               bit_index_t start, bit_index_t length,
+                               FILE* fout, char uppercase)
 
 Clone/copy
 ----------
@@ -358,6 +381,20 @@ Add to an array.  `bitarr` will be extended if needed.
 
     void bit_array_add(BIT_ARRAY* bitarr, unsigned long value)
 
+Add `add` to `bitarr` at `pos` -- same as:
+  bitarr + (add << pos)
+where pos can be bigger than the length of the array (bitarr will be resized)
+
+    void bit_array_add_word(BIT_ARRAY *bitarr, bit_index_t pos, uint64_t add)
+
+Add `add` to `bitarr` at `pos`
+
+    void bit_array_add_words(BIT_ARRAY *bitarr, bit_index_t pos, BIT_ARRAY *add)
+
+Multiply by some value
+
+    void bit_array_multiply(BIT_ARRAY *bitarr, uint64_t multiplier)
+
 Subtract from an array. If `value` is greater than `bitarr`, `bitarr` is not
 changed and `0` is returned. Returns `1` on success, `0` if `value > bitarr`
 
@@ -375,6 +412,11 @@ or different `BIT_ARRAY`s. If dst is shorter than src1, it will be extended to
 be as long as `src1`. `src1` must be greater than or equal to `src2` (`src1 >= src2`).
 
     void bit_array_difference(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
+
+dst = src1 * src2
+Pointers cannot all point to the same BIT_ARRAY
+
+    void bit_array_product(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2)
 
 
 Read/Write bit_array to a file
@@ -451,7 +493,6 @@ Development
 ===========
 
 To do:
-* _multiply
 * _div
 * _mod
 * write more test cases
