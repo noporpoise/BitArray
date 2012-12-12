@@ -202,6 +202,7 @@ void bit_array_from_substr(BIT_ARRAY* bitarr, bit_index_t offset,
 // Takes a char array to write to.  `str` must be bitarr->num_of_bits+1 in
 // length. Terminates string with '\0'
 char* bit_array_to_str(const BIT_ARRAY* bitarr, char* str);
+char* bit_array_to_str_rev(const BIT_ARRAY* bitarr, char* str);
 
 // Get a string representations for a given region, using given on/off
 // characters. 
@@ -220,7 +221,19 @@ void bit_array_print_substr(const BIT_ARRAY* bitarr,
                             bit_index_t start, bit_index_t length,
                             FILE* fout, char on, char off, char left_to_right);
 
+//
+// Decimal
+//
+
+// Get bit array as decimal str (e.g. 0b1101 -> "13")
+size_t bit_array_to_decimal(const BIT_ARRAY *bitarr, char *str, size_t len);
+
+// Return number of characters used
+size_t bit_array_from_decimal(BIT_ARRAY *bitarr, const char* decimal);
+
+//
 // Hexidecimal
+//
 
 // Loads array from hex string
 // Returns the number of bits loaded (will be chars rounded up to multiple of 8)
@@ -290,6 +303,9 @@ int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
 // Example: 10.. > 01.. [index 0 is MSB at left hand side]
 int bit_array_other_endian_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
 
+// compare bitarr with (bitarr2 << pos)
+int bit_array_cmp_words(const BIT_ARRAY *bitarr,
+                        bit_index_t pos, const BIT_ARRAY *bitarr2);
 
 //
 // Shift, interleave, reverse
@@ -323,19 +339,19 @@ void bit_array_reverse_region(BIT_ARRAY* bitarr,
 //
 
 // Returns 1 on sucess, 0 if value in array is too big
-char bit_array_as_num(BIT_ARRAY* bitarr, unsigned long* result);
+char bit_array_as_num(const BIT_ARRAY* bitarr, uint64_t* result);
 
 // 1 iff bitarr > value
 // 0 iff bitarr == value
 // -1 iff bitarr < value
-int bit_array_compare_num(BIT_ARRAY* bitarr, unsigned long value);
+int bit_array_compare_num(const BIT_ARRAY* bitarr, uint64_t value);
 
 // bitarr will be extended if needed
-void bit_array_add(BIT_ARRAY* bitarr, unsigned long value);
+void bit_array_add(BIT_ARRAY* bitarr, uint64_t value);
 
 // If value is greater than bitarr, bitarr is not changed and 0 is returned
 // Returns 1 on success, 0 if value > bitarr
-char bit_array_subtract(BIT_ARRAY* bitarr, unsigned long value);
+char bit_array_minus(BIT_ARRAY* bitarr, uint64_t value);
 
 // Add `add` to `bitarr` at `pos` -- same as:
 //   bitarr + (add << pos)
@@ -343,10 +359,14 @@ char bit_array_subtract(BIT_ARRAY* bitarr, unsigned long value);
 void bit_array_add_word(BIT_ARRAY *bitarr, bit_index_t pos, uint64_t add);
 
 // Add `add` to `bitarr` at `pos`
-void bit_array_add_words(BIT_ARRAY *bitarr, bit_index_t pos, BIT_ARRAY *add);
+void bit_array_add_words(BIT_ARRAY *bitarr, bit_index_t pos, const BIT_ARRAY *add);
 
 // Multiply by some value
 void bit_array_multiply(BIT_ARRAY *bitarr, uint64_t multiplier);
+
+// bitarr = round_down(bitarr / divisor)
+// rem = bitarr % divisor
+void bit_array_div(BIT_ARRAY *bitarr, uint64_t divisor, uint64_t *rem);
 
 //
 // Arithmetic between arrays
@@ -368,6 +388,13 @@ void bit_array_difference(BIT_ARRAY* dst,
 // dst = src1 * src2
 // Pointers cannot all point to the same BIT_ARRAY
 void bit_array_product(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2);
+
+// Results in:
+//   quotient = dividend / divisor
+//   dividend = dividend % divisor
+// (dividend is used to return the remainder)
+void bit_array_divide(BIT_ARRAY *dividend, BIT_ARRAY *quotient,
+                      BIT_ARRAY *divisor);
 
 //
 // Read/Write bit_array to a file
@@ -413,17 +440,29 @@ void bit_array_shuffle(BIT_ARRAY* bitarr);
 void bit_array_next_permutation(BIT_ARRAY* bitarr);
 
 //
-// Coming soon
+// Generally useful functions
 //
 
-// dst = src1 / src2
-// void bit_array_divide(BIT_ARRAY *dst, const BIT_ARRAY *div);
 
-// dst = src1 % src2
-// void bit_array_mod(BIT_ARRAY *dst, const BIT_ARRAY *mod);
+// Generalised 'binary to string' function
+// Adds bits to the string in order of lsb to msb
+// e.g. 0b11010 (26 in decimal) would come out as "01011"
+char* bit_array_bin2str(const void *ptr, size_t num_of_bits, char *str);
 
-// Get bit array as decimal str (e.g. 0b1101 -> "13")
-// char* bit_array_to_decimal(const BIT_ARRAY *bitarr, char *str);
+// Same as above but in reverse
+char* bit_array_bin2str_rev(const void *ptr, size_t num_of_bits, char *str);
+
+//
+// Coming soon - bugs remain
+//
+
+// minus `minus` from `bitarr` at `pos` -- same as:
+//   bitarr + (minus << pos)
+char bit_array_minus_word(BIT_ARRAY *bitarr, bit_index_t pos, word_t minus);
+
+// minus `minus` from `bitarr` at `pos`
+char bit_array_minus_words(BIT_ARRAY* bitarr, bit_index_t pos,
+                           BIT_ARRAY* minus);
 
 // uint64_t bit_array_crc(const BIT_ARRAY *bitarr, uint64_t crc);
 

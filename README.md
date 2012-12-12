@@ -256,6 +256,44 @@ Print a string representations for a given region, using given on/off characters
                                 bit_index_t start, bit_index_t length,
                                 FILE* fout, char on, char off, char left_to_right)
 
+Decimal
+-------
+
+Get bit array as decimal str e.g. 0b1101 -> "13".
+`len` is the length of str char array.  `bit_array_to_decimal()` write at most
+`len-1` chars to `str`.  Returns the number of characters that would have been
+written to str -- return is the same as strlen(str) upon success.
+
+    size_t bit_array_to_decimal(const BIT_ARRAY *bitarr, char *str, size_t len)
+
+Example usage:
+
+    char str[10];
+    size_t len = bit_array_to_decimal(arr, str, 10);
+
+    if(len > 9)
+    {
+      // str wasn't big enough
+    }
+
+Get bit array from decimal str (e.g. "13" -> 0b1101).
+Returns number of characters used
+
+    size_t bit_array_from_decimal(BIT_ARRAY *bitarr, const char* decimal)
+
+Example usage:
+
+    char *str = "1234";
+    BIT_ARRAY *bitarr = bit_array_create(0);
+
+    size_t len = bit_array_from_decimal(bitarr, str);
+
+    if(len < strlen(str))
+    {
+      // Parsing ended prematurely (non-numeric characters encountered)
+    }
+
+
 Hexidecimal
 -----------
 
@@ -307,6 +345,15 @@ Shift array left/right with a given `fill` (0 or 1)
 
     void bit_array_shift_right(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
     void bit_array_shift_left(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
+
+To shift and add digits instead of losing data, use resize and copy instead:
+
+    // Example to shift left 3 places and fill with zeros
+    bit_index_t len = bit_array_length(big);
+    int shift = 3;
+    bit_array_resize(big, len + shift);
+    bit_array_copy(arr, shift, arr, 0, len);
+    bit_array_clear_region(arr, 0, shift);
 
 Circular or cycle shifts.  Bits wrap around once shifted off the end
 
@@ -361,6 +408,10 @@ Example: 10.. > 01.. [index 0 is MSB at left hand side]
 
     int bit_array_other_endian_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
 
+Compare `bitarr` with `(bitarr2 << pos)`
+
+    int bit_array_cmp_words(const BIT_ARRAY *bitarr,
+                            bit_index_t pos, const BIT_ARRAY *bitarr2)
 
 Arithmetic
 ----------
@@ -398,7 +449,7 @@ Multiply by some value
 Subtract from an array. If `value` is greater than `bitarr`, `bitarr` is not
 changed and `0` is returned. Returns `1` on success, `0` if `value > bitarr`
 
-    char bit_array_subtract(BIT_ARRAY* bitarr, unsigned long value)
+    char bit_array_minus(BIT_ARRAY* bitarr, unsigned long value)
 
 Add two bit arrays together and store the result.  `src1` and `src2` do not have
 to be the same length. `src1`, `src2` and `dst` can all be the same or different
@@ -493,7 +544,7 @@ Development
 ===========
 
 To do:
-* _div
-* _mod
+* faster multiply / divide?
+  - Karatsuba, Booth algorithms
 * write more test cases
 * optimisations
