@@ -481,13 +481,15 @@ Pointers cannot all point to the same BIT_ARRAY
 
     void bit_array_product(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2)
 
-Divide: results in:
-* quotient = dividend / divisor
-* dividend = dividend % divisor
-(dividend is used to return the remainder)
+Divide a BitArray by a BitArray; returns:
+* `quotient = dividend / divisor`
+* `dividend = dividend % divisor`
+
+Dividend is used to return the remainder.
 
     void bit_array_divide(BIT_ARRAY *dividend, BIT_ARRAY *quotient,
                           BIT_ARRAY *divisor)
+
 
 Read/Write bit_array to a file
 ------------------------------
@@ -533,7 +535,7 @@ Shuffle the bits in an array randomly
 Useful functions
 ----------------
 
-Generalised 'binary to string' function/
+Generalised 'binary to string' function.
 Adds bits to the string in order of lsb to msb
 e.g. 0b11010 (26 in decimal) would come out as "01011"
 
