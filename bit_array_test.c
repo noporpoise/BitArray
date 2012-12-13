@@ -86,6 +86,32 @@ void warn(const char *fmt, ...)
   fflush(stderr);
 }
 
+void reverse_str(char *str)
+{
+  size_t s, len = strlen(str);
+  for(s = 0; s < len / 2; s++)
+  {
+    char tmp = str[s];
+    str[s] = str[len-s-1];
+    str[len-s-1] = tmp;
+  }
+}
+
+word_t word_from_str(char *str)
+{
+  word_t w = 0;
+  int i;
+  for(i = 0; i < 64 && str[i] != '\0'; i++)
+  {
+    w <<= 1;
+    if(str[i] == '1')
+    {
+      w |= 1;
+    }
+  }
+  return w;
+}
+
 //
 // Testing per function
 //
@@ -423,17 +449,6 @@ void test_hash()
   bit_array_free(arr);
 
   printf("== End of testing hash ==\n\n");
-}
-
-void reverse_str(char *str)
-{
-  size_t s, len = strlen(str);
-  for(s = 0; s < len / 2; s++)
-  {
-    char tmp = str[s];
-    str[s] = str[len-s-1];
-    str[len-s-1] = tmp;
-  }
 }
 
 void _test_reverse(int len)
@@ -1551,6 +1566,7 @@ void test_add_word()
   printf("== End of testing add word ==\n\n");
 }
 
+/*
 void _test_add_words(unsigned long a, unsigned long b, int offset)
 {
   BIT_ARRAY *arr1 = bit_array_create(0);
@@ -1611,6 +1627,7 @@ void test_add_words()
 
   printf("== End of testing add words ==\n\n");
 }
+*/
 
 void _test_multiply_small(uint64_t a, uint64_t b)
 {
@@ -1656,6 +1673,7 @@ void test_multiply()
   printf("== End of testing multiply ==\n\n");
 }
 
+/*
 void _test_product(uint64_t a, uint64_t b)
 {
   BIT_ARRAY *arr1 = bit_array_create(0);
@@ -1731,6 +1749,7 @@ void test_product()
 
   printf("== End of testing product ==\n\n");
 }
+*/
 
 void _test_div(uint64_t nom, uint64_t denom)
 {
@@ -1798,6 +1817,7 @@ void test_to_from_decimal()
   printf("\n== End of testing to / from decimal ==\n\n");
 }
 
+/*
 void _test_product_divide()
 {
   // Rand number between 0-255 inclusive
@@ -1891,7 +1911,9 @@ void test_product_divide()
 
   printf("== End of testing product and divide ==\n\n");
 }
+*/
 
+/*
 void _test_add_minus_words()
 {
   // Rand number between 0-511 inclusive
@@ -1965,6 +1987,7 @@ void test_add_minus_words()
   {
     _test_add_minus_words();
   }
+*/
 
   /*
   BIT_ARRAY *arr1 = bit_array_create(0);
@@ -2013,11 +2036,12 @@ void test_add_minus_words()
   bit_array_add_word(arr1, 69, 0x1);
   printf(" sum: %s\n", bit_array_to_str_rev(arr1, str));
   */
-
+/*
   printf("\n== End of testing add/minus words ==\n\n");
 }
+*/
 
-
+/*
 void _test_add_minus_single_word()
 {
   // Rand number between 0-511 inclusive
@@ -2066,38 +2090,18 @@ void _test_add_minus_single_word()
   bit_array_free(arr);
 }
 
-void test_add_minus_single_word()
+void _test_minus_word_example(char *arr_str, char *word_str, int offset)
 {
-  printf("\n== Testing add/minus single word ==\n\n");
+  word_t wrd = word_from_str(word_str);
 
-
-  int i;
-  for(i = 0; i < 10000; i++)
-  {
-    _test_add_minus_single_word();
-  }
-
-
-  /*
   char str[1000];
-
-  char *arr_str = "00000000001100010000100010000000001111000010101011001100001000001000000110000010000001000000000000001001111100000001100100001101111110100000101010000101100000000001000001000000001000101011000011010001010000101001101111011000000000001000000100000010000000011100100100000100000010000010000001101010000000001100100100101001000000011101000100100000110000001000000001000000000011000000000001000000101000000011000010000100010010000000000110011000001101100011000010011000000110000010010110001101010001000001101001";
-  word_t wrd = 0xF003130;
-  int offset = 480;
 
   BIT_ARRAY *arr = bit_array_create(0);
   bit_array_from_str(arr, arr_str);
 
   bit_array_reverse(arr);
   bit_array_to_str(arr, str);
-
-  size_t s;
-  for(s = 0; s < strlen(str) / 2; s++)
-  {
-    char tmp = str[s];
-    str[s] = str[strlen(str)-s-1];
-    str[strlen(str)-s-1] = tmp;
-  }
+  reverse_str(str);
 
   if(strcmp(str, arr_str) != 0)
   {
@@ -2124,9 +2128,24 @@ void test_add_minus_single_word()
   int cmp = bit_array_cmp_words(orig, 0, arr);
   printf(" add/minus single word: [%s]\n\n", cmp == 0 ? "Pass" : "Fail");
 
+  bit_array_free(orig);
   bit_array_free(arr);
-  */  
+}
 
+void test_add_minus_single_word()
+{
+  printf("\n== Testing add/minus single word ==\n\n");
+
+  int i;
+  for(i = 0; i < 10000; i++)
+  {
+    _test_add_minus_single_word();
+  }
+
+  char *str = "10111101111111111111111111111111111111111111101111111111111111111111111011111011111111111110111111111111101111111111111111111111111111111111111111111111111101111011111111111111111111111011111110110111111101111111110011111011111111111111111111111111110111111111111111111111111111011111101111111111111111111110101111111111111111110110111111111111111111111111111111110111110111111111111111111111111111111111111111111111111111111111111111011101111111111111111111110111111111111011111101110";
+  char *wrd = "0000000000000000000000000000000001110101010110010000011001111110";
+
+  _test_minus_word_example(str, wrd, 475);
 
   printf("\n== End of testing add/minus single word ==\n\n");
 }
@@ -2161,6 +2180,7 @@ void test_minus_word()
 
   printf("\n== End of testing minus word ==\n\n");
 }
+*/
 
 void test_copy()
 {
@@ -2231,9 +2251,7 @@ int main(int argc, char* argv[])
 
   // Dev: still getting errors in these functions:
   //test_add_minus_single_word();
-  //test_minus_word();
-  // test_minus_word();
-  // test_minus_words();
+
 
   // Test functions
   test_copy();
@@ -2259,11 +2277,15 @@ int main(int argc, char* argv[])
   test_add_word();
   test_multiply();
   test_string_functions();
-  test_product();
   test_div();
   test_to_from_decimal();
+
+  /*
+  test_product();
   test_product_divide();
   test_add_minus_words();
+  test_minus_word();
+  */
 
   // To do
   //test_crc();

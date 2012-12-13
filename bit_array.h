@@ -39,6 +39,10 @@ typedef uint8_t word_offset_t; // Offset within a 64 bit word
 
 extern const bit_index_t BIT_INDEX_MIN, BIT_INDEX_MAX;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //
 // Basics: Constructor, destructor, get length, resize
 //
@@ -358,8 +362,18 @@ char bit_array_minus(BIT_ARRAY* bitarr, uint64_t value);
 // where pos can be bigger than the length of the array (bitarr will be resized)
 void bit_array_add_word(BIT_ARRAY *bitarr, bit_index_t pos, uint64_t add);
 
+// Coming soon
+
 // Add `add` to `bitarr` at `pos`
-void bit_array_add_words(BIT_ARRAY *bitarr, bit_index_t pos, const BIT_ARRAY *add);
+// void bit_array_add_words(BIT_ARRAY *bitarr, bit_index_t pos, const BIT_ARRAY *add);
+
+// minus `minus` from `bitarr` at `pos` -- same as:
+//   bitarr + (minus << pos)
+// char bit_array_minus_word(BIT_ARRAY *bitarr, bit_index_t pos, word_t minus);
+
+// minus `minus` from `bitarr` at `pos`
+// char bit_array_minus_words(BIT_ARRAY* bitarr, bit_index_t pos,
+//                            BIT_ARRAY* minus);
 
 // Multiply by some value
 void bit_array_multiply(BIT_ARRAY *bitarr, uint64_t multiplier);
@@ -385,16 +399,18 @@ void bit_array_difference(BIT_ARRAY* dst,
                           const BIT_ARRAY* src1,
                           const BIT_ARRAY* src2);
 
+// Coming soon - testing in progress
+
 // dst = src1 * src2
 // Pointers cannot all point to the same BIT_ARRAY
-void bit_array_product(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2);
+// void bit_array_product(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2);
 
 // Results in:
 //   quotient = dividend / divisor
 //   dividend = dividend % divisor
 // (dividend is used to return the remainder)
-void bit_array_divide(BIT_ARRAY *dividend, BIT_ARRAY *quotient,
-                      BIT_ARRAY *divisor);
+// void bit_array_divide(BIT_ARRAY *dividend, BIT_ARRAY *quotient,
+                      // BIT_ARRAY *divisor);
 
 //
 // Read/Write bit_array to a file
@@ -443,7 +459,6 @@ void bit_array_next_permutation(BIT_ARRAY* bitarr);
 // Generally useful functions
 //
 
-
 // Generalised 'binary to string' function
 // Adds bits to the string in order of lsb to msb
 // e.g. 0b11010 (26 in decimal) would come out as "01011"
@@ -453,17 +468,13 @@ char* bit_array_bin2str(const void *ptr, size_t num_of_bits, char *str);
 char* bit_array_bin2str_rev(const void *ptr, size_t num_of_bits, char *str);
 
 //
-// Coming soon - bugs remain
+// In the pipeline:
 //
 
-// minus `minus` from `bitarr` at `pos` -- same as:
-//   bitarr + (minus << pos)
-char bit_array_minus_word(BIT_ARRAY *bitarr, bit_index_t pos, word_t minus);
-
-// minus `minus` from `bitarr` at `pos`
-char bit_array_minus_words(BIT_ARRAY* bitarr, bit_index_t pos,
-                           BIT_ARRAY* minus);
-
 // uint64_t bit_array_crc(const BIT_ARRAY *bitarr, uint64_t crc);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

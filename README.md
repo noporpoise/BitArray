@@ -469,6 +469,13 @@ Pointers cannot all point to the same BIT_ARRAY
 
     void bit_array_product(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2)
 
+Divide: results in:
+* quotient = dividend / divisor
+* dividend = dividend % divisor
+(dividend is used to return the remainder)
+
+    void bit_array_divide(BIT_ARRAY *dividend, BIT_ARRAY *quotient,
+                          BIT_ARRAY *divisor)
 
 Read/Write bit_array to a file
 ------------------------------
@@ -484,7 +491,7 @@ Saves bit array to a file.  Returns the number of bytes written
 Reads bit array from a file. `bitarr` is resized and filled with data from the file.
 Returns 1 on success, 0 on failure.
 
-    char bit_array_load(BIT_ARRAY* bitarr, FILE* f);
+    char bit_array_load(BIT_ARRAY* bitarr, FILE* f)
 
 
 Hash Value
