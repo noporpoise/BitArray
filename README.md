@@ -238,6 +238,10 @@ Terminates string with '\0'.
 
     char* bit_array_to_str(const BIT_ARRAY* bitarr, char* str)
 
+To construct a string in reverse (highest bit on the left, lowest on the right)
+
+    bit_array_to_str_rev(const BIT_ARRAY* bitarr, char* str)
+
 Get a string representations for a given region, using given on/off characters.
 `left_to_right` determines the order in which bits are printed.
 
@@ -385,11 +389,13 @@ Reverse the whole array or part of it.
 Comparing
 ---------
 
+Comparison functions return:
+* > 0 iff bitarr1 > bitarr2
+*   0 iff bitarr1 == bitarr2
+* < 0 iff bitarr1 < bitarr2
+
 Compare two bit arrays by value stored, with index 0 being the Least
-Significant Bit (LSB). Returns:
-* >0 iff bitarr1 > bitarr2
-*  0 iff bitarr1 == bitarr2
-* <0 iff bitarr1 < bitarr2
+Significant Bit (LSB). 
 
 Arrays do not have to be the same length.
 Example: ..0101 (5) > ...0011 (3) [index 0 is LSB at right hand side].
@@ -398,35 +404,36 @@ Example: ..0101 (5) > ...0011 (3) [index 0 is LSB at right hand side].
 
 Compare two bit arrays by value stored, with index 0 being the Most Significant
 Bit (MSB). Sorts on length if all zeros: (0,0) < (0,0,0)
-Returns:
-* >0 iff bitarr1 > bitarr2
-*  0 iff bitarr1 == bitarr2
-* <0 iff bitarr1 < bitarr2
 
 Arrays do not have to be the same length.
 Example: 10.. > 01.. [index 0 is MSB at left hand side]
 
     int bit_array_other_endian_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
 
-Compare `bitarr` with `(bitarr2 << pos)`
+Compare `bitarr` with `(bitarr2 << pos)`.  Does not use array length, only value
+stored.
 
     int bit_array_cmp_words(const BIT_ARRAY *bitarr,
                             bit_index_t pos, const BIT_ARRAY *bitarr2)
 
+Compare value stored against an unsigned long (treats `bitarr` as large unsigned
+integer type):
+
+    int bit_array_compare_num(BIT_ARRAY* bitarr, unsigned long value)
+
 Arithmetic
 ----------
 
-To be interpretted as a number, bit at index 0 is treated as the least
-significant bit.  
+Bit arrays can be interpretted as arbitarily large unsigned integers. To do this
+the bit at index 0 is treated as the least significant bit.  BitArrays provide
+functions for arithmetic between a BitArray & a long, and between BitArrays.
 
 Get the value of this number in an unsigned long.
 Returns 1 on sucess, 0 if value in array is too big.
 
     char bit_array_as_num(BIT_ARRAY* bitarr, unsigned long* result)
 
-Compare (1 iff bitarr > value; 0 iff bitarr == value; -1 iff bitarr < value):
-
-    int bit_array_compare_num(BIT_ARRAY* bitarr, unsigned long value)
+(Note: see also `bit_array_compare_num(BIT_ARRAY*, unsigned long)`)
 
 Add to an array.  `bitarr` will be extended if needed.
 
@@ -438,18 +445,23 @@ where pos can be bigger than the length of the array (bitarr will be resized)
 
     void bit_array_add_word(BIT_ARRAY *bitarr, bit_index_t pos, uint64_t add)
 
-Add `add` to `bitarr` at `pos`
+Add `add << pos` to `bitarr`
 
     void bit_array_add_words(BIT_ARRAY *bitarr, bit_index_t pos, BIT_ARRAY *add)
-
-Multiply by some value
-
-    void bit_array_multiply(BIT_ARRAY *bitarr, uint64_t multiplier)
 
 Subtract from an array. If `value` is greater than `bitarr`, `bitarr` is not
 changed and `0` is returned. Returns `1` on success, `0` if `value > bitarr`
 
     char bit_array_minus(BIT_ARRAY* bitarr, unsigned long value)
+
+Minus `minus << pos` from `bitarr`
+
+    char bit_array_minus_words(BIT_ARRAY* bitarr, bit_index_t pos,
+                               BIT_ARRAY* minus)
+
+Multiply by some value
+
+    void bit_array_multiply(BIT_ARRAY *bitarr, uint64_t multiplier)
 
 Add two bit arrays together and store the result.  `src1` and `src2` do not have
 to be the same length. `src1`, `src2` and `dst` can all be the same or different
@@ -517,6 +529,16 @@ Shuffle the bits in an array randomly
     // e.g. If you want exactly 9 random bits set in an array, use:
     bit_array_set_region(arr, 0, 9); // set the first 9 bits
     bit_array_shuffle(arr);          // shuffle the array
+
+Useful functions
+----------------
+
+Generalised 'binary to string' function/
+Adds bits to the string in order of lsb to msb
+e.g. 0b11010 (26 in decimal) would come out as "01011"
+
+    char* bit_array_bin2str(const void *ptr, size_t num_of_bits, char *str)
+    char* bit_array_bin2str_rev(const void *ptr, size_t num_of_bits, char *str)
 
 Constants
 ---------

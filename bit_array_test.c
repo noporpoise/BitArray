@@ -1566,7 +1566,6 @@ void test_add_word()
   printf("== End of testing add word ==\n\n");
 }
 
-/*
 void _test_add_words(unsigned long a, unsigned long b, int offset)
 {
   BIT_ARRAY *arr1 = bit_array_create(0);
@@ -1627,7 +1626,6 @@ void test_add_words()
 
   printf("== End of testing add words ==\n\n");
 }
-*/
 
 void _test_multiply_small(uint64_t a, uint64_t b)
 {
@@ -1673,7 +1671,6 @@ void test_multiply()
   printf("== End of testing multiply ==\n\n");
 }
 
-/*
 void _test_product(uint64_t a, uint64_t b)
 {
   BIT_ARRAY *arr1 = bit_array_create(0);
@@ -1749,7 +1746,6 @@ void test_product()
 
   printf("== End of testing product ==\n\n");
 }
-*/
 
 void _test_div(uint64_t nom, uint64_t denom)
 {
@@ -1817,7 +1813,6 @@ void test_to_from_decimal()
   printf("\n== End of testing to / from decimal ==\n\n");
 }
 
-/*
 void _test_product_divide()
 {
   // Rand number between 0-255 inclusive
@@ -1889,7 +1884,7 @@ void _test_product_divide()
   printf("\n");
 
   // Compare
-  int cmp = bit_array_cmp(tmp, arr);
+  int cmp = bit_array_cmp_words(tmp, 0, arr);
   printf("product & divide: [%s]\n\n", cmp == 0 ? "Pass" : "Fail");
 
   bit_array_free(tmp);
@@ -1911,9 +1906,7 @@ void test_product_divide()
 
   printf("== End of testing product and divide ==\n\n");
 }
-*/
 
-/*
 void _test_add_minus_words()
 {
   // Rand number between 0-511 inclusive
@@ -1948,7 +1941,7 @@ void _test_add_minus_words()
     }
   }
 
-  char str[500];
+  char str[2000];
 
   //bit_array_resize(small, len+shift-offset);
 
@@ -1970,7 +1963,7 @@ void _test_add_minus_words()
   printf("+small: %s\n", bit_array_to_str_rev(tmp, str));
 
   // Compare tmp and big
-  int cmp = bit_array_cmp(tmp, big);
+  int cmp = bit_array_cmp_words(tmp, 0, big);
   printf(" add/minus words: [%s]\n\n", cmp == 0 ? "Pass" : "Fail");
 
   bit_array_free(tmp);
@@ -1987,7 +1980,6 @@ void test_add_minus_words()
   {
     _test_add_minus_words();
   }
-*/
 
   /*
   BIT_ARRAY *arr1 = bit_array_create(0);
@@ -2036,12 +2028,10 @@ void test_add_minus_words()
   bit_array_add_word(arr1, 69, 0x1);
   printf(" sum: %s\n", bit_array_to_str_rev(arr1, str));
   */
-/*
+
   printf("\n== End of testing add/minus words ==\n\n");
 }
-*/
 
-/*
 void _test_add_minus_single_word()
 {
   // Rand number between 0-511 inclusive
@@ -2064,7 +2054,7 @@ void _test_add_minus_single_word()
 
   word_t word = rand();
 
-  char str[500];
+  char str[2000];
 
   printf("   arr: %s\n", bit_array_to_str_rev(arr, str));
   printf("  word: %s\n", bit_array_bin2str_rev(&word, 64, str));
@@ -2094,7 +2084,7 @@ void _test_minus_word_example(char *arr_str, char *word_str, int offset)
 {
   word_t wrd = word_from_str(word_str);
 
-  char str[1000];
+  char str[2000];
 
   BIT_ARRAY *arr = bit_array_create(0);
   bit_array_from_str(arr, arr_str);
@@ -2137,15 +2127,17 @@ void test_add_minus_single_word()
   printf("\n== Testing add/minus single word ==\n\n");
 
   int i;
-  for(i = 0; i < 10000; i++)
+  for(i = 0; i < 10; i++)
   {
     _test_add_minus_single_word();
   }
 
+  /*
   char *str = "10111101111111111111111111111111111111111111101111111111111111111111111011111011111111111110111111111111101111111111111111111111111111111111111111111111111101111011111111111111111111111011111110110111111101111111110011111011111111111111111111111111110111111111111111111111111111011111101111111111111111111110101111111111111111110110111111111111111111111111111111110111110111111111111111111111111111111111111111111111111111111111111111011101111111111111111111110111111111111011111101110";
   char *wrd = "0000000000000000000000000000000001110101010110010000011001111110";
 
   _test_minus_word_example(str, wrd, 475);
+  */
 
   printf("\n== End of testing add/minus single word ==\n\n");
 }
@@ -2155,7 +2147,7 @@ void test_minus_word()
   printf("== Testing minus word ==\n\n");
 
   BIT_ARRAY *arr = bit_array_create(100);
-  char tmp[500];
+  char tmp[2000];
 
   bit_array_set_region(arr, 20, 50);
   printf("arr: %s\n", bit_array_to_str_rev(arr, tmp));
@@ -2180,7 +2172,6 @@ void test_minus_word()
 
   printf("\n== End of testing minus word ==\n\n");
 }
-*/
 
 void test_copy()
 {
@@ -2249,10 +2240,6 @@ int main(int argc, char* argv[])
 
   printf("  Example operations on bit_array C library:\n\n");
 
-  // Dev: still getting errors in these functions:
-  //test_add_minus_single_word();
-
-
   // Test functions
   test_copy();
   test_arithmetic();
@@ -2279,13 +2266,11 @@ int main(int argc, char* argv[])
   test_string_functions();
   test_div();
   test_to_from_decimal();
-
-  /*
   test_product();
   test_product_divide();
   test_add_minus_words();
   test_minus_word();
-  */
+  test_add_minus_single_word();
 
   // To do
   //test_crc();

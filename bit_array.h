@@ -365,15 +365,15 @@ void bit_array_add_word(BIT_ARRAY *bitarr, bit_index_t pos, uint64_t add);
 // Coming soon
 
 // Add `add` to `bitarr` at `pos`
-// void bit_array_add_words(BIT_ARRAY *bitarr, bit_index_t pos, const BIT_ARRAY *add);
+void bit_array_add_words(BIT_ARRAY *bitarr, bit_index_t pos, const BIT_ARRAY *add);
 
 // minus `minus` from `bitarr` at `pos` -- same as:
 //   bitarr + (minus << pos)
-// char bit_array_minus_word(BIT_ARRAY *bitarr, bit_index_t pos, word_t minus);
+char bit_array_minus_word(BIT_ARRAY *bitarr, bit_index_t pos, word_t minus);
 
 // minus `minus` from `bitarr` at `pos`
-// char bit_array_minus_words(BIT_ARRAY* bitarr, bit_index_t pos,
-//                            BIT_ARRAY* minus);
+char bit_array_minus_words(BIT_ARRAY* bitarr, bit_index_t pos,
+                           BIT_ARRAY* minus);
 
 // Multiply by some value
 void bit_array_multiply(BIT_ARRAY *bitarr, uint64_t multiplier);
@@ -403,14 +403,14 @@ void bit_array_difference(BIT_ARRAY* dst,
 
 // dst = src1 * src2
 // Pointers cannot all point to the same BIT_ARRAY
-// void bit_array_product(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2);
+void bit_array_product(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2);
 
 // Results in:
 //   quotient = dividend / divisor
 //   dividend = dividend % divisor
 // (dividend is used to return the remainder)
-// void bit_array_divide(BIT_ARRAY *dividend, BIT_ARRAY *quotient,
-                      // BIT_ARRAY *divisor);
+void bit_array_divide(BIT_ARRAY *dividend, BIT_ARRAY *quotient,
+                      BIT_ARRAY *divisor);
 
 //
 // Read/Write bit_array to a file

@@ -48,6 +48,8 @@
 #include "bit_array.h"
 #include "lookup3.h"
 
+#undef DEBUG
+
 //
 // Structs
 //
@@ -341,9 +343,9 @@ void _debug_print_array(const BIT_ARRAY *bitarr)
   printf("\n");
 }
 
-#define CHECK_TOP_WORD(a) check_arr_top_word((a), __FILE__, __LINE__);
+#define VALIDATE_BIT_ARRAY(a) validate_bitarr((a), __FILE__, __LINE__);
 
-void check_arr_top_word(BIT_ARRAY *arr, char *file, int lineno)
+void validate_bitarr(BIT_ARRAY *arr, char *file, int lineno)
 {
   // Check top word is masked
   word_addr_t tw = arr->num_of_words == 0 ? 0 : arr->num_of_words - 1;
@@ -351,7 +353,7 @@ void check_arr_top_word(BIT_ARRAY *arr, char *file, int lineno)
 
   if(arr->words[tw] > BIT_MASK(top_bits))
   {
-    fprintf(stderr, "%s:%i:check_top_word(): Fail -- "
+    fprintf(stderr, "%s:%i:VALIDATE_BIT_ARRAY(): Fail -- "
                     "expected %i bits in top word[%i]:\n",
             file, lineno, (int)top_bits, (int)tw);
 
@@ -365,7 +367,7 @@ void check_arr_top_word(BIT_ARRAY *arr, char *file, int lineno)
   word_addr_t num_words = nwords(arr->num_of_bits);
   if(num_words != arr->num_of_words)
   {
-    fprintf(stderr, "%s:%i:check_top_word(): Fail -- num of words wrong "
+    fprintf(stderr, "%s:%i:VALIDATE_BIT_ARRAY(): Fail -- num of words wrong "
                     "[bits: %i, word: %i, actual words: %i]\n",
             file, lineno,
             (int)arr->num_of_bits, (int)num_words, (int)arr->num_of_words);
@@ -496,7 +498,7 @@ void _bit_array_set_word(BIT_ARRAY* bitarr, bit_index_t start, word_t word)
   _mask_top_word(bitarr);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -668,7 +670,7 @@ BIT_ARRAY* bit_array_create(bit_index_t nbits)
          (unsigned long)nbits, (unsigned long)bitarr->capacity_in_words,
          (unsigned long)nwords(nbits), (int)WORD_SIZE);
 
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 
   return bitarr;
@@ -751,7 +753,7 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
   _mask_top_word(bitarr);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 
   return 1;
@@ -796,7 +798,7 @@ void bit_array_set_bit(BIT_ARRAY* bitarr, bit_index_t b)
   SET_BIT(bitarr,b);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -808,7 +810,7 @@ void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b)
   CLEAR_BIT(bitarr, b);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -820,7 +822,7 @@ void bit_array_toggle_bit(BIT_ARRAY* bitarr, bit_index_t b)
   TOGGLE_BIT(bitarr, b);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -862,7 +864,7 @@ void bit_array_set_bits(BIT_ARRAY* bitarr, size_t n, ...)
   va_end(argptr);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -883,7 +885,7 @@ void bit_array_clear_bits(BIT_ARRAY* bitarr, size_t n, ...)
   va_end(argptr);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -904,7 +906,7 @@ void bit_array_toggle_bits(BIT_ARRAY* bitarr, size_t n, ...)
   va_end(argptr);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -924,7 +926,7 @@ void bit_array_set_region(BIT_ARRAY* bitarr,
   SET_REGION(bitarr, start, length);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -940,7 +942,7 @@ void bit_array_clear_region(BIT_ARRAY* bitarr,
   CLEAR_REGION(bitarr, start, length);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -955,7 +957,7 @@ void bit_array_toggle_region(BIT_ARRAY* bitarr,
   TOGGLE_REGION(bitarr, start, length);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -973,7 +975,7 @@ void bit_array_set_all(BIT_ARRAY* bitarr)
   _mask_top_word(bitarr);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -983,7 +985,7 @@ void bit_array_clear_all(BIT_ARRAY* bitarr)
   memset(bitarr->words, 0, bitarr->num_of_words * sizeof(word_t));
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -999,7 +1001,7 @@ void bit_array_toggle_all(BIT_ARRAY* bitarr)
   _mask_top_word(bitarr);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -1220,7 +1222,7 @@ void bit_array_sort_bits(BIT_ARRAY* bitarr)
   CLEAR_REGION(bitarr, 0, num_of_bits_cleared);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -1237,7 +1239,7 @@ void bit_array_sort_bits_rev(BIT_ARRAY* bitarr)
   SET_REGION(bitarr, 0, num_of_bits_set);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -1276,7 +1278,7 @@ void bit_array_from_substr(BIT_ARRAY* bitarr, bit_index_t offset,
   }
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -1545,7 +1547,7 @@ BIT_ARRAY* bit_array_clone(const BIT_ARRAY* bitarr)
   memcpy(cpy->words, bitarr->words, bitarr->num_of_words * sizeof(word_t));
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(cpy);
+  VALIDATE_BIT_ARRAY(cpy);
   #endif
 
   return cpy;
@@ -1641,7 +1643,7 @@ void bit_array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
   _bit_array_copy(dst, dstindx, src, srcindx, length);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(dst);
+  VALIDATE_BIT_ARRAY(dst);
   #endif
 }
 
@@ -1682,7 +1684,7 @@ void bit_array_and(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
   }
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(dst);
+  VALIDATE_BIT_ARRAY(dst);
   #endif
 }
 
@@ -1740,7 +1742,7 @@ void bit_array_or_xor(BIT_ARRAY* dst,
   }
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(dst);
+  VALIDATE_BIT_ARRAY(dst);
   #endif
 }
 
@@ -1785,7 +1787,7 @@ void bit_array_not(BIT_ARRAY* dst, const BIT_ARRAY* src)
   _mask_top_word(dst);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(dst);
+  VALIDATE_BIT_ARRAY(dst);
   #endif
 }
 
@@ -2072,7 +2074,7 @@ void bit_array_reverse_region(BIT_ARRAY* bitarr,
   }
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -2084,7 +2086,7 @@ void bit_array_reverse(BIT_ARRAY* bitarr)
   }
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -2263,7 +2265,7 @@ void bit_array_next_permutation(BIT_ARRAY* bitarr)
   }
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -2334,7 +2336,7 @@ void bit_array_interleave(BIT_ARRAY* dst, const BIT_ARRAY* src1,
   }
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(dst);
+  VALIDATE_BIT_ARRAY(dst);
   #endif
 }
 
@@ -2397,7 +2399,7 @@ void bit_array_random(BIT_ARRAY* bitarr, float prob)
   }
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -2431,7 +2433,7 @@ void bit_array_shuffle(BIT_ARRAY* bitarr)
   }
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -2678,7 +2680,7 @@ void _bit_array_arithmetic(BIT_ARRAY* dst,
   }
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(dst);
+  VALIDATE_BIT_ARRAY(dst);
   #endif
 }
 
@@ -2742,7 +2744,7 @@ void bit_array_difference(BIT_ARRAY* dst,
 void bit_array_add_word(BIT_ARRAY *bitarr, bit_index_t pos, uint64_t add)
 {
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 
   if(add == 0)
@@ -2815,7 +2817,7 @@ void bit_array_add_word(BIT_ARRAY *bitarr, bit_index_t pos, uint64_t add)
   }
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -2902,14 +2904,14 @@ void bit_array_add_words(BIT_ARRAY *bitarr, bit_index_t pos, const BIT_ARRAY *ad
   }
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
 char bit_array_minus_word(BIT_ARRAY* bitarr, bit_index_t pos, word_t minus)
 {
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 
   if(minus == 0)
@@ -2924,7 +2926,7 @@ char bit_array_minus_word(BIT_ARRAY* bitarr, bit_index_t pos, word_t minus)
     _bit_array_set_word(bitarr, pos, w - minus);
 
     #ifdef DEBUG
-    CHECK_TOP_WORD(bitarr);
+    VALIDATE_BIT_ARRAY(bitarr);
     #endif
 
     return 1;
@@ -2950,7 +2952,7 @@ char bit_array_minus_word(BIT_ARRAY* bitarr, bit_index_t pos, word_t minus)
       _bit_array_set_word(bitarr, pos, WORD_MAX - minus);
 
       #ifdef DEBUG
-      CHECK_TOP_WORD(bitarr);
+      VALIDATE_BIT_ARRAY(bitarr);
       #endif
 
       return 1;
@@ -2958,7 +2960,7 @@ char bit_array_minus_word(BIT_ARRAY* bitarr, bit_index_t pos, word_t minus)
   }
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 
   return 0;
@@ -2992,9 +2994,6 @@ char bit_array_minus_words(BIT_ARRAY* bitarr, bit_index_t pos,
   bit_index_t bitarr_top_bit_set;
   bit_array_find_last_set_bit(bitarr, &bitarr_top_bit_set);
 
-  //bit_index_t minus_top_bit_set;
-  //bit_array_find_last_set_bit(minus, &minus_top_bit_set);
-
   // subtraction by method of complements:
   // a - b = a + ~b + 1 = src1 + ~src2 +1
 
@@ -3011,7 +3010,7 @@ char bit_array_minus_words(BIT_ARRAY* bitarr, bit_index_t pos,
   bit_array_not(minus, minus);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 
   return 1;
@@ -3041,7 +3040,7 @@ void bit_array_multiply(BIT_ARRAY *bitarr, uint64_t multiplier)
   }
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 }
 
@@ -3090,7 +3089,7 @@ void bit_array_product(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2)
   }
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(dst);
+  VALIDATE_BIT_ARRAY(dst);
   #endif
 }
 
@@ -3258,8 +3257,11 @@ size_t bit_array_to_decimal(const BIT_ARRAY *bitarr, char *str, size_t len)
 
   if(i < len-1)
   {
+    // Moves null-terminator as well
     memmove(str, str+len-i-1, i+1);
   }
+
+  bit_array_free(tmp);
 
   return i;
 }
@@ -3405,7 +3407,7 @@ char bit_array_load(BIT_ARRAY* bitarr, FILE* f)
   _mask_top_word(bitarr);
 
   #ifdef DEBUG
-  CHECK_TOP_WORD(bitarr);
+  VALIDATE_BIT_ARRAY(bitarr);
   #endif
 
   return 1;
