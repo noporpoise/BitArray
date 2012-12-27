@@ -23,8 +23,13 @@ Please get in touch if you have suggestions / requests / bugs.
 Build
 =====
 
+To build the library:
+
+    make
+
 To build and run the test code:
 
+    cd dev
     make
     ./bit_array_test
 
