@@ -9,14 +9,22 @@ else
 endif
 
 CFLAGS := $(CFLAGS) -Wall -Wextra -I.
-LIBINC = -L.
 
-all: clean
-	$(CC) $(CFLAGS) -o lookup3.o -c lookup3.c
-	$(CC) $(CFLAGS) -o bit_array.o -c bit_array.c
+OBJS = lookup3.o bit_array.o
+SRCS = lookup3.c bit_array.c
+
+all: clean $(OBJS)
 	ar -csru libbitarr.a bit_array.o lookup3.o
-	$(CC) $(CFLAGS) $(LIBINC) -o bit_array_test bit_array_test.c -lbitarr
-	$(CC) $(CFLAGS) -o bit_array_generate bit_array_generate.c
+
+lookup3.o: lookup3.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+bit_array.o: bit_array.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf  *.o libbitarr.a bit_array_test bit_array_generate *.dSYM *.greg
+	rm -rf  *.o *.dSYM *.greg
+
+# Comment this line out to keep .o files
+.INTERMEDIATE: $(OBJS)
+.PHONY: all clean

@@ -36,8 +36,6 @@
 #include <string.h> // memset
 #include <stdint.h>
 
-#include "bit_array.h"
-
 uint8_t reverse(uint8_t b)
 {
   uint8_t r = 0;

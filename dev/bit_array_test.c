@@ -33,6 +33,9 @@
 #include <time.h>
 #include "bit_array.h"
 
+// Constants
+const char test_filename[] = "bitarr_example.dump";
+
 //
 // Utility functions
 //
@@ -998,11 +1001,11 @@ void test_hamming_weight()
 
 void _test_save_load(BIT_ARRAY *arr1, BIT_ARRAY *arr2)
 {
-  FILE *f = fopen("test.bitarr.bin", "w");
+  FILE *f = fopen(test_filename, "w");
 
   if(f == NULL)
   {
-    die("Couldn't open file to write: 'test.bitarr.bin'");
+    die("Couldn't open file to write: '%s'", test_filename);
   }
 
   char *tmp = (char*)malloc(sizeof(char) * (bit_array_length(arr1)+1));
@@ -1011,11 +1014,11 @@ void _test_save_load(BIT_ARRAY *arr1, BIT_ARRAY *arr2)
   bit_array_save(arr1, f);
   fclose(f);
 
-  f = fopen("test.bitarr.bin", "r");
+  f = fopen(test_filename, "r");
 
   if(f == NULL)
   {
-    die("Couldn't open file to read: 'test.bitarr.bin'");
+    die("Couldn't open file to read: '%s'", test_filename);
   }
 
   if(!bit_array_load(arr2, f))
@@ -1341,11 +1344,10 @@ void test_multiple_actions()
   printf("\n");
 
   // Test write/read file
-  char filename[] = "/tmp/bitarrtest.bits";
   FILE* f;
 
-  printf("Saving bitarray in %s\n", filename);
-  f = fopen(filename, "w");
+  printf("Saving bitarray in %s\n", test_filename);
+  f = fopen(test_filename, "w");
   bit_array_save(bitarr, f);
   fclose(f);
 
@@ -1355,8 +1357,8 @@ void test_multiple_actions()
   // Deconstruct bit array
   bit_array_free(bitarr);
 
-  printf("Loading bitarray in %s\n", filename);
-  f = fopen(filename, "r");
+  printf("Loading bitarray in %s\n", test_filename);
+  f = fopen(test_filename, "r");
   bit_array_load(bitarr, f);
   fclose(f);
 
