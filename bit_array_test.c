@@ -2057,7 +2057,7 @@ void _test_add_minus_single_word()
   char str[2000];
 
   printf("   arr: %s\n", bit_array_to_str_rev(arr, str));
-  printf("  word: %s\n", bit_array_bin2str_rev(&word, 64, str));
+  printf("  word: %s\n", bit_array_word2str_rev(&word, 64, str));
   printf("offset: %i\n", offset);
 
   // Copy
@@ -2107,7 +2107,7 @@ void _test_minus_word_example(char *arr_str, char *word_str, int offset)
 
   BIT_ARRAY *orig = bit_array_clone(arr);
 
-  printf(" word: %s\n", bit_array_bin2str_rev(&wrd, 64, str));
+  printf(" word: %s\n", bit_array_word2str_rev(&wrd, 64, str));
 
   printf(" +/- word with offset %i\n", offset);
   bit_array_add_word(arr, offset, wrd);

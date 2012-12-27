@@ -462,10 +462,10 @@ void bit_array_next_permutation(BIT_ARRAY* bitarr);
 // Generalised 'binary to string' function
 // Adds bits to the string in order of lsb to msb
 // e.g. 0b11010 (26 in decimal) would come out as "01011"
-char* bit_array_bin2str(const void *ptr, size_t num_of_bits, char *str);
+char* bit_array_word2str(const void *ptr, size_t num_of_bits, char *str);
 
 // Same as above but in reverse
-char* bit_array_bin2str_rev(const void *ptr, size_t num_of_bits, char *str);
+char* bit_array_word2str_rev(const void *ptr, size_t num_of_bits, char *str);
 
 //
 // In the pipeline:

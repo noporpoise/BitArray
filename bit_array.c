@@ -37,7 +37,7 @@
 #include <string.h> // memset
 #include <assert.h>
 #include <time.h> // needed for rand()
-#include <unistd.h>  // need for getpid()
+#include <unistd.h>  // need for getpid() for getting setting rand number
 #include <ctype.h>  // need for tolower()
 
 // Windows includes
@@ -728,9 +728,9 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
     {
       // error - could not allocate enough memory
       errno = ENOMEM;
-      //return 0;
-      printf("%s:%i: Out of memory\n", __FILE__, __LINE__);
-      exit(EXIT_FAILURE);
+      return 0;
+      //fprintf(stderr, "%s:%i: Out of memory\n", __FILE__, __LINE__);
+      //exit(EXIT_FAILURE);
     }
 
     // Need to zero new memory
@@ -757,6 +757,21 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
   #endif
 
   return 1;
+}
+
+void bit_array_resize_critical(BIT_ARRAY* bitarr, bit_index_t num_of_bits,
+                               char *file, int lineno, char *func)
+{
+  bit_index_t old_num_of_bits = bitarr->num_of_bits;
+
+  if(!bit_array_resize(bitarr, num_of_bits))
+  {
+    fprintf(stderr, "%s:%i:%s(): Ran out of memory resizing [%lu -> %lu]\n",
+            file, lineno, func,
+            (unsigned long)old_num_of_bits, (unsigned long)num_of_bits);
+    errno = ENOMEM;
+    exit(EXIT_FAILURE);
+  }
 }
 
 // If bitarr length < num_bits, resizes to num_bits
@@ -1659,13 +1674,8 @@ void bit_array_and(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 
   if(dst->num_of_bits < max_bits)
   {
-    if(!bit_array_resize(dst, max_bits))
-    {
-      fprintf(stderr, "%s:%i:bit_array_and(): Ran out of memory\n",
-              __FILE__, __LINE__);
-      errno = ENOMEM;
-      exit(EXIT_FAILURE);
-    }
+    bit_array_resize_critical(dst, max_bits, __FILE__, __LINE__,
+                              "bit_array_and");
   }
 
   word_addr_t min_words = MIN(src1->num_of_words, src2->num_of_words);
@@ -1699,13 +1709,8 @@ void bit_array_or_xor(BIT_ARRAY* dst,
 
   if(dst->num_of_bits < max_bits)
   {
-    if(!bit_array_resize(dst, max_bits))
-    {
-      fprintf(stderr, "%s:%i:bit_array_or_xor(): Ran out of memory\n",
-              __FILE__, __LINE__);
-      errno = ENOMEM;
-      exit(EXIT_FAILURE);
-    }
+    bit_array_resize_critical(dst, max_bits, __FILE__, __LINE__,
+                              "bit_array_xor");
   }
 
   word_addr_t min_words = MIN(src1->num_of_bits, src2->num_of_bits);
@@ -1762,13 +1767,8 @@ void bit_array_not(BIT_ARRAY* dst, const BIT_ARRAY* src)
 {
   if(dst->num_of_bits < src->num_of_bits)
   {
-    if(!bit_array_resize(dst, src->num_of_bits))
-    {
-      fprintf(stderr, "%s:%i:bit_array_not(): Ran out of memory\n",
-              __FILE__, __LINE__);
-      errno = ENOMEM;
-      exit(EXIT_FAILURE);
-    }
+    bit_array_resize_critical(dst, src->num_of_bits, __FILE__, __LINE__,
+                              "bit_array_not");
   }
 
   word_addr_t i;
@@ -2300,13 +2300,8 @@ void bit_array_interleave(BIT_ARRAY* dst, const BIT_ARRAY* src1,
 
   if(dst->num_of_bits < 2 * src1->num_of_bits)
   {
-    if(!bit_array_resize(dst, 2 * src1->num_of_bits))
-    {
-      fprintf(stderr, "%s:%i:bit_array_interleave(): Ran out of memory\n",
-              __FILE__, __LINE__);
-      errno = ENOMEM;
-      exit(EXIT_FAILURE);
-    }
+    bit_array_resize_critical(dst, 2 * src1->num_of_bits,
+                              __FILE__, __LINE__, "bit_array_and");
   }
 
   word_addr_t i, j;
@@ -2498,7 +2493,9 @@ void bit_array_add(BIT_ARRAY* bitarr, uint64_t value)
   }
   else if(bitarr->num_of_bits == 0)
   {
-    bit_array_resize(bitarr, WORD_SIZE - LEADING_ZEROS(value));
+    bit_array_resize_critical(bitarr, WORD_SIZE - LEADING_ZEROS(value),
+                              __FILE__, __LINE__, "bit_array_and");
+
     bitarr->words[0] = (word_t)value;
     return;
   }
@@ -2525,13 +2522,8 @@ void bit_array_add(BIT_ARRAY* bitarr, uint64_t value)
   if(carry)
   {
     // Bit array full, need another bit after all words filled
-    if(!bit_array_resize(bitarr, bitarr->num_of_words * WORD_SIZE + 1))
-    {
-      fprintf(stderr, "%s:%i:bit_array_add(): Ran out of memory\n",
-              __FILE__, __LINE__);
-      errno = ENOMEM;
-      exit(EXIT_FAILURE);
-    }
+    bit_array_resize_critical(bitarr, bitarr->num_of_words * WORD_SIZE + 1,
+                              __FILE__, __LINE__, "bit_array_add");
 
     // Set top word to 1
     bitarr->words[bitarr->num_of_words-1] = 1;
@@ -2660,13 +2652,8 @@ void _bit_array_arithmetic(BIT_ARRAY* dst,
       if(dst->num_of_words == max_words)
       {
         // Need to resize for the carry bit
-        if(!bit_array_resize(dst, dst->num_of_bits+1))
-        {
-          fprintf(stderr, "%s:%i:_bit_array_arithmetic(): Ran out of memory\n",
-                  __FILE__, __LINE__);
-          errno = ENOMEM;
-          exit(EXIT_FAILURE);
-        }
+        bit_array_resize_critical(dst, dst->num_of_bits+1,
+                                  __FILE__, __LINE__, "_bit_array_arithmetic");
       }
 
       dst->words[max_words] = (word_t)1;
@@ -2692,13 +2679,8 @@ void bit_array_sum(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 
   if(dst->num_of_bits < max_src_bits)
   {
-    if(!bit_array_resize(dst, max_src_bits))
-    {
-      fprintf(stderr, "%s:%i:bit_array_sum(): Ran out of memory\n",
-              __FILE__, __LINE__);
-      errno = ENOMEM;
-      exit(EXIT_FAILURE);
-    }
+    bit_array_resize_critical(dst, max_src_bits,
+                              __FILE__, __LINE__, "bit_array_sum");
   }
 
   _bit_array_arithmetic(dst, src1, src2, 0);
@@ -2726,13 +2708,8 @@ void bit_array_difference(BIT_ARRAY* dst,
 
   if(dst->num_of_bits < src1->num_of_bits)
   {
-    if(!bit_array_resize(dst, src1->num_of_bits))
-    {
-      fprintf(stderr, "%s:%i:bit_array_difference(): Ran out of memory\n",
-              __FILE__, __LINE__);
-      errno = ENOMEM;
-      exit(EXIT_FAILURE);
-    }
+    bit_array_resize_critical(dst, src1->num_of_bits,
+                              __FILE__, __LINE__, "bit_array_difference");
   }
 
   _bit_array_arithmetic(dst, src1, src2, 1);
@@ -2755,7 +2732,10 @@ void bit_array_add_word(BIT_ARRAY *bitarr, bit_index_t pos, uint64_t add)
   {
     // Resize and add!
     bit_index_t num_bits_required = pos + (WORD_SIZE - LEADING_ZEROS(add));
-    bit_array_resize(bitarr, num_bits_required);
+    
+    bit_array_resize_critical(bitarr, num_bits_required,
+                              __FILE__, __LINE__, "bit_array_add_word");
+
     _bit_array_set_word(bitarr, pos, (word_t)add);
     return;
   }
@@ -2804,12 +2784,14 @@ void bit_array_add_word(BIT_ARRAY *bitarr, bit_index_t pos, uint64_t add)
 
       if(addr == bitarr->num_of_words)
       {
-        bit_array_resize(bitarr, addr * WORD_SIZE + 1);
+        bit_array_resize_critical(bitarr, addr * WORD_SIZE + 1,
+                              __FILE__, __LINE__, "bit_array_add_word");
       }
       else if(addr == bitarr->num_of_words-1 &&
               bitarr->words[addr] == BIT_MASK(_bits_in_top_word(bitarr->num_of_bits)))
       {
-        bit_array_resize(bitarr, bitarr->num_of_bits + 1);
+        bit_array_resize_critical(bitarr, bitarr->num_of_bits + 1,
+                                  __FILE__, __LINE__, "bit_array_add_word");
       }
 
       bitarr->words[addr]++;
@@ -2844,7 +2826,10 @@ void bit_array_add_words(BIT_ARRAY *bitarr, bit_index_t pos, const BIT_ARRAY *ad
   {
     // Just resize and copy!
     bit_index_t num_bits_required = pos + add_top_bit_set + 1;
-    bit_array_resize(bitarr, num_bits_required);
+    
+    bit_array_resize_critical(bitarr, num_bits_required,
+                              __FILE__, __LINE__, "bit_array_add_words");
+
     _bit_array_copy(bitarr, pos, add, 0, add->num_of_bits);
     return;
   }
@@ -2882,7 +2867,8 @@ void bit_array_add_words(BIT_ARRAY *bitarr, bit_index_t pos, const BIT_ARRAY *ad
     if(i >= bitarr->num_of_words)
     {
       // Extend by a word
-      bit_array_resize(bitarr, (bit_index_t)(i+1)*WORD_SIZE+1);
+      bit_array_resize_critical(bitarr, (bit_index_t)(i+1)*WORD_SIZE+1,
+                                __FILE__, __LINE__, "bit_array_add_words");
     }
 
     word_t prev = bitarr->words[i];
@@ -3390,7 +3376,8 @@ char bit_array_load(BIT_ARRAY* bitarr, FILE* f)
   }
 
   // Resize
-  bit_array_resize(bitarr, num_bits);
+  bit_array_resize_critical(bitarr, num_bits,
+                            __FILE__, __LINE__, "bit_array_load");
 
   // Have to calculate how many bytes are needed for the file
   // (Note: this may be different from num_of_words * sizeof(word_t))
@@ -3443,7 +3430,7 @@ uint64_t bit_array_hash(const BIT_ARRAY* bitarr, uint64_t seed)
 // Generalised 'binary to string' function
 // Adds bits to the string in order of lsb to msb
 // e.g. 0b11010 (26 in decimal) would come out as "01011"
-char* bit_array_bin2str(const void *ptr, size_t num_of_bits, char *str)
+char* bit_array_word2str(const void *ptr, size_t num_of_bits, char *str)
 {
   const uint8_t* d = (const uint8_t*)ptr;
 
@@ -3457,7 +3444,7 @@ char* bit_array_bin2str(const void *ptr, size_t num_of_bits, char *str)
   return str;
 }
 
-char* bit_array_bin2str_rev(const void *ptr, size_t num_of_bits, char *str)
+char* bit_array_word2str_rev(const void *ptr, size_t num_of_bits, char *str)
 {
   const uint8_t* d = (const uint8_t*)ptr;
 
