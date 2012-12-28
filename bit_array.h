@@ -330,6 +330,8 @@ void bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t dist);
 // 0011 0000 -> 00001010
 // 1111 0000 -> 10101010
 // 0101 1010 -> 01100110
+// Extends dst if it is too short, but does not shrink it if it is too long
+// if dst is longer than length(src1)+length(src2), the end bits are not altered
 void bit_array_interleave(BIT_ARRAY* dst,
                           const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 

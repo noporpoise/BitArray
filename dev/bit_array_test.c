@@ -36,6 +36,26 @@
 // Constants
 const char test_filename[] = "bitarr_example.dump";
 
+#define MAX(x,y) ((x) >= (y) ? (x) : (y))
+
+//
+// Tests
+//
+char *suite_name;
+char suite_pass;
+int suites_run = 0, suites_failed = 0;
+
+#define QUOTE(str) #str
+#define ASSERT(x) if(!(x)) \
+  {warn("failed assert [%s:%i] %s", __FILE__, __LINE__, QUOTE(x)); \
+   suite_pass = 0;}
+
+#define SUITE_START(x) {suite_pass = 1; suite_name = x; suites_run++;}
+
+#define SUITE_END() printf("Testing %s: %s\n", \
+                           suite_name, suite_pass ? "Pass" : "Fail"); \
+                    if(!suite_pass) { suites_failed++;}
+
 //
 // Utility functions
 //
@@ -174,54 +194,50 @@ void test_arithmetic()
   printf("== End of testing arithmetic ==\n\n");
 }
 
-void _print_first_last_bit_set(BIT_ARRAY* arr)
+void _check_first_last_bit_set(BIT_ARRAY* arr, char not_zero,
+                               bit_index_t first, bit_index_t last)
 {
-  bit_index_t first_bit = 65, last_bit = 65;
+  bit_index_t first_bit = 0, last_bit = 0;
 
   char bit_set = bit_array_find_first_set_bit(arr, &first_bit);
   bit_array_find_last_set_bit(arr, &last_bit);
 
-  if(bit_set)
-    printf("First bit set: %i, last bit set: %i\n", (int)first_bit, (int)last_bit);
+  ASSERT(not_zero == bit_set);
+
+  if(not_zero)
+  {
+    ASSERT(first_bit == first);
+    ASSERT(last_bit == last);
+  }
   else
-    printf("First bit set: -, last bit set: -\n");
+  {
+    ASSERT(first_bit == 0);
+    ASSERT(last_bit == 0);
+  }
 }
 
 
 void test_first_last_bit_set()
 {
-  printf("== testing first and last bit set ==\n");
+  SUITE_START("first/last bit set");
 
-  char tmp[101];
   BIT_ARRAY* arr = bit_array_create(100);
+  _check_first_last_bit_set(arr, 0, 0, 0);
 
-  printf("Initialise 100:\n");
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-
-  printf("Set bits 0,5,24,64,80,99:\n");
   bit_array_set_bits(arr, 6, 0, 5, 24, 64, 80, 99);
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-  _print_first_last_bit_set(arr);
+  _check_first_last_bit_set(arr, 1, 0, 99);
 
-  printf("Clear bits 0,99:\n");
   bit_array_clear_bits(arr, 2, 0, 99);
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-  _print_first_last_bit_set(arr);
+  _check_first_last_bit_set(arr, 1, 5, 80);
 
-  printf("Clear bits 5,80:\n");
   bit_array_clear_bits(arr, 2, 5, 80);
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-  _print_first_last_bit_set(arr);
+  _check_first_last_bit_set(arr, 1, 24, 64);
 
-  printf("Clear bits 24,64:\n");
   bit_array_clear_bits(arr, 2, 24, 64);
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-  _print_first_last_bit_set(arr);
+  _check_first_last_bit_set(arr, 0, 0, 0);
 
-  printf("Set only bit 0:\n");
   bit_array_set_bit(arr, 0);
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-  _print_first_last_bit_set(arr);
+  _check_first_last_bit_set(arr, 1, 0, 0);
 
   const int len = 9;
   bit_index_t set[] = {0, 1, 31, 62, 63, 64, 65, 98, 99};
@@ -230,116 +246,115 @@ void test_first_last_bit_set()
   for(i = 0; i < len; i++)
   {
     bit_index_t pos = set[i];
-    printf("Set only bit %i:\n", (int)pos);
     bit_array_clear_all(arr);
     bit_array_set_bit(arr, pos);
-    printf("arr: %s\n", bit_array_to_str(arr, tmp));
-    _print_first_last_bit_set(arr);
+    _check_first_last_bit_set(arr, 1, pos, pos);
   }
 
   bit_array_free(arr);
 
-  printf("== End of testing first and last bit set ==\n\n");
+  SUITE_END();
 }
 
 void test_parity()
 {
-  printf("== testing parity ==\n");
+  SUITE_START("parity");
 
-  char tmp[101];
   BIT_ARRAY* arr = bit_array_create(100);
 
-  printf("Initialise 100:\n");
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-  printf("  parity: %i\n", (int)bit_array_parity(arr));
+  ASSERT(bit_array_parity(arr) == 0);
 
-  printf("Set bits 0,5,24,64,80,99:\n");
   bit_array_set_bits(arr, 6, 0, 5, 24, 64, 80, 99);
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-  printf("  parity: %i\n", (int)bit_array_parity(arr));
+  ASSERT(bit_array_parity(arr) == 0);
 
-  printf("Clear bits 24:\n");
   bit_array_clear_bit(arr, 24);
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-  printf("  parity: %i\n", (int)bit_array_parity(arr));
+  ASSERT(bit_array_parity(arr) == 1);
 
-  printf("Clear bits 99:\n");
   bit_array_clear_bit(arr, 99);
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-  printf("  parity: %i\n", (int)bit_array_parity(arr));
+  ASSERT(bit_array_parity(arr) == 0);
 
-  printf("Clear bits 0:\n");
   bit_array_clear_bit(arr, 0);
-  printf("arr: %s\n", bit_array_to_str(arr, tmp));
-  printf("  parity: %i\n", (int)bit_array_parity(arr));
+  ASSERT(bit_array_parity(arr) == 1);
 
   bit_array_free(arr);
 
-  printf("== End of testing parity ==\n\n");
+  SUITE_END();
+}
+
+void _test_interleave(BIT_ARRAY* result, BIT_ARRAY *arr1, BIT_ARRAY *arr2)
+{
+  bit_array_interleave(result, arr1, arr2);
+
+  size_t result_len = bit_array_length(result);
+  char *result_str = malloc(result_len+1);
+  bit_array_to_str(result, result_str);
+
+  size_t len1 = bit_array_length(arr1);
+  size_t len2 = bit_array_length(arr2);
+
+  char *correct = malloc(result_len+1);
+  memset(correct, '0', sizeof(char) * result_len);
+  correct[result_len] = '\0';
+
+  size_t i, j = 0;
+  size_t len = MAX(len1,len2);
+  for(i = 0; i < len; i++)
+  {
+    if(i < len1)
+      correct[j++] = bit_array_get_bit(arr1, i) ? '1' : '0';
+ 
+    if(i < len2)
+      correct[j++] = bit_array_get_bit(arr2, i) ? '1' : '0';
+  }
+
+  ASSERT(strcmp(correct, result_str) == 0);
+
+  if(strcmp(correct, result_str) != 0)
+  {
+    // debug output
+    printf("corr: %s\n", correct);
+    printf("got : %s\n", result_str);
+  }
+
+  free(correct);
+  free(result_str);
 }
 
 void test_interleave()
 {
-  printf("== testing interleave ==\n");
+  SUITE_START("interleave");
 
-  char tmp[201];
   BIT_ARRAY* arr1 = bit_array_create(10);
   BIT_ARRAY* arr2 = bit_array_create(10);
   BIT_ARRAY* result = bit_array_create(0);
 
-  printf("--\n");
   bit_array_set_all(arr1);
-  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
-  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
-  printf("Interleave:\n");
-  bit_array_interleave(result, arr1, arr2);
-  printf("result: %s\n", bit_array_to_str(result, tmp));
+  _test_interleave(result, arr1, arr2);
 
-  printf("--\n");
   bit_array_clear_all(arr1);
   bit_array_set_all(arr2);
   bit_array_resize(result, 25);
-  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
-  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
-  printf("tmp: %s\n", bit_array_to_str(result, tmp));
-  printf("Interleave:\n");
-  bit_array_interleave(result, arr1, arr2);
-  printf("result: %s\n", bit_array_to_str(result, tmp));
+  _test_interleave(result, arr1, arr2);
 
-  printf("--\n");
   bit_array_set_all(arr1);
   bit_array_set_all(arr2);
-  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
-  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
-  printf("Interleave:\n");
-  bit_array_interleave(result, arr1, arr2);
-  printf("result: %s\n", bit_array_to_str(result, tmp));
+  _test_interleave(result, arr1, arr2);
 
-  printf("--\n");
   bit_array_clear_all(arr1);
   bit_array_clear_all(arr2);
-  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
-  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
-  printf("Interleave:\n");
-  bit_array_interleave(result, arr1, arr2);
-  printf("result: %s\n", bit_array_to_str(result, tmp));
+  _test_interleave(result, arr1, arr2);
 
-  printf("--\n");
   bit_array_resize(arr1, 100);
   bit_array_resize(arr2, 100);
   bit_array_clear_all(arr1);
   bit_array_set_all(arr2);
-  printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
-  printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
-  printf("Interleave:\n");
-  bit_array_interleave(result, arr1, arr2);
-  printf("result: %s\n", bit_array_to_str(result, tmp));
+  _test_interleave(result, arr1, arr2);
 
   bit_array_free(arr1);
   bit_array_free(arr2);
   bit_array_free(result);
 
-  printf("== End of testing interleave ==\n\n");
+  SUITE_END();
 }
 
 void test_compare()
@@ -463,23 +478,26 @@ void _test_reverse(int len)
   bit_array_random(arr, 0.5);
 
   bit_array_to_str(arr, str);
-  printf("  orig: %s\n", str);
-
   reverse_str(str);
 
   bit_array_reverse(arr);
   bit_array_to_str(arr, str2);
 
-  printf("strrev: %s\n", str);
-  printf("arrrev: %s\n", str2);
-  printf("    [%s]\n", strcmp(str, str2) == 0 ? "Pass" : "Fail");
+  ASSERT(strcmp(str, str2) == 0);
+
+  if(strcmp(str, str2) != 0)
+  {
+    // debug output
+    printf("strrev: %s\n", str);
+    printf("arrrev: %s\n", str2);
+  }
 
   bit_array_free(arr);
 }
 
 void test_reverse()
 {
-  printf("== Testing reverse ==\n");
+  SUITE_START("reverse");
 
   _test_reverse(0);
   _test_reverse(10);
@@ -490,90 +508,70 @@ void test_reverse()
   _test_reverse(128);
   _test_reverse(506);
 
-  printf("== End of testing reverse ==\n\n");
+  SUITE_END();
+}
+
+void _test_toggle_region(BIT_ARRAY *arr, size_t start, size_t region_len)
+{
+  bit_index_t len = bit_array_length(arr);
+  char *str1 = (char*)malloc(len+1);
+  bit_array_to_str(arr, str1);
+
+  // Toggle string
+  size_t i;
+  for(i = start; i < start+region_len; i++)
+  {
+    str1[i] = (str1[i] == '1' ? '0' : '1');
+  }
+
+  // Toggle array
+  char *str2 = (char*)malloc(len+1);
+  bit_array_toggle_region(arr, start, region_len);
+  bit_array_to_str(arr, str2);
+
+  ASSERT(strcmp(str1, str2) == 0);
+
+  free(str1);
+  free(str2);
 }
 
 void test_toggle()
 {
-  printf("== Testing toggle ==\n");
+  SUITE_START("toggle");
 
   BIT_ARRAY* arr = bit_array_create(0);
-  char str[200];
+  _test_toggle_region(arr, 0, 0);
 
-  printf("Initialise length 0; toggle all\n");
-  bit_array_toggle_all(arr);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("Initialise length 0; toggle region 0-0\n");
-  bit_array_toggle_region(arr, 0, 0);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("resize length 10; set bits 2,3,6,9\n");
   bit_array_resize(arr, 10);
   bit_array_set_bits(arr, 4, 2,3,6,9);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
+  _test_toggle_region(arr, 3, 6);
+  _test_toggle_region(arr, 0, 10);
 
-  printf("Toggle region 3-8 [start: 3, len:6]\n");
-  bit_array_toggle_region(arr, 3, 6);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("Toggle all\n");
-  bit_array_toggle_all(arr);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("resize length 80; set bits 0,20,50,62,64,70,75,79\n");
   bit_array_resize(arr, 80);
   bit_array_set_bits(arr, 8, 0,20,50,62,64,70,75,79);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
+  _test_toggle_region(arr, 25, 50);
 
-  printf("Toggle region 20-74 [start: 25, len:50]\n");
-  bit_array_toggle_region(arr, 25, 50);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("Resize 100; reset\n");
   bit_array_resize(arr, 100);
   bit_array_clear_all(arr);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
+  _test_toggle_region(arr, 0, 100);
+  _test_toggle_region(arr, 0, 0);
+  _test_toggle_region(arr, 1, 1);
+  _test_toggle_region(arr, 3, 1);
+  _test_toggle_region(arr, 20, 80);
+  _test_toggle_region(arr, 0, 64);
+  _test_toggle_region(arr, 64, 36);
 
-  printf("Toggle bits 0,2,3\n");
-  bit_array_toggle_bits(arr, 3, 0,2,3);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("Toggle all\n");
-  bit_array_toggle_all(arr);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("toggle 0,100:\n");
-  bit_array_toggle_region(arr,0,100);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("toggle 0,0:\n");
-  bit_array_toggle_region(arr,0,0);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("toggle 1,1:\n");
-  bit_array_toggle_region(arr,1,1);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("toggle 3,1:\n");
-  bit_array_toggle_region(arr,3,1);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("toggle 20,80:\n");
-  bit_array_toggle_region(arr,20,80);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("toggle 0,64:\n");
-  bit_array_toggle_region(arr,0,64);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("toggle 64,26:\n");
-  bit_array_toggle_region(arr,64,36);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
+  int i;
+  for(i = 0; i < 1000; i += 50)
+  {
+    bit_array_resize(arr, i);
+    bit_array_random(arr, 0.5);
+    _test_toggle_region(arr, i / 2, i - i / 2);
+  }
 
   bit_array_free(arr);
 
-  printf("== End of testing toggle ==\n\n");
+  SUITE_END();
 }
 
 
@@ -999,6 +997,7 @@ void test_hamming_weight()
   printf("== End of testing hamming weight ==\n\n");
 }
 
+// Saves arr1 to file, then reloads it into arr2 and compares them
 void _test_save_load(BIT_ARRAY *arr1, BIT_ARRAY *arr2)
 {
   FILE *f = fopen(test_filename, "w");
@@ -1008,9 +1007,8 @@ void _test_save_load(BIT_ARRAY *arr1, BIT_ARRAY *arr2)
     die("Couldn't open file to write: '%s'", test_filename);
   }
 
-  char *tmp = (char*)malloc(sizeof(char) * (bit_array_length(arr1)+1));
-  printf("%s\n", bit_array_to_str(arr1, tmp));
-
+  // char *tmp = (char*)malloc(sizeof(char) * (bit_array_length(arr1)+1));
+  // printf("%s\n", bit_array_to_str(arr1, tmp));
   bit_array_save(arr1, f);
   fclose(f);
 
@@ -1023,49 +1021,65 @@ void _test_save_load(BIT_ARRAY *arr1, BIT_ARRAY *arr2)
 
   if(!bit_array_load(arr2, f))
   {
-    warn("Load returned warning");
+    die("Load returned warning [file: %s]", test_filename);
   }
 
   fclose(f);
 
-  if(bit_array_cmp(arr1, arr2) != 0)
-  {
-    printf("1>%s\n", bit_array_to_str(arr1, tmp));
-    printf("2>%s\n", bit_array_to_str(arr2, tmp));
-    die("Failed save/load");
-  }
+  ASSERT(bit_array_cmp(arr1, arr2) == 0);
 
-  free(tmp);
+  if(bit_array_cmp(arr1, arr2) != 0 && bit_array_length(arr1) < 500)
+  {
+    // debug output
+    bit_index_t len = MAX(bit_array_length(arr1), bit_array_length(arr2));
+    char *tmp = (char*)malloc(sizeof(char) * (len+1));
+
+    printf("out: %s\n", bit_array_to_str(arr1, tmp));
+    printf("in : %s\n", bit_array_to_str(arr2, tmp));
+
+    free(tmp);
+  }
 }
 
 void test_save_load()
 {
-  printf("== Testing save / load ==\n");
+  // printf("== Testing save / load ==\n");
+  SUITE_START("load and save");
 
   BIT_ARRAY* arr1 = bit_array_create(0);
   BIT_ARRAY* arr2 = bit_array_create(0);
 
-  printf("1) Empty:\n");
+  // Empty array
   _test_save_load(arr1, arr2);
 
-  printf("2) ten 0s:\n");
+  // Ten 0s
   bit_array_resize(arr1, 10);
   _test_save_load(arr1, arr2);
 
-  printf("3) thousand 1s:\n");
+  // Thousand 1s:
   bit_array_resize(arr1, 1000);
   bit_array_set_all(arr1);
   _test_save_load(arr1, arr2);
 
-  printf("4) 1100111010:\n");
+  // 1100111010
   bit_array_resize(arr1, 10);
   bit_array_clear_bits(arr1, 4, 2,3,7,9);
   _test_save_load(arr1, arr2);
 
+  // 100 x random lengths and bits
+  int i;
+  for(i = 0; i < 100; i++)
+  {
+    bit_array_resize(arr1, (double)rand()*5000 / RAND_MAX);
+    bit_array_random(arr1, 0.5);
+    _test_save_load(arr1, arr2);
+  }
+
   bit_array_free(arr1);
   bit_array_free(arr2);
 
-  printf("== End of testing save / load ==\n\n");
+  SUITE_END();
+  // printf("== End of testing save / load ==\n\n");
 }
 
 //
@@ -1413,7 +1427,9 @@ void test_string_functions()
   printf("== End of testing string functions ==\n\n");
 }
 
-void _test_hex_functions(BIT_ARRAY *arr, const char* hex, int offset, char upper)
+// Convert string of hex to bit array and back, then compare
+void _test_hex_functions(BIT_ARRAY *arr, const char* hex, int offset, char upper,
+                         const char* correct)
 {
   char tmp_buf[1000];
   char *tmp = tmp_buf;
@@ -1425,41 +1441,52 @@ void _test_hex_functions(BIT_ARRAY *arr, const char* hex, int offset, char upper
     tmp = tmp_buf + 2;
   }
 
+  // Reset BIT_ARRAY by resizing to zero
   bit_array_resize(arr, 0);
-  printf(" Hex: %s; offset: %i\n", hex, offset);
+  // printf(" Hex: %s; offset: %i\n", hex, offset);
   bit_array_from_hex(arr, offset, hex, strlen(hex));
-  printf(" bit_array_to_hex: %s\n", bit_array_to_str(arr, tmp));
+  // printf(" bit_array_to_hex: %s\n", bit_array_to_str(arr, tmp));
 
   bit_array_to_hex(arr, offset, bit_array_length(arr)-offset, tmp, upper);
-  printf(" bit_array_to_hex: 0x%s\n", tmp);
+  // printf(" bit_array_to_hex: 0x%s\n", tmp);
 
-  printf(" bit_array_print_hex: 0x");
-  bit_array_print_hex(arr, offset, bit_array_length(arr)-offset, stdout, upper);
-  printf("\n");
+  // printf(" bit_array_print_hex: 0x");
+  // bit_array_print_hex(arr, offset, bit_array_length(arr)-offset, stdout, upper);
+  // printf("\n");
 
-  if(strcasecmp(hex, tmp_buf) != 0)
+  ASSERT(strcmp(tmp_buf, correct) == 0);
+
+  if(strcmp(tmp_buf, correct) != 0)
   {
-    printf("Warning: mismatching hex '%s' vs '%s'\n", tmp_buf, hex);
+    printf("in : %s\n", hex);
+    printf("out: %s\n", tmp_buf);
+    printf("cor: %s\n\n", correct);
   }
 }
 
 // bit_array_from_hex(), bit_array_to_hex(), bit_array_print_hex()
 void test_hex_functions()
 {
-  printf("== Testing hex functions ==\n");
+//  printf("== Testing hex functions ==\n");
+  SUITE_START("hex functions");
 
   BIT_ARRAY *arr = bit_array_create(0);
 
   bit_array_resize(arr, 0);
-  _test_hex_functions(arr, "123456789ABcDeF0", 0, 0);
-  _test_hex_functions(arr, "123456789ABcDeF0", 0, 1); // uppercase
-  _test_hex_functions(arr, "0x123456789ABcDeF0", 0, 0);
-  _test_hex_functions(arr, "0x123456789ABcDeF0", 0, 1); // uppercase
-  _test_hex_functions(arr, "0x123456789Agadsfasdf", 0, 0);
-  _test_hex_functions(arr, "0x123456789ABcDeF0", 1, 0);
-  _test_hex_functions(arr, "0x123456789ABcDeF0", 40, 0);
+  // lowercase then uppercase
+  _test_hex_functions(arr, "123456789ABcDeF0", 0, 0, "123456789abcdef0");
+  _test_hex_functions(arr, "123456789ABcDeF0", 0, 1, "123456789ABCDEF0");
 
-  printf("== End of testing hex functions ==\n\n");
+  _test_hex_functions(arr, "0x123456789ABcDeF0", 0, 0, "0x123456789abcdef0");
+  _test_hex_functions(arr, "0x123456789ABcDeF0", 0, 1, "0x123456789ABCDEF0");
+
+  _test_hex_functions(arr, "0x123456789Agadsfasdf", 0, 0, "0x123456789a");
+
+  _test_hex_functions(arr, "0x123456789ABcDeF0", 1, 0, "0x123456789abcdef0");
+  _test_hex_functions(arr, "0x123456789ABcDeF0", 40, 0, "0x123456789abcdef0");
+
+  SUITE_END();
+//  printf("== End of testing hex functions ==\n\n");
 }
 
 void _test_nums(BIT_ARRAY *arr, char *tmp, unsigned long true_value)
@@ -1514,13 +1541,13 @@ void _test_add_word_small(unsigned long init, unsigned long add, int offset)
 {
   BIT_ARRAY *arr1 = bit_array_create(0);
   BIT_ARRAY *arr2 = bit_array_create(0);
-  char tmp[100];
+//  char tmp[100];
 
   uint64_t a, b, result;
 
-  printf(" Add %lu, %lu [offset: %i]\n", init, add, offset);
+  // printf(" Add %lu, %lu [offset: %i]\n", init, add, offset);
   bit_array_add(arr1, init);
-  printf("  init: %s\n", bit_array_to_str(arr1, tmp));
+  // printf("  init: %s\n", bit_array_to_str(arr1, tmp));
   bit_array_as_num(arr1, &a);
 
   bit_array_add(arr2, add);
@@ -1529,7 +1556,7 @@ void _test_add_word_small(unsigned long init, unsigned long add, int offset)
     bit_array_resize(arr2, bit_array_length(arr2)+offset);
     bit_array_shift_left(arr2, offset, 0);
   }
-  printf("  add : %s\n", bit_array_to_str(arr2, tmp));
+  // printf("  add : %s\n", bit_array_to_str(arr2, tmp));
   bit_array_as_num(arr2, &b);
 
   if(b != add << offset)
@@ -1538,12 +1565,14 @@ void _test_add_word_small(unsigned long init, unsigned long add, int offset)
   }
 
   bit_array_add_word(arr1, offset, add);
-  printf("  sum : %s\n", bit_array_to_str(arr1, tmp));
+  // printf("  sum : %s\n", bit_array_to_str(arr1, tmp));
   bit_array_as_num(arr1, &result);
 
-  printf("  %lu + %lu = %lu [%s]\n",
-         (unsigned long)a, (unsigned long)b, (unsigned long)result,
-         (a + b == result ? "Pass" : "Fail"));
+  ASSERT(a + b == result);
+
+  // printf("  %lu + %lu = %lu [%s]\n",
+  //        (unsigned long)a, (unsigned long)b, (unsigned long)result,
+  //        (a + b == result ? "Pass" : "Fail"));
 
   bit_array_free(arr1);
   bit_array_free(arr2);
@@ -1551,7 +1580,7 @@ void _test_add_word_small(unsigned long init, unsigned long add, int offset)
 
 void test_add_word()
 {
-  printf("== Testing add word ==\n\n");
+  SUITE_START("add word");
 
   _test_add_word_small(0, 3, 0);
   _test_add_word_small(0, 3, 1);
@@ -1565,7 +1594,7 @@ void test_add_word()
 
   _test_add_word_small(ULONG_MAX-(1<<4), 1, 4);
 
-  printf("== End of testing add word ==\n\n");
+  SUITE_END();
 }
 
 void _test_add_words(unsigned long a, unsigned long b, int offset)
@@ -1638,46 +1667,38 @@ void _test_multiply_small(uint64_t a, uint64_t b)
   bit_array_multiply(arr, b);
   bit_array_as_num(arr, &product);
 
-  printf("%lu * %lu = %lu [%s]\n",
-         (unsigned long)a, (unsigned long)b, (unsigned long)product,
-         (a*b == product ? "Pass" : "Fail"));
+  ASSERT(a * b == product);
+
+  if(a * b != product)
+  {
+    // debug output
+    printf("%lu * %lu = %lu [expected: %lu]\n", (unsigned long)a,
+           (unsigned long)b, (unsigned long)product, (unsigned long)(a * b));
+  }
 
   bit_array_free(arr);
 }
 
 void test_multiply()
 {
-  printf("== Testing multiply ==\n");
+  SUITE_START("small multiply");
 
-  _test_multiply_small(2,4);
-  _test_multiply_small(4,2);
-  _test_multiply_small(3,6);
-  _test_multiply_small(9,256);
-  _test_multiply_small(10,100);
-  _test_multiply_small(0,0);
-  _test_multiply_small(10,0);
-  _test_multiply_small(0,10);
+  _test_multiply_small(2, 4);
+  _test_multiply_small(4, 2);
+  _test_multiply_small(3, 6);
+  _test_multiply_small(9, 256);
+  _test_multiply_small(10, 100);
+  _test_multiply_small(0, 0);
+  _test_multiply_small(10, 0);
+  _test_multiply_small(0, 10);
 
-  BIT_ARRAY *arr = bit_array_create(0);
-  char tmp[1000];
-  bit_array_add(arr, ULONG_MAX);
-  bit_array_shift_left(arr, 2, 0);
-  bit_array_to_substr(arr, 0, bit_array_length(arr), tmp, '1', '0', 0);
-  printf("  data: 0b%s\n", tmp);
-  bit_array_multiply(arr, 6);
-  bit_array_to_substr(arr, 0, bit_array_length(arr), tmp, '1', '0', 0);
-  printf("   x 6: 0b%s\n", tmp);
-  bit_array_free(arr);
-
-
-  printf("== End of testing multiply ==\n\n");
+  SUITE_END();
 }
 
-void _test_product(uint64_t a, uint64_t b)
+void _test_small_product(uint64_t a, uint64_t b, char expect_overflow)
 {
   BIT_ARRAY *arr1 = bit_array_create(0);
   BIT_ARRAY *arr2 = bit_array_create(0);
-  char tmp[1000];
 
   int i;
   for(i = 0; i < 2; i++)
@@ -1687,25 +1708,30 @@ void _test_product(uint64_t a, uint64_t b)
     bit_array_add(arr1, a);
     bit_array_add(arr2, b);
 
-    printf(" a: %s\n", bit_array_to_str(arr1, tmp));
-    printf(" b: %s\n", bit_array_to_str(arr2, tmp));
-
-    BIT_ARRAY *result = i == 0 ? arr1 : arr2;
+    BIT_ARRAY *result = (i == 0 ? arr1 : arr2);
 
     bit_array_product(result, arr1, arr2);
 
-    printf("  = %s\n", bit_array_to_str(result, tmp));
+    // printf("  = %s\n", bit_array_to_str(result, tmp));
 
     uint64_t c;
-    if(bit_array_as_num(result, &c))
+    char overflowed = !bit_array_as_num(result, &c);
+
+    ASSERT(expect_overflow == overflowed);
+
+    if(!expect_overflow)
     {
-      printf("  %lu * %lu = %lu [%s]\n",
-             (unsigned long)a, (unsigned long)b, (unsigned long)c,
-             (a*b == c ? "Pass" : "Fail"));
+      ASSERT(a*b == c);
     }
-    else
+
+    if(expect_overflow != overflowed || (!expect_overflow && a*b != c))
     {
-      printf("  %lu * %lu overflowed\n", (unsigned long)a, (unsigned long)b);
+      // debug output
+      printf("expect: %lu * %lu = %lu [overflow: %s]\n",
+             (unsigned long)a, (unsigned long)b, (unsigned long)(a*b),
+             expect_overflow ? "yes" : "no");
+      printf("got: %lu [overflow: %s]\n", (unsigned long)c,
+             overflowed ? "yes" : "no");
     }
   }
 
@@ -1713,40 +1739,20 @@ void _test_product(uint64_t a, uint64_t b)
   bit_array_free(arr2);
 }
 
-void test_product()
+void test_small_products()
 {
-  printf("== Testing product ==\n\n");
+  SUITE_START("product with small numbers");
 
-  _test_product(1, 1);
-  _test_product(0, 1);
-  _test_product(0, 0);
-  _test_product(2, 2);
-  _test_product(3, 9);
+  _test_small_product(1, 1, 0);
+  _test_small_product(0, 1, 0);
+  _test_small_product(0, 0, 0);
+  _test_small_product(2, 2, 0);
+  _test_small_product(3, 9, 0);
+  _test_small_product(3, 90000, 0);
+  _test_small_product(300000, 90000, 0);
+  _test_small_product(123456789123132, 9876543212351234, 1);
 
-  BIT_ARRAY *arr1 = bit_array_create(0);
-  BIT_ARRAY *arr2 = bit_array_create(0);
-
-  bit_array_resize(arr1, 200);
-  bit_array_set_region(arr1, 0, 150);
-
-  bit_array_add(arr2, 12);
-
-  printf("a: ");
-  bit_array_print_substr(arr1, 0, bit_array_length(arr1), stdout, '1', '0', 0);
-  printf("\n");
-  printf("b: ");
-  bit_array_print_substr(arr2, 0, bit_array_length(arr2), stdout, '1', '0', 0);
-  printf("\n");
-
-  bit_array_product(arr1, arr1, arr2);
-  printf(" = ");
-  bit_array_print_substr(arr1, 0, bit_array_length(arr1), stdout, '1', '0', 0);
-  printf("\n");
-
-  bit_array_free(arr1);
-  bit_array_free(arr2);
-
-  printf("== End of testing product ==\n\n");
+  SUITE_END();
 }
 
 void _test_div(uint64_t nom, uint64_t denom)
@@ -1759,17 +1765,23 @@ void _test_div(uint64_t nom, uint64_t denom)
   bit_array_div(nom_arr, denom, &rem);
   bit_array_as_num(nom_arr, &quotient);
 
-  printf("%lu = %lu * %lu + %lu [%s]\n",
-         (unsigned long)nom, (unsigned long)quotient,
-         (unsigned long)denom, (unsigned long)rem,
-         (quotient * denom + rem == nom ? "Pass" : "Fail"));
+  ASSERT(quotient * denom + rem == nom);
+
+  if(quotient * denom + rem != nom)
+  {
+    // Debug output
+    printf("%lu = %lu * %lu + %lu [%s]\n",
+           (unsigned long)nom, (unsigned long)quotient,
+           (unsigned long)denom, (unsigned long)rem,
+           (quotient * denom + rem == nom ? "Pass" : "Fail"));
+  }
 
   bit_array_free(nom_arr);
 }
 
 void test_div()
 {
-  printf("== Testing bit_array_div ==\n\n");
+  SUITE_START("bit_array_div");
 
   _test_div(10, 2);
   _test_div(100, 100);
@@ -1781,7 +1793,7 @@ void test_div()
   _test_div(9, 9);
   _test_div(10000000, 13);
 
-  printf("\n== End of testing bit_array_div ==\n\n");
+  SUITE_END();
 }
 
 void _test_to_from_decimal(char *str)
@@ -1791,20 +1803,20 @@ void _test_to_from_decimal(char *str)
   BIT_ARRAY *bitarr = bit_array_create(0);
 
   bit_array_from_decimal(bitarr, str);
-
-  // char tmp[100];
-  // bit_array_to_substr(bitarr, 0, bit_array_length(bitarr), tmp, '1', '0', 0);
-  // printf("arr: %s\n", tmp);
-
   bit_array_to_decimal(bitarr, new_str, len+1);
 
-  printf("%s -> %s [%s]\n", str, new_str,
-         (atoi(str) == atoi(new_str)) ? "Pass" : "Fail");
+  ASSERT(atoi(str) == atoi(new_str));
+
+  if(atoi(str) != atoi(new_str))
+  {
+    // debug output
+    printf("%s -> %s\n", str, new_str);
+  }
 }
 
 void test_to_from_decimal()
 {
-  printf("== Testing to / from decimal ==\n\n");
+  SUITE_START("to/from decimal");
 
   _test_to_from_decimal("1");
   _test_to_from_decimal("0");
@@ -1812,7 +1824,7 @@ void test_to_from_decimal()
   _test_to_from_decimal("5678");
   _test_to_from_decimal("012");
 
-  printf("\n== End of testing to / from decimal ==\n\n");
+  SUITE_END();
 }
 
 void _test_product_divide()
@@ -1852,14 +1864,6 @@ void _test_product_divide()
     }
   }
 
-  printf("              arr:");
-  bit_array_print_substr(arr, 0, bit_array_length(arr), stdout, '1', '0', 0);
-  printf("\n");
-
-  printf("          divisor:");
-  bit_array_print_substr(divisor, 0, bit_array_length(divisor), stdout, '1', '0', 0);
-  printf("\n");
-
   // Copy
   BIT_ARRAY *tmp = bit_array_clone(arr);
   BIT_ARRAY *quotient = bit_array_create(0);
@@ -1867,27 +1871,14 @@ void _test_product_divide()
   // Divide
   bit_array_divide(tmp, quotient, divisor);
 
-  printf("         quotient:");
-  bit_array_print_substr(quotient, 0, bit_array_length(quotient), stdout, '1', '0', 0);
-  printf("\n");
-  printf("              rem:");
-  bit_array_print_substr(tmp, 0, bit_array_length(tmp), stdout, '1', '0', 0);
-  printf("\n");
-
   // Multiply and add
   bit_array_product(quotient, quotient, divisor);
   bit_array_sum(tmp, tmp, quotient);
 
-  printf("       quot * div:");
-  bit_array_print_substr(quotient, 0, bit_array_length(quotient), stdout, '1', '0', 0);
-  printf("\n");
-  printf(" quot * div + rem:");
-  bit_array_print_substr(tmp, 0, bit_array_length(tmp), stdout, '1', '0', 0);
-  printf("\n");
-
   // Compare
-  int cmp = bit_array_cmp_words(tmp, 0, arr);
-  printf("product & divide: [%s]\n\n", cmp == 0 ? "Pass" : "Fail");
+  ASSERT(bit_array_cmp_words(tmp, 0, arr) == 0);
+  // int cmp = bit_array_cmp_words(tmp, 0, arr);
+  // printf("product & divide: [%s]\n\n", cmp == 0 ? "Pass" : "Fail");
 
   bit_array_free(tmp);
   bit_array_free(quotient);
@@ -1898,7 +1889,7 @@ void _test_product_divide()
 
 void test_product_divide()
 {
-  printf("== Testing product and divide ==\n\n");
+  SUITE_START("product and divide");
 
   int i;
   for(i = 0; i < 10; i++)
@@ -1906,7 +1897,7 @@ void test_product_divide()
     _test_product_divide();
   }
 
-  printf("== End of testing product and divide ==\n\n");
+  SUITE_END();
 }
 
 void _test_add_minus_words()
@@ -1943,30 +1934,20 @@ void _test_add_minus_words()
     }
   }
 
-  char str[2000];
-
-  //bit_array_resize(small, len+shift-offset);
-
-  printf("   big: %s\n", bit_array_to_str_rev(big, str));
-  printf(" small: %s\n", bit_array_to_str_rev(small, str));
-  printf("offset: %i\n", offset);
-  printf("   cmp: %i\n", bit_array_cmp_words(big, offset, small));
-
   // Copy
   // tmp = big
   BIT_ARRAY *tmp = bit_array_clone(big);
 
   // tmp -= small
   bit_array_minus_words(tmp, offset, small);
-  printf("-small: %s\n", bit_array_to_str_rev(tmp, str));
 
   // tmp += small
   bit_array_add_words(tmp, offset, small);
-  printf("+small: %s\n", bit_array_to_str_rev(tmp, str));
 
   // Compare tmp and big
-  int cmp = bit_array_cmp_words(tmp, 0, big);
-  printf(" add/minus words: [%s]\n\n", cmp == 0 ? "Pass" : "Fail");
+  ASSERT(bit_array_cmp_words(tmp, 0, big) == 0);
+  // int cmp = bit_array_cmp_words(tmp, 0, big);
+  // printf(" add/minus words: [%s]\n\n", cmp == 0 ? "Pass" : "Fail");
 
   bit_array_free(tmp);
   bit_array_free(big);
@@ -1975,7 +1956,7 @@ void _test_add_minus_words()
 
 void test_add_minus_words()
 {
-  printf("== Testing add/minus words ==\n\n");
+  SUITE_START("add/minus multiple words");
 
   int i;
   for(i = 0; i < 10; i++)
@@ -1983,55 +1964,7 @@ void test_add_minus_words()
     _test_add_minus_words();
   }
 
-  /*
-  BIT_ARRAY *arr1 = bit_array_create(0);
-  BIT_ARRAY *arr2 = bit_array_create(0);
-
-  bit_array_from_str(arr1, "11111111111111111111111111111111111111111111111111111111111111111111111111000000000000001001000001000000000000000100110010010000000000000000010");
-  bit_array_from_str(arr2, "0000000000000000000000000000000000000000000000000000000000000001");
-
-  bit_array_reverse(arr1);
-  bit_array_reverse(arr2);
-
-  char str[500];
-  printf("arr1: %s\n", bit_array_to_str_rev(arr1, str));
-  printf("arr2: %s\n", bit_array_to_str_rev(arr2, str));
-
-  
-  //printf("arr1 + arr2 << 69\n");
-  //bit_array_add_words(arr1, 69, arr2);
-  //printf(" sum: %s\n", bit_array_to_str_rev(arr1, str));
-
-  printf("arr1 + 0x1 << 69\n");
-  bit_array_add_word(arr1, 69, 0x1);
-  printf(" sum: %s\n", bit_array_to_str_rev(arr1, str));
-  */
-
-  /*
-  BIT_ARRAY *arr1 = bit_array_create(0);
-  bit_array_from_str(arr1, "100000010000000000000000000100000110100000010010011010001000010000000000000000001000010001010010000101000000001100101000011000001000000000000001000000000000000");
-  bit_array_reverse(arr1);
-
-  char str[500];
-  printf("arr1: %s\n", bit_array_to_str_rev(arr1, str));
-  printf("arr1 + 0x3 << 157\n");
-  bit_array_add_word(arr1, 157, 0x3);
-  printf(" sum: %s\n", bit_array_to_str_rev(arr1, str));
-  */
-
-  /*
-  BIT_ARRAY *arr1 = bit_array_create(0);
-  bit_array_from_str(arr1, "11111111111111111111111111111111111111111111111111111111111111111111111111000000000000001001000001000000000000000100110010010000000000000000010");
-  bit_array_reverse(arr1);
-
-  char str[500];
-  printf("arr1: %s\n", bit_array_to_str_rev(arr1, str));
-  printf("arr1 + 0x1 << 69\n");
-  bit_array_add_word(arr1, 69, 0x1);
-  printf(" sum: %s\n", bit_array_to_str_rev(arr1, str));
-  */
-
-  printf("\n== End of testing add/minus words ==\n\n");
+  SUITE_END();
 }
 
 void _test_add_minus_single_word()
@@ -2056,32 +1989,24 @@ void _test_add_minus_single_word()
 
   word_t word = rand();
 
-  char str[2000];
-
-  printf("   arr: %s\n", bit_array_to_str_rev(arr, str));
-  printf("  word: %s\n", bit_array_word2str_rev(&word, 64, str));
-  printf("offset: %i\n", offset);
-
   // Copy
   // tmp = arr
   BIT_ARRAY *tmp = bit_array_clone(arr);
 
   // tmp += word
   bit_array_add_word(tmp, offset, word);
-  printf("+word: %s\n", bit_array_to_str_rev(tmp, str));
 
   // tmp -= word
   bit_array_minus_word(tmp, offset, word);
-  printf("-word: %s\n", bit_array_to_str_rev(tmp, str));
 
   // Compare tmp and arr
-  int cmp = bit_array_cmp_words(tmp, 0, arr);
-  printf(" add/minus single word: [%s]\n\n", cmp == 0 ? "Pass" : "Fail");
+  ASSERT(bit_array_cmp_words(tmp, 0, arr) == 0);
 
   bit_array_free(tmp);
   bit_array_free(arr);
 }
 
+/*
 void _test_minus_word_example(char *arr_str, char *word_str, int offset)
 {
   word_t wrd = word_from_str(word_str);
@@ -2123,10 +2048,11 @@ void _test_minus_word_example(char *arr_str, char *word_str, int offset)
   bit_array_free(orig);
   bit_array_free(arr);
 }
+*/
 
 void test_add_minus_single_word()
 {
-  printf("\n== Testing add/minus single word ==\n\n");
+  SUITE_START("add/minus single word");
 
   int i;
   for(i = 0; i < 10; i++)
@@ -2141,7 +2067,7 @@ void test_add_minus_single_word()
   _test_minus_word_example(str, wrd, 475);
   */
 
-  printf("\n== End of testing add/minus single word ==\n\n");
+  SUITE_END();
 }
 
 void test_minus_word()
@@ -2175,47 +2101,67 @@ void test_minus_word()
   printf("\n== End of testing minus word ==\n\n");
 }
 
+void _test_copy(BIT_ARRAY *arr2, bit_index_t to,
+                BIT_ARRAY *arr1, bit_index_t from,
+                bit_index_t len)
+{
+  char *str1 = (char*)malloc(bit_array_length(arr1)+1);
+  char *corr = (char*)malloc(bit_array_length(arr2)+to+len+1);
+
+  bit_array_to_str(arr1, str1);
+  bit_array_to_str(arr2, corr);
+  size_t arr2_len = strlen(corr);
+
+  memmove(corr+to, str1+from, len * sizeof(char));
+
+  if(to+len > arr2_len)
+  {
+    corr[to+len] = '\0';
+  }
+
+  // do copy
+  bit_array_copy(arr2, to, arr1, from, len);
+
+  char *str2 = (char*)malloc(bit_array_length(arr2)+1);
+  bit_array_to_str(arr2, str2);
+
+  // compare
+  ASSERT(strcmp(str2, corr) == 0);
+
+  if(strcmp(str2, corr) != 0)
+  {
+    // debug output
+    printf("str1: %s\n", str1);
+    printf("str2: %s\n", str2);
+    printf("corr: %s\n", corr);
+  }
+
+  free(str1);
+  free(str2);
+  free(corr);
+}
+
 void test_copy()
 {
-  printf("== Testing copy ==\n\n");
-
-  char str[500];
+  SUITE_START("copy");
 
   BIT_ARRAY *arr = bit_array_create(200);
   bit_array_set_region(arr, 0, 20);
 
-  printf("Create bit array (200), set bits 0-19\n");
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("copy 0-14 -> 30-44\n");
-  bit_array_copy(arr, 30, arr, 0, 15);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("copy 0-49 -> 50-99\n");
-  bit_array_copy(arr, 50, arr, 0, 50);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("copy 0-99 -> 100-199\n");
-  bit_array_copy(arr, 100, arr, 0, 100);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
+  _test_copy(arr, 30, arr, 0, 15);
+  _test_copy(arr, 50, arr, 0, 50);
+  _test_copy(arr, 100, arr, 0, 100);
 
   bit_index_t len = bit_array_length(arr);
   int shift = 3;
 
-  printf("resize (grow +%i) and shift left by %i\n", shift, shift);
   bit_array_resize(arr, len + shift);
-  bit_array_copy(arr, shift, arr, 0, len);
-  bit_array_clear_region(arr, 0, shift);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
-
-  printf("resize (shrink -%i) and shift right by %i\n", shift, shift);
-  bit_array_copy(arr, 0, arr, shift, len);
-  bit_array_resize(arr, len);
-  printf("arr: %s\n", bit_array_to_str(arr, str));
+  _test_copy(arr, shift, arr, 0, len);
+  _test_copy(arr, 0, arr, shift, len);
 
   bit_array_free(arr);
 
-  printf("== End of testing copy ==\n\n");
+  SUITE_END();
 }
 
 void test_crc()
@@ -2240,45 +2186,48 @@ int main(int argc, char* argv[])
     exit(EXIT_FAILURE);
   }
 
-  printf("  Example operations on bit_array C library:\n\n");
+  printf("  Test bit_array C library:\n\n");
 
   // Test functions
   test_copy();
-  test_arithmetic();
+  // test_arithmetic();
   test_first_last_bit_set();
-  test_zero_length_arrays();
+  // test_zero_length_arrays();
   test_parity();
   test_interleave();
-  test_compare();
+  /*test_compare();
   test_compare2();
-  test_hash();
+  test_hash();*/
   test_reverse();
   test_toggle();
-  test_next_permutation();
+  /*test_next_permutation();
   test_shuffle();
   test_random();
   test_cycle();
   test_shift();
-  test_hamming_weight();
+  test_hamming_weight();*/
   test_save_load();
-  test_nums();
+  // test_nums();
   test_hex_functions();
   test_add_word();
   test_multiply();
-  test_string_functions();
+  // test_string_functions();
   test_div();
   test_to_from_decimal();
-  test_product();
+  test_small_products();
   test_product_divide();
   test_add_minus_words();
-  test_minus_word();
+  // test_minus_word();
   test_add_minus_single_word();
 
   // To do
   //test_crc();
   //test_multiple_actions();
 
-  printf(" THE END.\n");
+  printf("\n");
+  printf(" %i / %i suites failed\n", suites_failed, suites_run);
+
+  printf("\n THE END.\n");
   
   return EXIT_SUCCESS;
 }
