@@ -1335,6 +1335,7 @@ char* bit_array_to_str_rev(const BIT_ARRAY* bitarr, char* str)
 
 
 // Get a string representations for a given region, using given on/off characters.
+// Note: does not null-terminate
 void bit_array_to_substr(const BIT_ARRAY* bitarr,
                          bit_index_t start, bit_index_t length,
                          char* str, char on, char off, char left_to_right)
@@ -1352,7 +1353,7 @@ void bit_array_to_substr(const BIT_ARRAY* bitarr,
     str[i] = GET_BIT(bitarr, j) ? on : off;
   }
 
-  str[length] = '\0';
+//  str[length] = '\0';
 }
 
 // Print this array to a file stream.  Prints '0's and '1'.  Doesn't print newline.
@@ -1814,8 +1815,8 @@ int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
   // i is unsigned to break when i == 0
   for(i = max_words-1; ; i--)
   {
-    word1 = (i < bitarr1->num_of_words ? bitarr1->words[i] : 0);
-    word2 = (i < bitarr2->num_of_words ? bitarr2->words[i] : 0);
+    word1 = (i < bitarr1->num_of_words ? bitarr1->words[i] : (word_t)0);
+    word2 = (i < bitarr2->num_of_words ? bitarr2->words[i] : (word_t)0);
 
     if(word1 > word2)
     {
@@ -1828,6 +1829,53 @@ int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
     else if(i == 0)
     {
       break;
+    }
+  }
+
+  if(bitarr1->num_of_bits > bitarr2->num_of_bits)
+  {
+    return 1;
+  }
+  else if(bitarr1->num_of_bits < bitarr2->num_of_bits)
+  {
+    return -1;
+  }
+  else
+  {
+    return 0;
+  }
+}
+
+// Compare two bit arrays by value stored, with index 0 being the Most
+// Significant Bit (MSB). Arrays do not have to be the same length.
+// Example: 10.. > 01.. [index 0 is MSB at left hand side]
+// Sorts on length if all zeros: (0,0) < (0,0,0)
+// returns:
+//  >0 iff bitarr1 > bitarr2
+//   0 iff bitarr1 == bitarr2
+//  <0 iff bitarr1 < bitarr2
+int bit_array_other_endian_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
+{
+  word_addr_t max_words = MAX(bitarr1->num_of_words, bitarr2->num_of_words);
+
+  word_addr_t i;
+  word_t word1, word2;
+
+  for(i = 0; i < max_words; i++)
+  {
+    word1 = (i < bitarr1->num_of_words ? bitarr1->words[i] : (word_t)0);
+    word2 = (i < bitarr2->num_of_words ? bitarr2->words[i] : (word_t)0);
+
+    word1 = _bit_array_reverse_word(word1);
+    word2 = _bit_array_reverse_word(word2);
+
+    if(word1 > word2)
+    {
+      return 1;
+    }
+    else if(word1 < word2)
+    {
+      return -1;
     }
   }
 
@@ -1937,56 +1985,6 @@ int bit_array_cmp_words(const BIT_ARRAY *arr1,
   return 0;
 }
 
-// Compare two bit arrays by value stored, with index 0 being the Most
-// Significant Bit (MSB). Arrays do not have to be the same length.
-// Example: 10.. > 01.. [index 0 is MSB at left hand side]
-// Sorts on length if all zeros: (0,0) < (0,0,0)
-// returns:
-//  >0 iff bitarr1 > bitarr2
-//   0 iff bitarr1 == bitarr2
-//  <0 iff bitarr1 < bitarr2
-int bit_array_other_endian_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
-{
-  word_addr_t max_words = MAX(bitarr1->num_of_words, bitarr2->num_of_words);
-
-  word_addr_t i;
-  word_t word1, word2;
-
-  for(i = 0; i < max_words; i++)
-  {
-    word1 = (i < bitarr1->num_of_words ? bitarr1->words[i] : 0);
-    word2 = (i < bitarr2->num_of_words ? bitarr2->words[i] : 0);
-
-    word1 = _bit_array_reverse_word(word1);
-    word2 = _bit_array_reverse_word(word2);
-
-    if(word1 > word2)
-    {
-      return 1;
-    }
-    else if(word1 < word2)
-    {
-      return -1;
-    }
-    else if(i == 0)
-    {
-      break;
-    }
-  }
-
-  if(bitarr1->num_of_bits > bitarr2->num_of_bits)
-  {
-    return 1;
-  }
-  else if(bitarr1->num_of_bits < bitarr2->num_of_bits)
-  {
-    return -1;
-  }
-  else
-  {
-    return 0;
-  }
-}
 
 //
 // Reverse -- coords may wrap around
@@ -2140,6 +2138,7 @@ void bit_array_shift_right(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
 // Cycle
 //
 
+// Cycle towards index 0
 void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
 {
   if(bitarr->num_of_bits == 0)
@@ -2154,12 +2153,15 @@ void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
     return;
   }
 
-  bit_index_t mid = bitarr->num_of_bits - cycle_dist;
-  _bit_array_reverse_region(bitarr, 0, mid);
-  _bit_array_reverse_region(bitarr, mid, cycle_dist);
+  bit_index_t len1 = cycle_dist;
+  bit_index_t len2 = bitarr->num_of_bits - cycle_dist;
+
+  _bit_array_reverse_region(bitarr, 0, len1);
+  _bit_array_reverse_region(bitarr, len1, len2);
   bit_array_reverse(bitarr);
 }
 
+// Cycle away from index 0
 void bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
 {
   if(bitarr->num_of_bits == 0)
@@ -2174,9 +2176,11 @@ void bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
     return;
   }
 
-  bit_index_t len = bitarr->num_of_bits - cycle_dist;
-  _bit_array_reverse_region(bitarr, 0, cycle_dist);
-  _bit_array_reverse_region(bitarr, cycle_dist, len);
+  bit_index_t len1 = bitarr->num_of_bits - cycle_dist;
+  bit_index_t len2 = cycle_dist;
+
+  _bit_array_reverse_region(bitarr, 0, len1);
+  _bit_array_reverse_region(bitarr, len1, len2);
   bit_array_reverse(bitarr);
 }
 
@@ -2989,8 +2993,6 @@ char bit_array_minus_words(BIT_ARRAY* bitarr, bit_index_t pos,
   bit_array_add_word(bitarr, pos, (word_t)1);
 
   bit_array_minus_word(bitarr, pos+minus->num_of_bits, 1);
-  //CLEAR_BIT(bitarr, bitarr_top_bit_set+1);
-  //CLEAR_BIT(bitarr, pos+minus->num_of_bits);
   bit_array_resize(bitarr, bitarr_length);
 
   bit_array_not(minus, minus);

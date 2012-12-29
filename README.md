@@ -249,6 +249,7 @@ To construct a string in reverse (highest bit on the left, lowest on the right)
 
 Get a string representations for a given region, using given on/off characters.
 `left_to_right` determines the order in which bits are printed.
+Note: does not null-terminate.
 
     void bit_array_to_substr(const BIT_ARRAY* bitarr,
                              bit_index_t start, bit_index_t length,

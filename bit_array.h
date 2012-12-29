@@ -210,6 +210,7 @@ char* bit_array_to_str_rev(const BIT_ARRAY* bitarr, char* str);
 
 // Get a string representations for a given region, using given on/off
 // characters. 
+// Note: does not null-terminate
 void bit_array_to_substr(const BIT_ARRAY* bitarr,
                          bit_index_t start, bit_index_t length,
                          char* str, char on, char off, char left_to_right);
@@ -364,16 +365,16 @@ char bit_array_minus(BIT_ARRAY* bitarr, uint64_t value);
 // where pos can be bigger than the length of the array (bitarr will be resized)
 void bit_array_add_word(BIT_ARRAY *bitarr, bit_index_t pos, uint64_t add);
 
-// Coming soon
-
 // Add `add` to `bitarr` at `pos`
 void bit_array_add_words(BIT_ARRAY *bitarr, bit_index_t pos, const BIT_ARRAY *add);
 
 // minus `minus` from `bitarr` at `pos` -- same as:
 //   bitarr + (minus << pos)
+// Returns 1 on success, 0 if value > bitarr
 char bit_array_minus_word(BIT_ARRAY *bitarr, bit_index_t pos, word_t minus);
 
 // minus `minus` from `bitarr` at `pos`
+// Returns 1 on success, 0 if value > bitarr
 char bit_array_minus_words(BIT_ARRAY* bitarr, bit_index_t pos,
                            BIT_ARRAY* minus);
 
