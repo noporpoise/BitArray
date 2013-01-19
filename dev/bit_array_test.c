@@ -30,7 +30,8 @@
 #include <stdarg.h>
 #include <string.h>
 #include <limits.h>
-#include <time.h>
+#include <time.h> // needed for rand()
+#include <unistd.h>  // need for getpid() for getting setting rand number
 #include "bit_array.h"
 
 // Constants
@@ -38,6 +39,8 @@ const char test_filename[] = "bitarr_example.dump";
 
 #define MAX(x,y) ((x) >= (y) ? (x) : (y))
 #define MIN(x,y) ((x) <= (y) ? (x) : (y))
+
+#define RAND(x) ((x) * (double)rand()/RAND_MAX)
 
 //
 // Tests
@@ -521,8 +524,8 @@ void _test_compares(char rev)
 
   for(i = 0; i < 20; i++)
   {
-    size_t len1 = (double)rand() * 600 / RAND_MAX;
-    size_t len2 = (double)rand() * 600 / RAND_MAX;
+    size_t len1 = RAND(600);
+    size_t len2 = RAND(600);
 
     for(j = 0; j < len1; j++)
     {
@@ -705,85 +708,77 @@ void test_toggle()
   SUITE_END();
 }
 
-
-void test_shuffle()
+void _test_random_and_shuffle()
 {
-  printf("== Testing shuffle ==\n");
+  int i, j, k, maxi_sum = 0;
+  BIT_ARRAY *arr = bit_array_create(0);
 
-  BIT_ARRAY* arr = bit_array_create(0);
-  char str[200];
+  int max_len = 500;
+  int num_hits = 50;
+  int num_repetitions = 50;
+  double prob = 0.5;
 
-  printf("Initialise length 0; shuffle\n");
-  bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
-                          (int)bit_array_num_bits_set(arr));
+  int *counts = malloc(max_len*sizeof(int));
+  int *hist = malloc(num_hits*sizeof(int));
 
-  printf("resize length 10; set bits 2,3,6,9\n");
-  bit_array_resize(arr, 10);
-  bit_array_set_bits(arr, 4, 2,3,6,9);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
-                           (int)bit_array_num_bits_set(arr));
+  for(k = 0; k < num_repetitions; k++)
+  {
+    int len = RAND(max_len-5)+5;
 
-  printf("Shuffle\n");
-  bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
-                           (int)bit_array_num_bits_set(arr));
-  bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
-                           (int)bit_array_num_bits_set(arr));
-  bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
-                           (int)bit_array_num_bits_set(arr));
+    bit_array_resize(arr, len);
+    bit_array_random(arr, prob);
 
-  printf("resize length 80; clear all; set bits 0-15 [start:0, len: 16]\n");
-  bit_array_resize(arr, 80);
-  bit_array_clear_all(arr);
-  bit_array_set_region(arr, 0, 16);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
-                           (int)bit_array_num_bits_set(arr));
+    bit_index_t bitset = bit_array_num_bits_set(arr);
 
-  printf("Shuffle\n");
-  bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
-                           (int)bit_array_num_bits_set(arr));
-  bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
-                           (int)bit_array_num_bits_set(arr));
-  bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
-                           (int)bit_array_num_bits_set(arr));
+    memset(counts, 0, len*sizeof(int));
+    memset(hist, 0, num_hits*sizeof(int));
 
-  printf("Clear all; set bits 0-69 [start:0, len: 70]\n");
-  bit_array_clear_all(arr);
-  bit_array_set_region(arr, 0, 70);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
-                           (int)bit_array_num_bits_set(arr));
+    for(i = 0; i < num_hits; i++)
+    {
+      bit_array_shuffle(arr);
 
-  printf("Shuffle\n");
-  bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
-                           (int)bit_array_num_bits_set(arr));
-  bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
-                           (int)bit_array_num_bits_set(arr));
-  bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
-                           (int)bit_array_num_bits_set(arr));
-  bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
-                           (int)bit_array_num_bits_set(arr));
-  bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
-                           (int)bit_array_num_bits_set(arr));
-  bit_array_shuffle(arr);
-  printf("arr: %s [%i]\n", bit_array_to_str(arr, str),
-                           (int)bit_array_num_bits_set(arr));
+      for(j = 0; j < len; j++)
+        if(bit_array_get_bit(arr, j))
+          counts[j]++;
+    }
 
+    ASSERT(bitset == bit_array_num_bits_set(arr));
+
+    // Get the most common number of times to be hit
+    for(i = 0; i < len; i++) {
+      hist[counts[i]]++;
+    }
+
+    int maxi = 0;
+    for(i = 1; i < num_hits; i++) {
+      if(hist[i] > hist[maxi]) {
+        maxi = i;
+      }
+    }
+
+    maxi_sum += maxi;
+  }
+
+  double average = (double)maxi_sum / num_repetitions;
+  double expected = num_hits * prob;
+  ASSERT(average >= expected-10 && average <= expected+10);
+
+  free(hist);
   bit_array_free(arr);
-
-  printf("== End of testing shuffle ==\n\n");
 }
 
+void test_random_and_shuffle()
+{
+  SUITE_START("random and shuffle");
+
+  int i;
+  for(i = 0; i < 100; i++)
+    _test_random_and_shuffle();
+
+  SUITE_END();
+}
+
+/*
 // used in test_random
 void _print_random_arr(BIT_ARRAY* arr, float *rates, int num_rates, char *tmp)
 {
@@ -838,6 +833,7 @@ void test_random()
 
   printf("== End of testing random ==\n\n");
 }
+*/
 
 void _test_cycle(BIT_ARRAY *arr, size_t dist, char left)
 {
@@ -948,8 +944,8 @@ void test_cycle()
   // Random arrays
   for(i = 0; i < 10; i++)
   {
-    size_t len = 1000UL * (double)rand() / RAND_MAX;
-    size_t dist = 1000UL * (double)rand() / RAND_MAX;
+    size_t len = RAND(1000UL);
+    size_t dist = RAND(1000UL);
     char left = rand() > RAND_MAX / 2 ? 1 : 0;
 
     bit_array_resize(arr, len);
@@ -1128,8 +1124,8 @@ void test_hamming_weight()
   int i;
   for(i = 0; i < 10; i++)
   {
-    size_t len1 = (1000UL * rand()) / RAND_MAX;
-    size_t len2 = (1000UL * rand()) / RAND_MAX;
+    size_t len1 = RAND(1000UL);
+    size_t len2 = RAND(1000UL);
     bit_array_resize(arr1, len1);
     bit_array_resize(arr2, len2);
     bit_array_random(arr1, 0.5);
@@ -1214,7 +1210,7 @@ void test_save_load()
   int i;
   for(i = 0; i < 10; i++)
   {
-    bit_array_resize(arr1, (5000UL * rand()) / RAND_MAX);
+    bit_array_resize(arr1, RAND(5000UL));
     bit_array_random(arr1, 0.5);
     _test_save_load(arr1, arr2);
   }
@@ -1571,7 +1567,7 @@ void test_string_functions()
   int i;
   for(i = 0; i < 10; i++)
   {
-    bit_array_resize(arr, (500UL * rand()) / RAND_MAX);
+    bit_array_resize(arr, RAND(500UL));
     bit_array_random(arr, 0.5);
     _test_string_functions(arr);
   }
@@ -1785,7 +1781,7 @@ void _test_add_single_word_small(unsigned long init, unsigned long add, int offs
 
 void test_add_single_word()
 {
-  SUITE_START("add word");
+  SUITE_START("add single word");
 
   _test_add_single_word_small(0, 3, 0);
   _test_add_single_word_small(0, 3, 1);
@@ -1807,7 +1803,7 @@ void _test_minus_single_word()
   uint64_t word = rand();
   // char tmp[1000];
 
-  int shift = (1000UL * rand()) / RAND_MAX;
+  int shift = RAND(1000);
   // int shift = 5;
   shift = MAX(shift, 5);
 
@@ -1840,7 +1836,7 @@ void _test_minus_single_word()
 
 void test_minus_single_word()
 {
-  SUITE_START("minus word");
+  SUITE_START("minus single word");
 
   int i;
   for(i = 0; i < 100; i++)
@@ -1851,68 +1847,99 @@ void test_minus_single_word()
   SUITE_END();
 }
 
-/*
-void _test_add_words(unsigned long a, unsigned long b, int offset)
+
+void _test_add_words()
 {
-  BIT_ARRAY *arr1 = bit_array_create(0);
-  BIT_ARRAY *arr2 = bit_array_create(0);
-  char tmp[500];
+  BIT_ARRAY *arr1 = bit_array_create(RAND(10));
+  BIT_ARRAY *arr2 = bit_array_create(RAND(10));
 
-  bit_array_add(arr1, a);
-  bit_array_add(arr2, b);
+  bit_array_random(arr1, 0.5);
+  bit_array_random(arr2, 0.5);
 
-  printf(" Add %lu + %lu [offset: %i]\n", a, b, offset);
-  printf(" a: %s\n", bit_array_to_str(arr1, tmp));
-  printf(" b: %s >> %i\n", bit_array_to_str(arr2, tmp), offset);
+  int shift1 = RAND(10);
+  int shift2 = RAND(10);
 
-  bit_array_add_words(arr1, offset, arr2);
+  BIT_ARRAY *shifted_sum = bit_array_create(0);
 
-  printf("  = %s\n", bit_array_to_str(arr1, tmp));
+  bit_array_add_words(shifted_sum, shift1, arr1);
+  bit_array_add_words(shifted_sum, shift2, arr2);
+
+  bit_array_resize(arr1, bit_array_length(arr1)+shift1);
+  bit_array_shift_left(arr1, shift1, 0);
+  bit_array_resize(arr2, bit_array_length(arr2)+shift2);
+  bit_array_shift_left(arr2, shift2, 0);
+  bit_array_sum(arr1, arr1, arr2); // arr1 = arr1 + arr2
+
+  ASSERT(bit_array_cmp_words(arr1, 0, shifted_sum) == 0);
 
   bit_array_free(arr1);
   bit_array_free(arr2);
+  bit_array_free(shifted_sum);
 }
 
 void test_add_words()
 {
-  printf("== Testing add words ==\n\n");
+  SUITE_START("add multiple words");
 
-  _test_add_words(3, 12, 0);
-  _test_add_words(12, 3, 0);
-  _test_add_words(3, 12, 1);
-  _test_add_words(12, 3, 1);
-  _test_add_words(1, 1, 1);
-  _test_add_words(1, 1, 0);
-  _test_add_words(1, 1, 10);
-  _test_add_words(1, 1, 100);
+  int i;
+  for(i = 0; i < 20; i++)
+    _test_add_words();
 
-  printf("TEST 2:\n");
-
-  BIT_ARRAY *arr1 = bit_array_create(0);
-  BIT_ARRAY *arr2 = bit_array_create(0);
-
-  bit_array_resize(arr1, 200);
-  bit_array_set_region(arr1, 0, 150);
-  bit_array_add(arr2, 100012);
-
-  printf("a: ");
-  bit_array_print_substr(arr1, 0, bit_array_length(arr1), stdout, '1', '0', 0);
-  printf("\n");
-  printf("b: ");
-  bit_array_print_substr(arr2, 0, bit_array_length(arr2), stdout, '1', '0', 0);
-  printf("\n");
-
-
-  int offset = 10;
-  bit_array_add_words(arr2, offset, arr1);
-  printf("b + (a << %i):\n", offset);
-  printf(" = ");
-  bit_array_print_substr(arr2, 0, bit_array_length(arr2), stdout, '1', '0', 0);
-  printf("\n");
-
-  printf("== End of testing add words ==\n\n");
+  SUITE_END();
 }
-*/
+
+void _test_minus_words()
+{
+  // Check that: A<<x + 1<<y - a<<x == 1<<y
+  BIT_ARRAY *arr = bit_array_create(RAND(100)+5);
+
+  int shift1 = RAND(100)+5;
+  int shift2 = RAND(100)+5;
+
+  BIT_ARRAY *accum = bit_array_clone(arr);
+  bit_array_resize(accum, bit_array_length(accum)+MAX(shift1, shift2));
+  bit_array_shift_left(accum, shift1, 0);
+  // set shift2 to the pos of a bit NOT set
+  while(shift2 > 0 && bit_array_get_bit(accum, shift2)) shift2--;
+  bit_array_set_bit(accum, shift2);
+
+  bit_array_minus_words(accum, shift1, arr);
+
+  ASSERT(bit_array_get_bit(accum, shift2));
+  bit_array_clear_bit(accum, shift2);
+  ASSERT(bit_array_compare_num(accum, 0) == 0);
+
+  bit_array_free(accum);
+  bit_array_free(arr);
+}
+
+void test_minus_words()
+{
+  SUITE_START("minus multiple words");
+
+  int i;
+  for(i = 0; i < 1000; i++)
+    _test_minus_words();
+
+  // Check minus word of length 0
+  BIT_ARRAY *arr1 = bit_array_create(RAND(100));
+  bit_array_random(arr1, 0.5);
+  BIT_ARRAY *arr2 = bit_array_clone(arr1);
+  BIT_ARRAY *zero = bit_array_create(0);
+
+  for(i = 0; i < 100; i++)
+  {
+    bit_array_minus_words(arr1, 0, zero);
+    bit_array_minus_words(arr1, RAND(bit_array_length(arr1)), zero);
+  }
+
+  ASSERT(bit_array_cmp(arr1, arr2) == 0);
+  bit_array_free(arr1);
+  bit_array_free(arr2);
+  bit_array_free(zero);
+
+  SUITE_END();
+}
 
 void _test_multiply_small(uint64_t a, uint64_t b)
 {
@@ -2170,7 +2197,7 @@ void _test_add_and_minus_multiple_words()
   BIT_ARRAY *big = bit_array_create(num_digits);
   BIT_ARRAY *small = bit_array_create(num_digits);
 
-  int offset = ((double)rand() / RAND_MAX) * (num_digits-1);
+  int offset = RAND(num_digits-1);
 
   while(bit_array_num_bits_set(small) == 0)
   {
@@ -2236,7 +2263,7 @@ void _test_add_and_minus_single_word()
   // Set
   BIT_ARRAY *arr = bit_array_create(num_digits);
 
-  int offset = ((double)rand() / RAND_MAX) * (num_digits+2);
+  int offset = RAND(num_digits+2);
 
   do
   {
@@ -2297,6 +2324,9 @@ int main(int argc, char* argv[])
     exit(EXIT_FAILURE);
   }
 
+  // Initialise random number generator
+  srand((unsigned int)time(NULL) + getpid());
+
   printf("  Test bit_array C library:\n\n");
 
   // Test functions
@@ -2309,6 +2339,8 @@ int main(int argc, char* argv[])
   test_cycle();
   test_shift();
   test_next_permutation();
+
+  test_random_and_shuffle();
 
   test_compare();
   test_compare2();
@@ -2325,6 +2357,9 @@ int main(int argc, char* argv[])
   test_add_single_word();
   test_minus_single_word();
 
+  test_add_words();
+  test_minus_words();
+
   test_add_and_minus_single_word();
   test_add_and_minus_multiple_words();
 
@@ -2335,10 +2370,6 @@ int main(int argc, char* argv[])
 
   // Tests that need re-writing
   // test_hash();
-  // test_shuffle();
-  // test_random();
-  // test_add_words();
-  // test_minus_words();
 
   // To do
   // test_crc();
