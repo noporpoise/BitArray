@@ -561,6 +561,7 @@ void test_compare2()
   SUITE_END();
 }
 
+/*
 void test_hash()
 {
 
@@ -602,6 +603,7 @@ void test_hash()
 
   printf("== End of testing hash ==\n\n");
 }
+*/
 
 void _test_reverse(int len)
 {
@@ -2300,19 +2302,6 @@ void test_add_and_minus_single_word()
   }
 
   SUITE_END();
-}
-
-void test_crc()
-{
-  printf("== Testing CRC ==\n\n");
-
-  /*
-  char str[500];
-  BIT_ARRAY *arr = bit_array_create(100);
-  bit_array_free(arr);
-  */
-
-  printf("== End of testing CRC ==\n\n");
 }
 
 int main(int argc, char* argv[])

@@ -89,8 +89,21 @@ Assign a value to a bit.  If `c != 0` then set bit; otherwise clear bit.
 
     void bit_array_assign_bit(BIT_ARRAY* bitarr, bit_index_t b, char c)
 
+Fast MACROs
+-----------
+
+You can also use the following which are implemented as MACROs without bounds
+checking:
+
+    bit_array_get(BIT_ARRAY *arr, bit_index_t i)
+    bit_array_set(BIT_ARRAY *arr, bit_index_t i)
+    bit_array_clear(BIT_ARRAY *arr, bit_index_t i)
+    bit_array_toggle(BIT_ARRAY *arr, bit_index_t i)
+
 Set, clear and toggle several bits
 ----------------------------------
+
+Note: variable args are of type unsigned int
 
 Set multiple bits at once. 
 
@@ -557,7 +570,7 @@ Constants
 Revised BSD License
 ===================
 
-    Copyright (c) 2011, Isaac Turner
+    Copyright (c) 2013, Isaac Turner
     All rights reserved.
    
     Redistribution and use in source and binary forms, with or without
@@ -581,7 +594,4 @@ Development
 ===========
 
 To do:
-* faster multiply / divide?
-  - Karatsuba, Booth algorithms
-* write more test cases
-* optimisations
+* faster multiply / divide? (i.e. Karatsuba)
