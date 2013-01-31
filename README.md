@@ -99,6 +99,7 @@ checking:
     bit_array_set(BIT_ARRAY *arr, bit_index_t i)
     bit_array_clear(BIT_ARRAY *arr, bit_index_t i)
     bit_array_toggle(BIT_ARRAY *arr, bit_index_t i)
+    bit_array_assign(BIT_ARRAY *arr, bit_index_t i, char c)
 
 Set, clear and toggle several bits
 ----------------------------------

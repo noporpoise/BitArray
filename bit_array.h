@@ -88,6 +88,7 @@ char bit_array_ensure_size(BIT_ARRAY* bitarr, bit_index_t ensure_num_of_bits);
 #define bit_array_set(arr,i)    ((arr)->words[(i)/64] |=  ((word_t)1 << ((i) % 64)))
 #define bit_array_clear(arr,i)  ((arr)->words[(i)/64] &= ~((word_t)1 << ((i) % 64)))
 #define bit_array_toggle(arr,i) ((arr)->words[(i)/64] ^=   (word_t)1 << ((i) % 64))
+#define bit_array_assign(arr,i,c) ((c) ? bit_array_set(arr,i) : bit_array_clear(arr,i))
 
 // Macros for bounds checking functions below
 #define bit_array_get_bit(bitarr,i)      _bit_array_get_bit(__FILE__,__LINE__,bitarr,i)
