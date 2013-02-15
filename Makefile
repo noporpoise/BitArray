@@ -10,24 +10,19 @@ endif
 
 CFLAGS := $(CFLAGS) -Wall -Wextra -I.
 
-OBJS = lookup3.o bit_array.o
-SRCS = lookup3.c bit_array.c
+all: bitarr dev examples
 
-bitarr: $(OBJS)
-	ar -csru libbitarr.a bit_array.o lookup3.o
+bitarr: lookup3.o bit_array.o bit_matrix.o
+	ar -csru libbitarr.a bit_array.o lookup3.o bit_matrix.o
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 dev: bitarr
 	cd dev; make
 
-lookup3.o: lookup3.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-bit_array.o: bit_array.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-all: bitarr dev
-	cd dev; make all
-	cd examples; make all
+examples: bitarr
+	cd examples; make
 
 clean:
 	rm -rf libbitarr.a *.o *.dSYM *.greg
@@ -36,4 +31,4 @@ clean:
 
 # Comment this line out to keep .o files
 .INTERMEDIATE: $(OBJS)
-.PHONY: all clean
+.PHONY: all clean dev examples

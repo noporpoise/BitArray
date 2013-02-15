@@ -222,6 +222,8 @@ static word_t __inline windows_parity(word_t w)
 // Make this a power of two
 #define INIT_CAPACITY_WORDS 2
 
+#define ROUNDUP2POW(x) (0x1 << (64 - LEADING_ZEROS(x)))
+
 // WORD_SIZE is the number of bits per word
 // sizeof gives size in bytes (8 bits per byte)
 //word_offset_t WORD_SIZE = (sizeof(word_t) * 8);
@@ -693,10 +695,7 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
     word_addr_t old_capacity_in_words = bitarr->capacity_in_words;
     size_t old_capacity_in_bytes = old_capacity_in_words * sizeof(word_t);
 
-    while(bitarr->capacity_in_words < new_num_of_words)
-    {
-      bitarr->capacity_in_words *= 2;
-    }
+    bitarr->capacity_in_words = ROUNDUP2POW(new_num_of_words);
 
     size_t new_capacity_in_bytes = bitarr->capacity_in_words * sizeof(word_t);
     bitarr->words = (word_t*)realloc(bitarr->words, new_capacity_in_bytes);
@@ -706,8 +705,6 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
       // error - could not allocate enough memory
       errno = ENOMEM;
       return 0;
-      //fprintf(stderr, "%s:%i: Out of memory\n", __FILE__, __LINE__);
-      //exit(EXIT_FAILURE);
     }
 
     // Need to zero new memory
@@ -2563,17 +2560,6 @@ char bit_array_minus(BIT_ARRAY* bitarr, uint64_t value)
 
   // subtract value is greater than array
   return 0;
-
-  /*
-  uint64_t arr_value;
-  bit_array_as_num(bitarr, &arr_value);
-
-  fprintf(stderr, "%s:%i:bit_array_minus(): subtract value is greater "
-                  "than array value [%lu > %lu]\n",
-          __FILE__, __LINE__, value, arr_value);
-  errno = ENOMEM;
-  exit(EXIT_FAILURE);
-  */
 }
 
 //
