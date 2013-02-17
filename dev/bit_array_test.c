@@ -47,19 +47,25 @@ const char test_filename[] = "bitarr_example.dump";
 //
 char *suite_name;
 char suite_pass;
-int suites_run = 0, suites_failed = 0;
-int tests_run = 0, tests_failed = 0;
+int suites_run = 0, suites_failed = 0, suites_empty = 0;
+int tests_in_suite = 0, tests_run = 0, tests_failed = 0;
 
 #define QUOTE(str) #str
-#define ASSERT(x) {tests_run++; if(!(x)) \
+#define ASSERT(x) {tests_run++; tests_in_suite++; if(!(x)) \
   { warn("failed assert [%s:%i] %s", __FILE__, __LINE__, QUOTE(x)); \
     suite_pass = 0; tests_failed++; }}
 
-#define SUITE_START(x) {suite_pass = 1; suite_name = x; suites_run++;}
+#define SUITE_START(x) {suite_pass = 1; suite_name = x; \
+                        suites_run++; tests_in_suite = 0;}
 
-#define SUITE_END() printf("Testing %s: %s\n", \
-                           suite_name, suite_pass ? "Pass" : "Fail"); \
-                    if(!suite_pass) { suites_failed++;}
+#define SUITE_END() do { \
+    printf("Testing %s ", suite_name); \
+    size_t suite_i; \
+    for(suite_i = strlen(suite_name); suite_i < 80-8-5; suite_i++) printf("."); \
+    printf("%s\n", suite_pass ? " pass" : " fail");   \
+    if(!suite_pass) suites_failed++; \
+    if(!tests_in_suite) suites_empty++; \
+  } while(0)
 
 //
 // Utility functions
@@ -2368,6 +2374,7 @@ int main(int argc, char* argv[])
 
   printf("\n");
   printf(" %i / %i suites failed\n", suites_failed, suites_run);
+  printf(" %i / %i suites empty\n", suites_empty, suites_run);
   printf(" %i / %i tests failed\n", tests_failed, tests_run);
 
   printf("\n THE END.\n");

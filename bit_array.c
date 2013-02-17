@@ -170,9 +170,9 @@ const bit_index_t BIT_INDEX_MAX = ~(bit_index_t)0;
 // Macros
 //
 
-//TRAILING_ZEROS is number of least significant zeros
-//LEADING_ZEROS is number of most significant zeros
-//POPCOUNT is number of bits set
+// TRAILING_ZEROS is number of least significant zeros
+// LEADING_ZEROS is number of most significant zeros
+// POPCOUNT is number of bits set
 
 #if defined(_WIN32)
 static word_t __inline windows_ctz(word_t x)
