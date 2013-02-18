@@ -12,8 +12,8 @@ CFLAGS := $(CFLAGS) -Wall -Wextra -I.
 
 all: bitarr dev examples
 
-bitarr: lookup3.o bit_array.o bit_matrix.o
-	ar -csru libbitarr.a bit_array.o lookup3.o bit_matrix.o
+bitarr: lookup3.o bit_array.o
+	ar -csru libbitarr.a bit_array.o lookup3.o
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
