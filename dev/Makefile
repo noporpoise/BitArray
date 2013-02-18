@@ -15,9 +15,6 @@ all: bit_array_test bit_matrix_test bit_array_generate
 bit_array_test: bit_array_test.c
 	$(CC) $(CFLAGS) -I.. -L.. -o bit_array_test bit_array_test.c -lbitarr
 
-bit_matrix_test: bit_matrix_test.c
-	$(CC) $(CFLAGS) -I.. -L.. -o bit_matrix_test bit_matrix_test.c -lbitarr
-
 bit_array_generate:
 	$(CC) $(CFLAGS) -o bit_array_generate bit_array_generate.c
 
