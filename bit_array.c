@@ -170,6 +170,11 @@ const bit_index_t BIT_INDEX_MAX = ~(bit_index_t)0;
 // Macros
 //
 
+// WORD_SIZE is the number of bits per word
+// sizeof gives size in bytes (8 bits per byte)
+#define WORD_SIZE 64
+// #define WORD_SIZE (sizeof(word_t) * 8)
+
 // TRAILING_ZEROS is number of least significant zeros
 // LEADING_ZEROS is number of most significant zeros
 // POPCOUNT is number of bits set
@@ -210,10 +215,10 @@ static word_t __inline windows_parity(word_t w)
 #define POPCOUNT(x) windows_popcountl(x)
 #define PARITY(x) windows_parity(x)
 #else
-#define TRAILING_ZEROS(x) (x == 0 ? WORD_SIZE : __builtin_ctzl(x))
-#define LEADING_ZEROS(x) (x == 0 ? WORD_SIZE : __builtin_clzl(x))
-#define POPCOUNT(x) __builtin_popcountl(x)
-#define PARITY(x) __builtin_parityl(x)
+#define TRAILING_ZEROS(x) ((x) == 0 ? WORD_SIZE : (unsigned)__builtin_ctzl(x))
+#define LEADING_ZEROS(x) ((x) == 0 ? WORD_SIZE : (unsigned)__builtin_clzl(x))
+#define POPCOUNT(x) (unsigned)__builtin_popcountl(x)
+#define PARITY(x) (unsigned)__builtin_parityl(x)
 #endif
 
 #define MIN(a, b)  (((a) <= (b)) ? (a) : (b))
@@ -223,11 +228,6 @@ static word_t __inline windows_parity(word_t w)
 #define INIT_CAPACITY_WORDS 2
 
 #define ROUNDUP2POW(x) (0x1 << (64 - LEADING_ZEROS(x)))
-
-// WORD_SIZE is the number of bits per word
-// sizeof gives size in bytes (8 bits per byte)
-//word_offset_t WORD_SIZE = (sizeof(word_t) * 8);
-#define WORD_SIZE (sizeof(word_t) * 8)
 
 // word of all 1s
 #define WORD_MAX  (~(word_t)0)
@@ -1885,28 +1885,18 @@ int bit_array_cmp_words(const BIT_ARRAY *arr1,
     return 0;
   }
 
-  bit_index_t top_bit1, top_bit2;
+  bit_index_t top_bit1 = 0, top_bit2 = 0;
 
   char arr1_zero = !bit_array_find_last_set_bit(arr1, &top_bit1);
   char arr2_zero = !bit_array_find_last_set_bit(arr2, &top_bit2);
 
-  if(arr1_zero && arr2_zero)
-  {
-    return 0;
-  }
-  else if(arr1_zero)
-  {
-    return -1;
-  }
-  else if(arr2_zero)
-  {
-    return 1;
-  }
+  if(arr1_zero && arr2_zero) return 0;
+  if(arr1_zero) return -1;
+  if(arr2_zero) return 1;
 
   bit_index_t top_bit2_offset = top_bit2 + pos;
 
-  if(top_bit1 != top_bit2_offset)
-  {
+  if(top_bit1 != top_bit2_offset) {
     return top_bit1 > top_bit2_offset ? 1 : -1;
   }
 
@@ -1918,27 +1908,15 @@ int bit_array_cmp_words(const BIT_ARRAY *arr1,
     word1 = _bit_array_get_word(arr1, pos + i * WORD_SIZE);
     word2 = arr2->words[i];
 
-    if(word1 > word2)
-    {
-      return 1;
-    }
-    else if(word1 < word2)
-    {
-      return -1;
-    }
+    if(word1 > word2) return 1;
+    if(word1 < word2) return -1;
   }
 
   word1 = _bit_array_get_word(arr1, pos);
   word2 = arr2->words[0];
 
-  if(word1 > word2)
-  {
-    return 1;
-  }
-  else if(word1 < word2)
-  {
-    return -1;
-  }
+  if(word1 > word2) return 1;
+  if(word1 < word2) return -1;
 
   // return 1 if arr1[0..pos] != 0, 0 otherwise
 
@@ -3149,7 +3127,7 @@ void _bit_array_divide(const char *file, int line, BIT_ARRAY *dividend,
 
   // now we know: dividend > divisor, quotient is zero'd,
   //              dividend != 0, divisor != 0
-  bit_index_t dividend_top_bit, div_top_bit;
+  bit_index_t dividend_top_bit = 0, div_top_bit = 0;
 
   bit_array_find_last_set_bit(dividend, &dividend_top_bit);
   bit_array_find_last_set_bit(divisor, &div_top_bit);

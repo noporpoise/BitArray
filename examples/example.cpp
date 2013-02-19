@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
   {
     cout << "  Unused args '" << argv[1] << "..'\n";
     cout << "Usage: ./bit_array_test\n";
-    return EXIT_FAILURE;
+    return -1;
   }
 
   BIT_ARRAY *bitarr = bit_array_create(10);
@@ -47,5 +47,5 @@ int main(int argc, char* argv[])
   bit_array_print(bitarr, stdout);
   cout << "\n";
 
-  return EXIT_SUCCESS;
+  return 0;
 }

@@ -164,4 +164,5 @@ int main()
   generate_morton(1);
   printf("// Tables for shuffling\n");
   generate_shuffle();
+  return 1;
 }
