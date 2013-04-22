@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <limits.h> // ULONG_MAX
 #include <errno.h>
+#include <signal.h> // needed for kill
 #include <string.h> // memset
 #include <assert.h>
 #include <time.h> // needed for rand()
@@ -339,7 +340,8 @@ void validate_bitarr(BIT_ARRAY *arr, char *file, int lineno)
     _bit_array_print_word(arr->words[tw], stderr);
     fprintf(stderr, "\n");
 
-    exit(EXIT_FAILURE);
+    kill(getpid(), SIGABRT);
+    // exit(EXIT_FAILURE);
   }
 
   // Check num of words is correct
@@ -351,7 +353,8 @@ void validate_bitarr(BIT_ARRAY *arr, char *file, int lineno)
             file, lineno,
             (int)arr->num_of_bits, (int)num_words, (int)arr->num_of_words);
 
-    exit(EXIT_FAILURE);
+    kill(getpid(), SIGABRT);
+    // exit(EXIT_FAILURE);
   }
 }
 
@@ -390,8 +393,9 @@ void _bounds_check_start(const BIT_ARRAY* bitarr, bit_index_t start,
                     "(index: %lu, num_of_bits: %lu)\n",
             file, line, func,
             (unsigned long)start, (unsigned long)bitarr->num_of_bits);
-    errno = EDOM;
-    exit(EXIT_FAILURE);
+    kill(getpid(), SIGABRT);
+    // errno = EDOM;
+    // exit(EXIT_FAILURE);
   }
 }
 
@@ -404,8 +408,9 @@ void _bounds_check_length(const BIT_ARRAY* bitarr, bit_index_t length,
                     "(length: %lu, num_of_bits: %lu)\n",
             file, line, func,
             (unsigned long)length, (unsigned long)bitarr->num_of_bits);
-    errno = EDOM;
-    exit(EXIT_FAILURE);
+    kill(getpid(), SIGABRT);
+    // errno = EDOM;
+    // exit(EXIT_FAILURE);
   }
 }
 
@@ -420,8 +425,9 @@ void _bounds_check_offset(const BIT_ARRAY* bitarr,
             file, line, func,
             (unsigned long)start, (unsigned long)len,
             (unsigned long)bitarr->num_of_bits);
-    errno = EDOM;
-    exit(EXIT_FAILURE);
+    kill(getpid(), SIGABRT);
+    // errno = EDOM;
+    // exit(EXIT_FAILURE);
   }
 }
 
@@ -743,8 +749,9 @@ void bit_array_resize_critical(BIT_ARRAY* bitarr, bit_index_t num_of_bits,
     fprintf(stderr, "%s:%i:%s(): Ran out of memory resizing [%lu -> %lu]\n",
             file, lineno, func,
             (unsigned long)old_num_of_bits, (unsigned long)num_of_bits);
-    errno = ENOMEM;
-    exit(EXIT_FAILURE);
+    kill(getpid(), SIGABRT);
+    // errno = ENOMEM;
+    // exit(EXIT_FAILURE);
   }
 }
 
@@ -1272,8 +1279,9 @@ void _bit_array_from_substr(const char *file, int line,
     {
       fprintf(stderr, "%s:%i:bit_array_from_substr(): Invalid char '%c' "
                       "(on: %s; off: %s)\n", file, line, str[i], on, off);
-      errno = EDOM;
-      exit(EXIT_FAILURE);
+      kill(getpid(), SIGABRT);
+      // errno = EDOM;
+      // exit(EXIT_FAILURE);
     }
   }
 
@@ -2244,14 +2252,16 @@ void _bit_array_interleave(const char *file, int line,
   {
     fprintf(stderr, "%s:%i:bit_array_interleave(): dst cannot point to "
                     "src1 or src2\n", file, line);
-    exit(EXIT_FAILURE);
+    kill(getpid(), SIGABRT);
+    // exit(EXIT_FAILURE);
   }
   else if(src1->num_of_bits != src2->num_of_bits)
   {
     fprintf(stderr, "%s:%i:bit_array_interleave(): Behaviour undefined when"
                     "src1 length (%lu) != src2 length (%lu)", file, line,
             (unsigned long)src1->num_of_bits, (unsigned long)src2->num_of_bits);
-    exit(EXIT_FAILURE);
+    kill(getpid(), SIGABRT);
+    // exit(EXIT_FAILURE);
   }
 
   if(dst->num_of_bits < 2 * src1->num_of_bits)
@@ -2307,7 +2317,8 @@ void _bit_array_random(const char *file, int line,
   {
     fprintf(stderr, "%s:%i:bit_array_random(): Behaviour undefined when "
                     "prob > 1 (%f)", file, line, prob);
-    exit(EXIT_FAILURE);
+    kill(getpid(), SIGABRT);
+    // exit(EXIT_FAILURE);
   }
   else if(prob == 1)
   {
@@ -2648,7 +2659,8 @@ void _bit_array_difference(const char *file, int line, BIT_ARRAY* dst,
     // Error
     fprintf(stderr, "%s:%i:bit_array_difference(): bit_array_substract "
                     "requires src1 >= src2\n", file, line);
-    exit(EXIT_FAILURE);
+    kill(getpid(), SIGABRT);
+    // exit(EXIT_FAILURE);
   }
 
   if(dst->num_of_bits < src1->num_of_bits)
@@ -2758,7 +2770,8 @@ void _bit_array_add_words(const char *file, int line, BIT_ARRAY *bitarr,
     // Error
     fprintf(stderr, "%s:%i:bit_array_add_words() bitarr and add cannot "
                     "point to the same bit array\n", file, line);
-    exit(EXIT_FAILURE);
+    kill(getpid(), SIGABRT);
+    // exit(EXIT_FAILURE);
   }
 
   bit_index_t add_top_bit_set;
@@ -2906,7 +2919,8 @@ char _bit_array_minus_words(const char *file, int line, BIT_ARRAY* bitarr,
     // Error
     fprintf(stderr, "%s:%i:bit_array_minus_words() bitarr and minus cannot "
                     "point to the same bit array\n", file, line);
-    exit(EXIT_FAILURE);
+    kill(getpid(), SIGABRT);
+    // exit(EXIT_FAILURE);
   }
 
   int cmp = bit_array_cmp_words(bitarr, pos, minus);
@@ -2986,7 +3000,8 @@ void _bit_array_product(const char *file, int line,
   {
     fprintf(stderr, "%s:%i:bit_array_product(): Cannot pass the same array "
                     "as dst, src1 AND src2\n", file, line);
-    exit(EXIT_FAILURE);
+    kill(getpid(), SIGABRT);
+    // exit(EXIT_FAILURE);
   }
   // Dev: multiplier == 1?
 
@@ -3032,7 +3047,8 @@ void _bit_array_div(const char *file, int line,
   if(divisor == 0)
   {
     fprintf(stderr, "%s:%i:bit_array_div(): Cannot divide by zero\n", file, line);
-    exit(EXIT_FAILURE);
+    kill(getpid(), SIGABRT);
+    // exit(EXIT_FAILURE);
   }
 
   bit_index_t div_top_bit = 63 - LEADING_ZEROS(divisor);
@@ -3105,7 +3121,8 @@ void _bit_array_divide(const char *file, int line, BIT_ARRAY *dividend,
   {
     fprintf(stderr, "%s:%i:bit_array_divide(): Cannot divide by zero\n",
             file, line);
-    exit(EXIT_FAILURE);
+    kill(getpid(), SIGABRT);
+    // exit(EXIT_FAILURE);
   }
 
   bit_array_clear_all(quotient);
