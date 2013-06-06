@@ -1,11 +1,15 @@
+ifndef CC
+	CC = gcc
+endif
 
-cpp:
-	g++ -Wall -Wextra -I.. -L.. -o example_cpp example.cpp -lbitarr
+CFLAGS = -Wall -Wextra -Wc++-compat -I.. -L..
 
-c:
-	gcc -Wall -Wextra -I.. -L.. -o example_c example.c -lbitarr
+all: example_cpp example_c
 
-all: cpp c
+example_cpp:
+	$(CXX) $(CFLAGS) -o example_cpp example.cpp -lbitarr
+example_c:
+	$(CC) $(CFLAGS) -o example_c example.c -lbitarr
 
 clean:
 	rm -rf example_cpp example_c *.o *.dSYM *.greg

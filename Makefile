@@ -3,25 +3,25 @@ ifndef CC
 endif
 
 ifdef DEBUG
-	CFLAGS := -DDEBUG=1 --debug -g
+	OPT = -DDEBUG=1 --debug -g
 else
-	CFLAGS := -O3
+	OPT = -O3
 endif
 
-CFLAGS := $(CFLAGS) -Wall -Wextra -I.
+CFLAGS = -Wall -Wextra -Wc++-compat -I.
 
-all: bitarr dev examples
+all: libbitarr.a dev examples
 
-bitarr: lookup3.o bit_array.o
+libbitarr.a: lookup3.o bit_array.o
 	ar -csru libbitarr.a bit_array.o lookup3.o
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(OPT) $(CFLAGS) -c $< -o $@
 
-dev: bitarr
+dev: libbitarr.a
 	cd dev; make
 
-examples: bitarr
+examples: libbitarr.a
 	cd examples; make
 
 clean:
