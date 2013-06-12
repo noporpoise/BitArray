@@ -154,8 +154,8 @@ void _test_copy(BIT_ARRAY *arr2, bit_index_t to,
                 BIT_ARRAY *arr1, bit_index_t from,
                 bit_index_t len)
 {
-  char *str1 = (char*)malloc(bit_array_length(arr1)+1);
-  char *corr = (char*)malloc(bit_array_length(arr2)+to+len+1);
+  char *str1 = (char*)malloc((bit_array_length(arr1)+1) * sizeof(char));
+  char *corr = (char*)malloc((bit_array_length(arr2)+to+len+1) * sizeof(char));
 
   bit_array_to_str(arr1, str1);
   bit_array_to_str(arr2, corr);
@@ -171,7 +171,7 @@ void _test_copy(BIT_ARRAY *arr2, bit_index_t to,
   // do copy
   bit_array_copy(arr2, to, arr1, from, len);
 
-  char *str2 = (char*)malloc(bit_array_length(arr2)+1);
+  char *str2 = (char*)malloc((bit_array_length(arr2)+1) * sizeof(char));
   bit_array_to_str(arr2, str2);
 
   // compare
@@ -360,13 +360,13 @@ void _test_interleave(BIT_ARRAY* result, BIT_ARRAY *arr1, BIT_ARRAY *arr2)
   bit_array_interleave(result, arr1, arr2);
 
   size_t result_len = bit_array_length(result);
-  char *result_str = malloc(result_len+1);
+  char *result_str = (char*)malloc((result_len+1) * sizeof(char));
   bit_array_to_str(result, result_str);
 
   size_t len1 = bit_array_length(arr1);
   size_t len2 = bit_array_length(arr2);
 
-  char *correct = malloc(result_len+1);
+  char *correct = (char*)malloc(result_len+1);
   memset(correct, '0', sizeof(char) * result_len);
   correct[result_len] = '\0';
 
@@ -656,7 +656,7 @@ void test_reverse()
 void _test_toggle_region(BIT_ARRAY *arr, size_t start, size_t region_len)
 {
   bit_index_t len = bit_array_length(arr);
-  char *str1 = (char*)malloc(len+1);
+  char *str1 = (char*)malloc((len+1) * sizeof(char));
   bit_array_to_str(arr, str1);
 
   // Toggle string
@@ -667,7 +667,7 @@ void _test_toggle_region(BIT_ARRAY *arr, size_t start, size_t region_len)
   }
 
   // Toggle array
-  char *str2 = (char*)malloc(len+1);
+  char *str2 = (char*)malloc((len+1) * sizeof(char));
   bit_array_toggle_region(arr, start, region_len);
   bit_array_to_str(arr, str2);
 
@@ -726,8 +726,8 @@ void _test_random_and_shuffle()
   int num_repetitions = 50;
   double prob = 0.5;
 
-  int *counts = malloc(max_len*sizeof(int));
-  int *hist = malloc(num_hits*sizeof(int));
+  int *counts = (int*)malloc(max_len*sizeof(int));
+  int *hist = (int*)malloc(num_hits*sizeof(int));
 
   for(k = 0; k < num_repetitions; k++)
   {
@@ -852,8 +852,8 @@ void _test_cycle(BIT_ARRAY *arr, size_t dist, char left)
   if(len > 0)
     dist = dist % len;
 
-  char *str1 = malloc(len+1);
-  char *str2 = malloc(len+1);
+  char *str1 = (char*)malloc((len+1) * sizeof(char));
+  char *str2 = (char*)malloc((len+1) * sizeof(char));
   str1[len] = '\0';
   str2[len] = '\0';
 
@@ -977,8 +977,8 @@ void _test_shift(BIT_ARRAY *arr, size_t dist, char left, char fill)
   // printf("dist: %i; len: %i; %s; fill: %i\n",
   //        (int)dist, (int)len, left ? "left" : "right", fill);
 
-  char *str1 = malloc(len+1);
-  char *str2 = malloc(len+1);
+  char *str1 = (char*)malloc((len+1) * sizeof(char));
+  char *str2 = (char*)malloc((len+1) * sizeof(char));
   memset(str1, fill ? '1' : '0', len+1);
   str1[len] = '\0';
   str2[len] = '\0';
@@ -1181,7 +1181,7 @@ void _test_save_load(BIT_ARRAY *arr1, BIT_ARRAY *arr2)
   {
     // debug output
     bit_index_t len = MAX(bit_array_length(arr1), bit_array_length(arr2));
-    char *tmp = (char*)malloc(sizeof(char) * (len+1));
+    char *tmp = (char*)malloc((len+1) * sizeof(char));
 
     printf("out: %s\n", bit_array_to_str(arr1, tmp));
     printf("in : %s\n", bit_array_to_str(arr2, tmp));
@@ -1537,7 +1537,7 @@ void _test_string_functions(BIT_ARRAY *arr)
 {
   size_t len = bit_array_length(arr);
 
-  char *str = malloc(len+1);
+  char *str = (char*)malloc((len+1) * sizeof(char));
   BIT_ARRAY *arr2 = bit_array_create(0);
 
   // to/from string
