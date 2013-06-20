@@ -195,12 +195,13 @@ static word_t __inline windows_clz(word_t x)
   return r;
 }
 
+// See http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
 static word_t __inline windows_popcount(word_t w)
 {
   w = w - ((w >> 1) & (word_t)~(word_t)0/3);
   w = (w & (word_t)~(word_t)0/15*3) + ((w >> 2) & (word_t)~(word_t)0/15*3);
   w = (w + (w >> 4)) & (word_t)~(word_t)0/255*15;
-  c = (word_t)(w * ((word_t)~(word_t)0/255)) >> (sizeof(T) - 1) * CHAR_BIT;
+  c = (word_t)(w * ((word_t)~(word_t)0/255)) >> (sizeof(word_t) - 1) * 8;
 }
 
 static word_t __inline windows_parity(word_t w)
