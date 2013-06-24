@@ -1746,10 +1746,8 @@ static void _bit_array_or_xor(BIT_ARRAY* dst,
   }
 
   // Set remaining bits to zero
-  for(i = max_words; i < dst->num_of_words; i++)
-  {
-    dst->words[i] = (word_t)0;
-  }
+  size_t size = (dst->num_of_words - max_words) * sizeof(word_t);
+  memset(dst->words + max_words, 0, size);
 
   #ifdef DEBUG
   VALIDATE_BIT_ARRAY(dst);
