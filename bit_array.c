@@ -1718,8 +1718,8 @@ static void _bit_array_or_xor(BIT_ARRAY* dst,
                               "bit_array_xor");
   }
 
-  word_addr_t min_words = MIN(src1->num_of_bits, src2->num_of_bits);
-  word_addr_t max_words = MAX(src1->num_of_bits, src2->num_of_bits);
+  word_addr_t min_words = MIN(src1->num_of_words, src2->num_of_words);
+  word_addr_t max_words = MAX(src1->num_of_words, src2->num_of_words);
 
   word_addr_t i;
 
@@ -1737,7 +1737,7 @@ static void _bit_array_or_xor(BIT_ARRAY* dst,
   // Copy remaining bits from longer src array
   if(min_words != max_words)
   {
-    const BIT_ARRAY* longer = src1->num_of_bits > src2->num_of_bits ? src1 : src2;
+    const BIT_ARRAY* longer = src1->num_of_words > src2->num_of_words ? src1 : src2;
 
     for(i = min_words; i < max_words; i++)
     {
