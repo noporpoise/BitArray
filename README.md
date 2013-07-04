@@ -31,7 +31,7 @@ To build and run the test code:
 
     cd dev
     make
-    ./bit_array_test
+    ./dev/bit_array_test
 
 Using bit_array in your code
 ============================
@@ -55,6 +55,11 @@ Constructor - create a new bit array of length nbits
 Destructor - free the memory used for a bit array
 
     void bit_array_free(BIT_ARRAY* bitarray)
+
+Alternatively, allocate / free using an existing struct
+
+    BIT_ARRAY* bit_array_alloc(BIT_ARRAY* bitarr, bit_index_t nbits)
+    void bit_array_dealloc(BIT_ARRAY* bitarr)
 
 Get length of bit array
 
@@ -559,14 +564,32 @@ Generalised 'binary to string' function.
 Adds bits to the string in order of lsb to msb
 e.g. 0b11010 (26 in decimal) would come out as "01011"
 
-    char* bit_array_bin2str(const void *ptr, size_t num_of_bits, char *str)
-    char* bit_array_bin2str_rev(const void *ptr, size_t num_of_bits, char *str)
+    char* bit_array_word2str(const void *ptr, size_t num_of_bits, char *str);
+
+    // Same as above but in reverse
+    char* bit_array_word2str_rev(const void *ptr, size_t num_of_bits, char *str);
 
 Constants
 ---------
 
 `BIT_INDEX_MIN` and `BIT_INDEX_MAX` define the min and max values of datatype
 `bit_index_t`.  These are defined as `0` and `2^63 - 1`.
+
+Contributing
+============
+
+Please feel free to submit issues and pull requests. I appreciate bug reports.
+
+Methods are named:
+  _name()            - indicates only used internally
+  _bit_array_name()  - exported and wrapped in a #define in the header
+  bit_array_name     - exported as is
+
+_bit_array_name() functions are wrapped in a #define to allow reporting of file
+and line number of offending call in the case of an out of bounds error etc.
+
+Testing on different platforms is especially appreciated. I only have access
+to Mac OS X and Linux.
 
 Revised BSD License
 ===================

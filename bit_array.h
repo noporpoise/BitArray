@@ -69,6 +69,10 @@ BIT_ARRAY* bit_array_create(bit_index_t nbits);
 // Destructor - free the memory used for a bit array
 void bit_array_free(BIT_ARRAY* bitarray);
 
+// Allocate using existing struct
+BIT_ARRAY* bit_array_alloc(BIT_ARRAY* bitarr, bit_index_t nbits);
+void bit_array_dealloc(BIT_ARRAY* bitarr);
+
 // Get length of bit array
 bit_index_t bit_array_length(const BIT_ARRAY* bit_arr);
 
