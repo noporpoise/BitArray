@@ -112,12 +112,12 @@ char bit_array_ensure_size(BIT_ARRAY* bitarr, bit_index_t ensure_num_of_bits);
 #define bit_array_get_word64(bitarr,start) _bit_array_get_word64(__FILE__,__LINE__,bitarr,start)
 #define bit_array_get_word32(bitarr,start) _bit_array_get_word32(__FILE__,__LINE__,bitarr,start)
 #define bit_array_get_word16(bitarr,start) _bit_array_get_word16(__FILE__,__LINE__,bitarr,start)
-#define bit_array_get_word8 (bitarr,start) _bit_array_get_word8 (__FILE__,__LINE__,bitarr,start)
+#define bit_array_get_word8(bitarr,start) _bit_array_get_word8(__FILE__,__LINE__,bitarr,start)
 
 #define bit_array_set_word64(bitarr,start,word) _bit_array_set_word64(__FILE__,__LINE__,bitarr,start,word)
 #define bit_array_set_word32(bitarr,start,word) _bit_array_set_word32(__FILE__,__LINE__,bitarr,start,word)
 #define bit_array_set_word16(bitarr,start,word) _bit_array_set_word16(__FILE__,__LINE__,bitarr,start,word)
-#define bit_array_set_word8 (bitarr,start,word) _bit_array_set_word8 (__FILE__,__LINE__,bitarr,start,word)
+#define bit_array_set_word8(bitarr,start,word) _bit_array_set_word8(__FILE__,__LINE__,bitarr,start,word)
 
 #define bit_array_reverse_region(arr,start,len) \
         _bit_array_reverse_region(__FILE__,__LINE__,arr,start,len)
@@ -242,7 +242,7 @@ uint32_t _bit_array_get_word32(const char *file, int line,
                                const BIT_ARRAY* bitarr, bit_index_t start);
 uint16_t _bit_array_get_word16(const char *file, int line,
                                const BIT_ARRAY* bitarr, bit_index_t start);
-uint8_t  _bit_array_get_word8 (const char *file, int line,
+uint8_t  _bit_array_get_word8(const char *file, int line,
                                const BIT_ARRAY* bitarr, bit_index_t start);
 
 // Set 64 bits at once from a particular start position
@@ -252,7 +252,7 @@ void _bit_array_set_word32(const char *file, int line,
                            BIT_ARRAY* bitarr, bit_index_t start, uint32_t word);
 void _bit_array_set_word16(const char *file, int line,
                            BIT_ARRAY* bitarr, bit_index_t start, uint16_t word);
-void _bit_array_set_word8 (const char *file, int line,
+void _bit_array_set_word8(const char *file, int line,
                            BIT_ARRAY* bitarr, bit_index_t start, uint8_t byte);
 
 //
