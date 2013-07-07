@@ -40,7 +40,7 @@ const char test_filename[] = "bitarr_example.dump";
 #define MAX(x,y) ((x) >= (y) ? (x) : (y))
 #define MIN(x,y) ((x) <= (y) ? (x) : (y))
 
-#define RAND(x) ((x) * (double)rand()/RAND_MAX)
+#define RAND(x) (((x) * (long)rand())/RAND_MAX)
 
 //
 // Tests
@@ -617,7 +617,7 @@ void _test_reverse(int len)
 
   BIT_ARRAY* arr = bit_array_create(len);
 
-  bit_array_random(arr, 0.5);
+  bit_array_random(arr, 0.5f);
 
   bit_array_to_str(arr, str);
   reverse_str(str);
@@ -707,7 +707,7 @@ void test_toggle()
   for(i = 0; i < 1000; i += 50)
   {
     bit_array_resize(arr, i);
-    bit_array_random(arr, 0.5);
+    bit_array_random(arr, 0.5f);
     _test_toggle_region(arr, i / 2, i - i / 2);
   }
 
@@ -724,7 +724,7 @@ void _test_random_and_shuffle()
   int max_len = 500;
   int num_hits = 50;
   int num_repetitions = 50;
-  double prob = 0.5;
+  float prob = 0.5f;
 
   int *counts = (int*)malloc(max_len*sizeof(int));
   int *hist = (int*)malloc(num_hits*sizeof(int));
@@ -768,7 +768,7 @@ void _test_random_and_shuffle()
   }
 
   double average = (double)maxi_sum / num_repetitions;
-  double expected = num_hits * prob;
+  double expected = num_hits * (double)prob;
   ASSERT(average >= expected-10 && average <= expected+10);
 
   free(hist);
@@ -957,7 +957,7 @@ void test_cycle()
     char left = rand() > RAND_MAX / 2 ? 1 : 0;
 
     bit_array_resize(arr, len);
-    bit_array_random(arr, 0.5);
+    bit_array_random(arr, 0.5f);
     _test_cycle(arr, dist, left);
   }
 
@@ -1136,8 +1136,8 @@ void test_hamming_weight()
     size_t len2 = RAND(1000UL);
     bit_array_resize(arr1, len1);
     bit_array_resize(arr2, len2);
-    bit_array_random(arr1, 0.5);
-    bit_array_random(arr2, 0.5);
+    bit_array_random(arr1, 0.5f);
+    bit_array_random(arr2, 0.5f);
     _test_hamming(arr1, arr2);
     _test_hamming(arr2, arr1);
   }
@@ -1219,7 +1219,7 @@ void test_save_load()
   for(i = 0; i < 10; i++)
   {
     bit_array_resize(arr1, RAND(5000UL));
-    bit_array_random(arr1, 0.5);
+    bit_array_random(arr1, 0.5f);
     _test_save_load(arr1, arr2);
   }
 
@@ -1576,7 +1576,7 @@ void test_string_functions()
   for(i = 0; i < 10; i++)
   {
     bit_array_resize(arr, RAND(500UL));
-    bit_array_random(arr, 0.5);
+    bit_array_random(arr, 0.5f);
     _test_string_functions(arr);
   }
 
@@ -1861,8 +1861,8 @@ void _test_add_words()
   BIT_ARRAY *arr1 = bit_array_create(RAND(10));
   BIT_ARRAY *arr2 = bit_array_create(RAND(10));
 
-  bit_array_random(arr1, 0.5);
-  bit_array_random(arr2, 0.5);
+  bit_array_random(arr1, 0.5f);
+  bit_array_random(arr2, 0.5f);
 
   int shift1 = RAND(10);
   int shift2 = RAND(10);
@@ -1931,7 +1931,7 @@ void test_minus_words()
 
   // Check minus word of length 0
   BIT_ARRAY *arr1 = bit_array_create(RAND(100));
-  bit_array_random(arr1, 0.5);
+  bit_array_random(arr1, 0.5f);
   BIT_ARRAY *arr2 = bit_array_clone(arr1);
   BIT_ARRAY *zero = bit_array_create(0);
 
@@ -2136,12 +2136,12 @@ void _test_product_divide()
   {
     do
     {
-      bit_array_random(arr, (double)rand() / RAND_MAX);
+      bit_array_random(arr, (float)((double)rand() / RAND_MAX));
     } while(bit_array_num_bits_set(arr) == 0);
 
     do
     {
-      bit_array_random(divisor, (double)rand() / RAND_MAX);
+      bit_array_random(divisor, (float)((double)rand() / RAND_MAX));
     } while(bit_array_num_bits_set(divisor) == 0);
 
     while(bit_array_cmp(arr, divisor) < 0)
@@ -2211,12 +2211,12 @@ void _test_add_and_minus_multiple_words()
   {
     do
     {
-      bit_array_random(big, (double)rand() / RAND_MAX);
+      bit_array_random(big, (float)((double)rand() / RAND_MAX));
     } while(bit_array_num_bits_set(big) == 0);
 
     do
     {
-      bit_array_random(small, (double)rand() / RAND_MAX);
+      bit_array_random(small, (float)((double)rand() / RAND_MAX));
     } while(bit_array_num_bits_set(small) == 0);
 
     while(bit_array_cmp_words(big, offset, small) < 0)
@@ -2275,7 +2275,7 @@ void _test_add_and_minus_single_word()
 
   do
   {
-    bit_array_random(arr, (double)rand() / RAND_MAX);
+    bit_array_random(arr, (float)((double)rand() / RAND_MAX));
   } while(bit_array_num_bits_set(arr) == 0);
 
   word_t word = rand();
