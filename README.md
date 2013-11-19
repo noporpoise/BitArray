@@ -183,7 +183,7 @@ Index `start` must be within the range of the bit array (0 <= x < length)
     uint32_t bit_array_get_word32(const BIT_ARRAY* bitarr, bit_index_t start)
     uint16_t bit_array_get_word16(const BIT_ARRAY* bitarr, bit_index_t start)
     uint8_t  bit_array_get_word8 (const BIT_ARRAY* bitarr, bit_index_t start)
-    uint8_t  bit_array_get_wordn (const BIT_ARRAY* bitarr, bit_index_t start, int n)
+    uint64_t bit_array_get_wordn (const BIT_ARRAY* bitarr, bit_index_t start, int n)
 
 Set 64 bits at once from a particular start position
 
