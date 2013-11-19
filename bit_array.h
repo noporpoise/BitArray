@@ -87,6 +87,14 @@ char bit_array_ensure_size(BIT_ARRAY* bitarr, bit_index_t ensure_num_of_bits);
 // Macros
 //
 
+// WORD_MAX >> (WORD_SIZE-(length)) gives WORD_MAX instead of 0 if length is 0
+// need to check for length == 0
+#define BIT_MASK(nbits) (nbits ? ~(word_t)0 >> (sizeof(word_t)*8-(nbits)) : (word_t)0)
+
+// A possibly faster way to combine two words with a mask
+//#define BIT_MASK_MERGE(a,b,abits) ((a & abits) | (b & ~abits))
+#define BIT_MASK_MERGE(a,b,abits) (b ^ ((a ^ b) & abits))
+
 // Macros for fast access -- beware: no bounds checking
 #define bit_array_get(arr,i)   (((arr)->words[(i)/64] >>  ((i) % 64)) & 0x1)
 #define bit_array_set(arr,i)    ((arr)->words[(i)/64] |=  ((word_t)1 << ((i) % 64)))
@@ -113,11 +121,13 @@ char bit_array_ensure_size(BIT_ARRAY* bitarr, bit_index_t ensure_num_of_bits);
 #define bit_array_get_word32(bitarr,start) _bit_array_get_word32(__FILE__,__LINE__,bitarr,start)
 #define bit_array_get_word16(bitarr,start) _bit_array_get_word16(__FILE__,__LINE__,bitarr,start)
 #define bit_array_get_word8(bitarr,start) _bit_array_get_word8(__FILE__,__LINE__,bitarr,start)
+#define bit_array_get_wordn(bitarr,start,n) _bit_array_get_wordn(__FILE__,__LINE__,bitarr,start,n)
 
 #define bit_array_set_word64(bitarr,start,word) _bit_array_set_word64(__FILE__,__LINE__,bitarr,start,word)
 #define bit_array_set_word32(bitarr,start,word) _bit_array_set_word32(__FILE__,__LINE__,bitarr,start,word)
 #define bit_array_set_word16(bitarr,start,word) _bit_array_set_word16(__FILE__,__LINE__,bitarr,start,word)
 #define bit_array_set_word8(bitarr,start,word) _bit_array_set_word8(__FILE__,__LINE__,bitarr,start,word)
+#define bit_array_set_wordn(bitarr,start,word,n) _bit_array_set_wordn(__FILE__,__LINE__,bitarr,start,word,n)
 
 #define bit_array_reverse_region(arr,start,len) \
         _bit_array_reverse_region(__FILE__,__LINE__,arr,start,len)
@@ -244,6 +254,8 @@ uint16_t _bit_array_get_word16(const char *file, int line,
                                const BIT_ARRAY* bitarr, bit_index_t start);
 uint8_t  _bit_array_get_word8(const char *file, int line,
                                const BIT_ARRAY* bitarr, bit_index_t start);
+uint64_t _bit_array_get_wordn(const char *file, int line,
+                              const BIT_ARRAY* bitarr, bit_index_t start, int n);
 
 // Set 64 bits at once from a particular start position
 void _bit_array_set_word64(const char *file, int line,
@@ -254,6 +266,9 @@ void _bit_array_set_word16(const char *file, int line,
                            BIT_ARRAY* bitarr, bit_index_t start, uint16_t word);
 void _bit_array_set_word8(const char *file, int line,
                            BIT_ARRAY* bitarr, bit_index_t start, uint8_t byte);
+void _bit_array_set_wordn(const char *file, int line,
+                          BIT_ARRAY* bitarr, bit_index_t start,
+                          uint64_t word, int n);
 
 //
 // Number of bits set

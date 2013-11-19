@@ -47,7 +47,6 @@
 #endif
 
 #include "bit_array.h"
-#include "lookup3.h"
 
 //
 // Tables of constants
@@ -238,10 +237,6 @@ static word_t __inline windows_parity(word_t w)
 // if w == 0 return WORD_SIZE, otherwise index of top bit set
 #define TOP_BIT_SET(w) (w == 0 ? WORD_SIZE : WORD_SIZE - LEADING_ZEROS(w) - 1)
 
-// WORD_MAX >> (WORD_SIZE-(length)) gives WORD_MAX instead of 0 if length is 0
-// need to check for length == 0
-#define BIT_MASK(length) (length == 0 ? (word_t)0 : WORD_MAX >> (WORD_SIZE-(length)))
-
 // Index of word
 #define bindex(b) ((b) / WORD_SIZE)
 
@@ -251,10 +246,6 @@ static word_t __inline windows_parity(word_t w)
 #define SET_REGION(arr,start,len)    _set_region((arr),(start),(len),FILL_REGION)
 #define CLEAR_REGION(arr,start,len)  _set_region((arr),(start),(len),ZERO_REGION)
 #define TOGGLE_REGION(arr,start,len) _set_region((arr),(start),(len),SWAP_REGION)
-
-// A possibly faster way to combine two words with a mask
-//#define MASK_MERGE(a,b,abits) ((a & abits) | (b & ~abits))
-#define MASK_MERGE(a,b,abits) (b ^ ((a ^ b) & abits))
 
 // Have we initialised with srand() ?
 static char rand_initiated = 0;
@@ -315,6 +306,24 @@ static inline char* _word_to_str(word_t word, char str[WORD_SIZE+1])
   return str;
 }
 
+// Error reporting code
+void call_die(const char *file, int line, const char *fmt, ...)
+__attribute__((format(printf, 3, 4)))
+__attribute__((noreturn));
+
+void call_die(const char *file, int line, const char *fmt, ...)
+{
+  va_list argptr;
+  fflush(stdout);
+  fprintf(stderr, "[%s:%i] Error: ", file, line);
+  va_start(argptr, fmt);
+  vfprintf(stderr, fmt, argptr);
+  va_end(argptr);
+  if(*(fmt + strlen(fmt) - 1) != '\n') fputc('\n', stderr);
+  kill(getpid(), SIGABRT);
+  exit(EXIT_FAILURE);
+}
+
 // Used in debugging
 #define VALIDATE_BIT_ARRAY(a) validate_bitarr((a), __FILE__, __LINE__)
 
@@ -326,28 +335,20 @@ void validate_bitarr(BIT_ARRAY *arr, char *file, int lineno)
 
   if(arr->words[tw] > BIT_MASK(top_bits))
   {
-    fprintf(stderr, "%s:%i:VALIDATE_BIT_ARRAY(): Fail -- "
-                    "expected %i bits in top word[%i]:\n",
-            file, lineno, (int)top_bits, (int)tw);
-
     _print_word(arr->words[tw], stderr);
     fprintf(stderr, "\n");
-
-    kill(getpid(), SIGABRT);
-    // exit(EXIT_FAILURE);
+    call_die(file, lineno, "VALIDATE_BIT_ARRAY(): Fail -- "
+                           "expected %i bits in top word[%i]:\n",
+            (int)top_bits, (int)tw);
   }
 
   // Check num of words is correct
   word_addr_t num_words = nwords(arr->num_of_bits);
   if(num_words != arr->num_of_words)
   {
-    fprintf(stderr, "%s:%i:VALIDATE_BIT_ARRAY(): Fail -- num of words wrong "
-                    "[bits: %i, word: %i, actual words: %i]\n",
-            file, lineno,
-            (int)arr->num_of_bits, (int)num_words, (int)arr->num_of_words);
-
-    kill(getpid(), SIGABRT);
-    // exit(EXIT_FAILURE);
+    call_die(file, lineno, "VALIDATE_BIT_ARRAY(): Fail -- num of words wrong "
+             "[bits: %i, word: %i, actual words: %i]\n",
+             (int)arr->num_of_bits, (int)num_words, (int)arr->num_of_words);
   }
 }
 
@@ -384,30 +385,8 @@ static inline void _bounds_check_start(const BIT_ARRAY* bitarr,
 {
   if(start >= bitarr->num_of_bits)
   {
-    fprintf(stderr, "%s:%i:%s() - out of bounds error "
-                    "(index: %lu, num_of_bits: %lu)\n",
-            file, line, func,
-            (unsigned long)start, (unsigned long)bitarr->num_of_bits);
-    kill(getpid(), SIGABRT);
-    // errno = EDOM;
-    // exit(EXIT_FAILURE);
-  }
-}
-
-static inline void _bounds_check_length(const BIT_ARRAY* bitarr,
-                                        bit_index_t length,
-                                        const char* file, int line,
-                                        const char* func)
-{
-  if(length > bitarr->num_of_bits)
-  {
-    fprintf(stderr, "%s:%i:%s() - out of bounds error "
-                    "(length: %lu, num_of_bits: %lu)\n",
-            file, line, func,
-            (unsigned long)length, (unsigned long)bitarr->num_of_bits);
-    kill(getpid(), SIGABRT);
-    // errno = EDOM;
-    // exit(EXIT_FAILURE);
+    call_die(file, line, "%s() - out of bounds error (index: %zu, num_of_bits: %zu)",
+             func, (size_t)start, (size_t)bitarr->num_of_bits);
   }
 }
 
@@ -418,14 +397,10 @@ static inline void _bounds_check_offset(const BIT_ARRAY* bitarr,
 {
   if(start + len > bitarr->num_of_bits)
   {
-    fprintf(stderr, "%s:%i:%s() - out of bounds error "
-                    "(start: %lu; length: %lu; num_of_bits: %lu)\n",
-            file, line, func,
-            (unsigned long)start, (unsigned long)len,
-            (unsigned long)bitarr->num_of_bits);
-    kill(getpid(), SIGABRT);
-    // errno = EDOM;
-    // exit(EXIT_FAILURE);
+    call_die(file, line, "%s() - out of bounds error "
+             "(start: %zu; length: %zu; num_of_bits: %zu)\n",
+             func, (size_t)start, (size_t)len,
+             (size_t)bitarr->num_of_bits);
   }
 }
 
@@ -537,7 +512,7 @@ static inline void _set_word_cyclic(BIT_ARRAY* bitarr,
     word_offset_t bits_remaining = MIN(WORD_SIZE - bits_set, start);
     word_t mask = BIT_MASK(bits_remaining);
 
-    bitarr->words[0] = MASK_MERGE(word, bitarr->words[0], mask);
+    bitarr->words[0] = BIT_MASK_MERGE(word, bitarr->words[0], mask);
   }
 }
 
@@ -1016,7 +991,6 @@ uint64_t _bit_array_get_word64(const char *file, int line,
 {
   // Bounds checking
   _bounds_check_start(bitarr, start, file, line, "bit_array_word64");
-
   return (uint64_t)_get_word(bitarr, start);
 }
 
@@ -1026,7 +1000,6 @@ uint32_t _bit_array_get_word32(const char *file, int line,
 {
   // Bounds checking
   _bounds_check_start(bitarr, start, file, line, "bit_array_word32");
-
   return (uint32_t)_get_word(bitarr, start);
 }
 
@@ -1036,7 +1009,6 @@ uint16_t _bit_array_get_word16(const char *file, int line,
 {
   // Bounds checking
   _bounds_check_start(bitarr, start, file, line, "bit_array_word16");
-
   return (uint16_t)_get_word(bitarr, start);
 }
 
@@ -1046,8 +1018,17 @@ uint8_t _bit_array_get_word8(const char *file, int line,
 {
   // Bounds checking
   _bounds_check_start(bitarr, start, file, line, "bit_array_word8");
-
   return (uint8_t)_get_word(bitarr, start);
+}
+
+uint64_t _bit_array_get_wordn(const char *file, int line,
+                              const BIT_ARRAY* bitarr,
+                              bit_index_t start, int n)
+{
+  // Bounds checking
+  _bounds_check_start(bitarr, start, file, line, "bit_array_wordn");
+  if(n > 64) call_die(file, line, "_bit_array_get_wordn(): n > 64");
+  return (uint64_t)(_get_word(bitarr, start) & BIT_MASK(n));
 }
 
 //
@@ -1060,7 +1041,6 @@ void _bit_array_set_word64(const char *file, int line,
 {
   // Bounds checking
   _bounds_check_start(bitarr, start, file, line, "bit_array_set_word64");
-
   _set_word(bitarr, start, (word_t)word);
 }
 
@@ -1070,7 +1050,6 @@ void _bit_array_set_word32(const char *file, int line,
 {
   // Bounds checking
   _bounds_check_start(bitarr, start, file, line, "bit_array_set_word32");
-
   word_t w = _get_word(bitarr, start);
   _set_word(bitarr, start, (w & ~(word_t)0xffffffff) | word);
 }
@@ -1081,7 +1060,6 @@ void _bit_array_set_word16(const char *file, int line,
 {
   // Bounds checking
   _bounds_check_start(bitarr, start, file, line, "bit_array_set_word16");
-
   word_t w = _get_word(bitarr, start);
   _set_word(bitarr, start, (w & ~(word_t)0xffff) | word);
 }
@@ -1092,8 +1070,17 @@ void _bit_array_set_word8(const char *file, int line,
 {
   // Bounds checking
   _bounds_check_start(bitarr, start, file, line, "bit_array_set_word8");
-
   _set_byte(bitarr, start, byte);
+}
+
+void _bit_array_set_wordn(const char *file, int line,
+                          BIT_ARRAY* bitarr,
+                          bit_index_t start, uint64_t word, int n)
+{
+  // Bounds checking
+  _bounds_check_start(bitarr, start, file, line, "bit_array_set_wordn");
+  word_t w = _get_word(bitarr, start), m = BIT_MASK(n);
+  _set_word(bitarr, start, BIT_MASK_MERGE(word,w,m));
 }
 
 //
@@ -1610,7 +1597,7 @@ static void _array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
       word_t dst_word = _get_word(dst, dstindx+i*WORD_SIZE);
 
       word_t mask = BIT_MASK(bits_in_last_word);
-      word_t word = MASK_MERGE(src_word, dst_word, mask);
+      word_t word = BIT_MASK_MERGE(src_word, dst_word, mask);
 
       _set_word(dst, dstindx+num_of_full_words*WORD_SIZE, word);
     }
@@ -1639,7 +1626,7 @@ static void _array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
       word_t dst_word = _get_word(dst, dstindx);
 
       word_t mask = BIT_MASK(bits_in_last_word);
-      word_t word = MASK_MERGE(src_word, dst_word, mask);
+      word_t word = BIT_MASK_MERGE(src_word, dst_word, mask);
       _set_word(dst, dstindx, word);
     }
   }
@@ -2030,7 +2017,7 @@ static void _reverse_region(BIT_ARRAY* bitarr,
   rev >>= WORD_SIZE - length;
   word_t mask = BIT_MASK(length);
 
-  word = MASK_MERGE(rev, word, mask);
+  word = BIT_MASK_MERGE(rev, word, mask);
 
   _set_word_cyclic(bitarr, left, word);
 }
@@ -2041,7 +2028,7 @@ void _bit_array_reverse_region(const char *file, int line,
 {
   // Bounds checking
   _bounds_check_start(bitarr, start, file, line, "bit_array_reverse_region");
-  _bounds_check_length(bitarr, length, file, line, "bit_array_reverse_region");
+  _bounds_check_offset(bitarr, start, length, file, line, "bit_array_reverse_region");
 
   if(length > 0)
   {
@@ -3381,6 +3368,80 @@ char bit_array_load(BIT_ARRAY* bitarr, FILE* f)
 //
 // Hash function
 //
+
+/* From: lookup3.c, by Bob Jenkins, May 2006, Public Domain. */
+#define hashsize(n) ((uint32_t)1<<(n))
+#define hashmask(n) (hashsize(n)-1)
+#define rot(x,k) (((x)<<(k)) | ((x)>>(32-(k))))
+
+/* From: lookup3.c, by Bob Jenkins, May 2006, Public Domain. */
+#define mix(a,b,c) \
+{ \
+  a -= c;  a ^= rot(c, 4);  c += b; \
+  b -= a;  b ^= rot(a, 6);  a += c; \
+  c -= b;  c ^= rot(b, 8);  b += a; \
+  a -= c;  a ^= rot(c,16);  c += b; \
+  b -= a;  b ^= rot(a,19);  a += c; \
+  c -= b;  c ^= rot(b, 4);  b += a; \
+}
+
+/* From: lookup3.c, by Bob Jenkins, May 2006, Public Domain. */
+#define final(a,b,c) \
+{ \
+  c ^= b; c -= rot(b,14); \
+  a ^= c; a -= rot(c,11); \
+  b ^= a; b -= rot(a,25); \
+  c ^= b; c -= rot(b,16); \
+  a ^= c; a -= rot(c,4);  \
+  b ^= a; b -= rot(a,14); \
+  c ^= b; c -= rot(b,24); \
+}
+
+/*
+From: lookup3.c, by Bob Jenkins, May 2006, Public Domain.
+--------------------------------------------------------------------
+hashword2() -- same as hashword(), but take two seeds and return two
+32-bit values.  pc and pb must both be nonnull, and *pc and *pb must
+both be initialized with seeds.  If you pass in (*pb)==0, the output
+(*pc) will be the same as the return value from hashword().
+--------------------------------------------------------------------
+*/
+static void hashword2 (
+const uint32_t *k,                   /* the key, an array of uint32_t values */
+size_t          length,               /* the length of the key, in uint32_ts */
+uint32_t       *pc,                      /* IN: seed OUT: primary hash value */
+uint32_t       *pb)               /* IN: more seed OUT: secondary hash value */
+{
+  uint32_t a,b,c;
+
+  /* Set up the internal state */
+  a = b = c = 0xdeadbeef + ((uint32_t)(length<<2)) + *pc;
+  c += *pb;
+
+  /*------------------------------------------------- handle most of the key */
+  while (length > 3)
+  {
+    a += k[0];
+    b += k[1];
+    c += k[2];
+    mix(a,b,c);
+    length -= 3;
+    k += 3;
+  }
+
+  /*------------------------------------------- handle the last 3 uint32_t's */
+  switch(length)                     /* all the case statements fall through */
+  {
+  case 3 : c+=k[2];
+  case 2 : b+=k[1];
+  case 1 : a+=k[0];
+    final(a,b,c);
+  case 0:     /* case 0: nothing left to add */
+    break;
+  }
+  /*------------------------------------------------------ report the result */
+  *pc=c; *pb=b;
+}
 
 // Pass seed as 0 on first call, pass previous hash value if rehashing due
 // to a collision

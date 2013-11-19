@@ -106,6 +106,14 @@ checking:
     bit_array_toggle(BIT_ARRAY *arr, bit_index_t i)
     bit_array_assign(BIT_ARRAY *arr, bit_index_t i, char c)
 
+Get a word_t with the bottom `nbits` set to 1, the rest to 0:
+
+    word_t BIT_MASK(int nbits)
+
+Combine two words with a mask `((a & abits) | (b & ~abits))`:
+
+    word_t BIT_MASK_MERGE(word_t a, word_t b, int abits)
+
 Set, clear and toggle several bits
 ----------------------------------
 
@@ -168,17 +176,22 @@ Set all 1 bits to 0, and all 0 bits to 1 (i.e. flip all the bits)
 Get / set a word
 ----------------
 
-Get a word of a given size.  First bit is in the least significant bit position
-start index must be within the range of the bit array (0 <= x < length)
+Get a word of a given size.  First bit is in the least significant bit position.
+Index `start` must be within the range of the bit array (0 <= x < length)
 
     uint64_t bit_array_get_word64(const BIT_ARRAY* bitarr, bit_index_t start)
     uint32_t bit_array_get_word32(const BIT_ARRAY* bitarr, bit_index_t start)
     uint16_t bit_array_get_word16(const BIT_ARRAY* bitarr, bit_index_t start)
     uint8_t  bit_array_get_word8 (const BIT_ARRAY* bitarr, bit_index_t start)
+    uint8_t  bit_array_get_wordn (const BIT_ARRAY* bitarr, bit_index_t start, int n)
 
 Set 64 bits at once from a particular start position
 
     void bit_array_set_word64(BIT_ARRAY* bitarr, bit_index_t start, uint64_t word)
+    void bit_array_set_word32(BIT_ARRAY* bitarr, bit_index_t start, uint32_t word)
+    void bit_array_set_word16(BIT_ARRAY* bitarr, bit_index_t start, uint16_t word)
+    void bit_array_set_word8 (BIT_ARRAY* bitarr, bit_index_t start, uint8_t word)
+    void bit_array_set_wordn (BIT_ARRAY* bitarr, bit_index_t start, uint64_t word, int n)
 
 Count bits set
 --------------
@@ -581,12 +594,12 @@ Contributing
 Please feel free to submit issues and pull requests. I appreciate bug reports.
 
 Methods are named:
-  _name()            - indicates only used internally
-  _bit_array_name()  - exported and wrapped in a #define in the header
-  bit_array_name     - exported as is
+* `_name()` indicates only used internally
+* `_bit_array_name()` exported and wrapped in a #define in the header
+* `bit_array_name()` exported as is
 
-_bit_array_name() functions are wrapped in a #define to allow reporting of file
-and line number of offending call in the case of an out of bounds error etc.
+`_bit_array_name()` functions are wrapped in a `#define` to allow reporting of
+file and line number of offending call in the case of an out of bounds error etc.
 
 Testing on different platforms is especially appreciated. I only have access
 to Mac OS X and Linux.
