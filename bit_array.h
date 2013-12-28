@@ -2,27 +2,9 @@
  bit_array.h
  project: bit array C library
  url: https://github.com/noporpoise/BitArray/
- Adapted from: http://stackoverflow.com/a/2633584/431087
  author: Isaac Turner <turner.isaac@gmail.com>
-
- Copyright (c) 2012, Isaac Turner
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
- DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ license: Public Domain, no warranty
+ date: Dec 2013
 */
 
 #ifndef BIT_ARRAY_HEADER_SEEN
@@ -30,6 +12,8 @@
 
 #include <stdio.h>
 #include <inttypes.h>
+
+#include "bit_macros.h"
 
 typedef struct BIT_ARRAY BIT_ARRAY;
 
@@ -87,20 +71,13 @@ char bit_array_ensure_size(BIT_ARRAY* bitarr, bit_index_t ensure_num_of_bits);
 // Macros
 //
 
-// WORD_MAX >> (WORD_SIZE-(length)) gives WORD_MAX instead of 0 if length is 0
-// need to check for length == 0
-#define BIT_MASK(nbits) (nbits ? ~(word_t)0 >> (sizeof(word_t)*8-(nbits)) : (word_t)0)
-
-// A possibly faster way to combine two words with a mask
-//#define BIT_MASK_MERGE(a,b,abits) ((a & abits) | (b & ~abits))
-#define BIT_MASK_MERGE(a,b,abits) (b ^ ((a ^ b) & abits))
-
 // Macros for fast access -- beware: no bounds checking
-#define bit_array_get(arr,i)   (((arr)->words[(i)/64] >>  ((i) % 64)) & 0x1)
-#define bit_array_set(arr,i)    ((arr)->words[(i)/64] |=  ((word_t)1 << ((i) % 64)))
-#define bit_array_clear(arr,i)  ((arr)->words[(i)/64] &= ~((word_t)1 << ((i) % 64)))
-#define bit_array_toggle(arr,i) ((arr)->words[(i)/64] ^=   (word_t)1 << ((i) % 64))
-#define bit_array_assign(arr,i,c) ((c) ? bit_array_set(arr,i) : bit_array_clear(arr,i))
+#define bit_array_get(arr,i)      bitset_get(arr->words, i)
+#define bit_array_set(arr,i)      bitset_set(arr->words, i)
+#define bit_array_clear(arr,i)    bitset_del(arr->words, i)
+#define bit_array_toggle(arr,i)   bitset_tgl(arr->words, i)
+// c must be 0 or 1
+#define bit_array_assign(arr,i,c) bitset_cpy(arr->words,i,c)
 
 // Macros for bounds checking functions below
 #define bit_array_get_bit(bitarr,i)      _bit_array_get_bit(__FILE__,__LINE__,bitarr,i)

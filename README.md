@@ -1,10 +1,8 @@
 **C code for bit arrays**
 =========================
 
-https://github.com/noporpoise/BitArray/
-
-License: revised BSD
-
+https://github.com/noporpoise/BitArray/  
+License: Public Domain, no warranty  
 Isaac Turner <turner.isaac@gmail.com>
 
 About
@@ -29,7 +27,6 @@ To build the library:
 
 To build and run the test code:
 
-    cd dev
     make
     ./dev/bit_array_test
 
@@ -573,6 +570,9 @@ Shuffle the bits in an array randomly
 Useful functions
 ----------------
 
+The file `bit_macros.h` contains many useful macros for bit arrays. Simple bit
+array functions can be implemented with this file alone.
+
 Generalised 'binary to string' function.
 Adds bits to the string in order of lsb to msb
 e.g. 0b11010 (26 in decimal) would come out as "01011"
@@ -604,28 +604,11 @@ file and line number of offending call in the case of an out of bounds error etc
 Testing on different platforms is especially appreciated. I only have access
 to Mac OS X and Linux.
 
-Revised BSD License
+License
 ===================
 
-    Copyright (c) 2013, Isaac Turner
-    All rights reserved.
-   
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions are met:
-   
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-   
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+This software is in the *Public Domain*. That means you can do whatever you like
+with it. There are no warranties and there may be bugs. 
 
 Development
 ===========

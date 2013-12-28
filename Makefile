@@ -15,7 +15,10 @@ all: libbitarr.a dev examples
 libbitarr.a: bit_array.o
 	ar -csru libbitarr.a bit_array.o
 
-%.o: %.c
+bit_array.h: bit_macros.h
+bit_array.o: bit_macros.h
+
+%.o: %.c %.h
 	$(CC) $(OPT) $(CFLAGS) -c $< -o $@
 
 dev: libbitarr.a
