@@ -97,8 +97,8 @@
 // Undefined behaviour if you do not already hold the lock
 #define bitlock_release(arr,pos) { \
   size_t _w = (pos) / (sizeof(*(arr)) * 8); \
-  size_t _b = ~((__typeof(*(arr)))1 << bitset_idx(arr,pos); \
-  while(!__sync_bool_compare_and_swap((arr) + _w, (arr)[_w], (arr)[_w] & _b)); \
+  size_t _b = (__typeof(*(arr)))1 << bitset_idx(arr,pos); \
+  while(!__sync_bool_compare_and_swap((arr) + _w, (arr)[_w], (arr)[_w] & ~_b)); \
 }
 
 #endif /* BITLOCK_H_ */
