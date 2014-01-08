@@ -90,14 +90,14 @@
 // Acquire a lock
 #define bitlock_acquire(arr,pos) { \
   size_t _w = bitset_wrd(arr,pos); \
-  size_t _b = (__typeof(*(arr)))1 << bitset_idx(arr,pos); \
+  __typeof(*(arr)) _b = (__typeof(*(arr)))(1UL << bitset_idx(arr,pos)); \
   while(!__sync_bool_compare_and_swap((arr)+_w, (arr)[_w] & ~_b, (arr)[_w] | _b)); \
 }
 
 // Undefined behaviour if you do not already hold the lock
 #define bitlock_release(arr,pos) { \
-  size_t _w = (pos) / (sizeof(*(arr)) * 8); \
-  size_t _b = (__typeof(*(arr)))1 << bitset_idx(arr,pos); \
+  size_t _w = bitset_wrd(arr,pos); \
+  __typeof(*(arr)) _b = (__typeof(*(arr)))(1UL << bitset_idx(arr,pos)); \
   while(!__sync_bool_compare_and_swap((arr) + _w, (arr)[_w], (arr)[_w] & ~_b)); \
 }
 
