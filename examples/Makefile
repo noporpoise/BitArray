@@ -6,9 +6,10 @@ CFLAGS = -Wall -Wextra -I.. -L..
 
 all: example_cpp example_c
 
-example_cpp:
+example_cpp: example.cpp ../libbitarr.a
 	$(CXX) $(CFLAGS) -o example_cpp example.cpp -lbitarr
-example_c:
+
+example_c: example.c ../libbitarr.a
 	$(CC) $(CFLAGS) -Wc++-compat -o example_c example.c -lbitarr
 
 clean:

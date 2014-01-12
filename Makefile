@@ -12,11 +12,10 @@ CFLAGS = -Wall -Wextra -Wc++-compat -I.
 
 all: libbitarr.a dev examples
 
+bit_array.o: bit_array.c bit_array.h bit_macros.h
+
 libbitarr.a: bit_array.o
 	ar -csru libbitarr.a bit_array.o
-
-bit_array.h: bit_macros.h
-bit_array.o: bit_macros.h
 
 %.o: %.c %.h
 	$(CC) $(OPT) $(CFLAGS) -c $< -o $@

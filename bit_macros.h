@@ -11,10 +11,27 @@
 #define BITSET_H_
 
 #include <inttypes.h>
+#include <sched.h>
+
+// trailing_zeros is number of least significant zeros
+// leading_zeros is number of most significant zeros
+#if defined(_WIN32)
+  #define trailing_zeros(x) ({ __typeof(x) _r; _BitScanReverse64(&_r, x); _r; })
+  #define leading_zeros(x) ({ __typeof(x) _r; _BitScanForward64(&_r, x); _r; })
+#else
+  #define trailing_zeros(x) ((x) ? (__typeof(x))__builtin_ctzl(x) : (__typeof(x))sizeof(x)*8)
+  #define leading_zeros(x) ((x) ? (__typeof(x))__builtin_clzl(x) : (__typeof(x))sizeof(x)*8)
+#endif
+
+// Get index of top set bit. If x is 0 return nbits
+#define top_set_bit(x) ((x) ? sizeof(x)*8-leading_zeros(x)-1 : sizeof(x)*8)
 
 #define roundup_bits2bytes(bits)   (((bits)+7)/8)
 #define roundup_bits2words32(bits) (((bits)+31)/32)
 #define roundup_bits2words64(bits) (((bits)+63)/64)
+
+// Round a number up to the nearest number that is a power of two
+#define roundup2pow(x) (1UL << (64 - leading_zeros(x)))
 
 #define rot32(x,r) (((x)<<(r)) | ((x)>>(32-(r))))
 #define rot64(x,r) (((x)<<(r)) | ((x)>>(64-(r))))
@@ -30,22 +47,6 @@
 
 // Swap lowest four bits. A nibble is 4 bits (i.e. half a byte)
 #define rev_nibble(x) ((((x)&1)<<3)|(((x)&2)<<1)|(((x)&4)>>1)|(((x)&8)>>3))
-
-// trailing_zeros is number of least significant zeros
-// leading_zeros is number of most significant zeros
-#if defined(_WIN32)
-  #define trailing_zeros(x) ({ __typeof(x) _r; _BitScanReverse64(&_r, x); _r; })
-  #define leading_zeros(x) ({ __typeof(x) _r; _BitScanForward64(&_r, x); _r; })
-#else
-  #define trailing_zeros(x) ((x) ? __builtin_ctzl(x) : sizeof(x)*8)
-  #define leading_zeros(x) ((x) ? __builtin_clzl(x) : sizeof(x)*8)
-#endif
-
-// Get index of top set bit. If x is 0 return nbits
-#define top_set_bit(x) ((x) ? sizeof(x)*8-leading_zeros(x)-1 : sizeof(x)*8)
-
-// Round a number up to the nearest number that is a power of two
-#define roundup2pow(x) (1UL << (64 - leading_zeros(x)))
 
 //
 // Bit array (bitset)
@@ -77,28 +78,64 @@
 #define bitset_get(arr,pos) bitset_op(bitset2_get, arr, pos)
 #define bitset_set(arr,pos) bitset_op(bitset2_set, arr, pos)
 #define bitset_del(arr,pos) bitset_op(bitset2_del, arr, pos)
-#define bitset_tgl(arr,pos) bitset_op(bitset2_del, arr, pos)
+#define bitset_tgl(arr,pos) bitset_op(bitset2_tgl, arr, pos)
 #define bitset_cpy(arr,pos,bit) \
         bitset2_cpy(arr, bitset_wrd(arr,pos), bitset_idx(arr,pos), (bit))
 
 #define bitset_clear_word(arr,pos) ((arr)[bitset_wrd(arr,pos)] = 0)
 
 //
+// Thread safe versions
+//
+#define bitset2_set_mt(arr,wrd,idx) \
+        __sync_or_and_fetch(&(arr)[wrd], (__typeof(*(arr)))1 << (idx))
+#define bitset2_del_mt(arr,wrd,idx) \
+        __sync_and_and_fetch(&(arr)[wrd], ~((__typeof(*(arr)))1 << (idx)))
+#define bitset2_tgl_mt(arr,wrd,idx) \
+        __sync_xor_and_fetch(&(arr)[wrd], ~((__typeof(*(arr)))1 << (idx)))
+#define bitset2_cpy_mt(arr,wrd,idx,bit) \
+        ((bit) ? bitset2_set_mt(arr,wrd,idx) : bitset2_del_mt(arr,wrd,idx))
+
+#define bitset_set_mt(arr,pos) bitset_op(bitset2_set_mt, arr, pos)
+#define bitset_del_mt(arr,pos) bitset_op(bitset2_del_mt, arr, pos)
+#define bitset_tgl_mt(arr,pos) bitset_op(bitset2_tgl_mt, arr, pos)
+#define bitset_cpy_mt(arr,pos,bit) \
+        bitset2_cpy_mt(arr, bitset_wrd(arr,pos), bitset_idx(arr,pos), (bit))
+
+// The following do not need atomics
+#define bitset2_get_mt(arr,wrd,idx) bitset2_get(arr,wrd,idx)
+#define bitset_get_mt(arr,pos) bitset_op(bitset2_get, arr, pos)
+#define bitset_clear_word_mt(arr,pos) bitset_clear_word(arr,pos)
+
+//
 // Compact bit array of spin locks
 // These are most effecient when arr is of type: volatile char*
 //
 // Acquire a lock
-#define bitlock_acquire(arr,pos) { \
+#define bitlock_acquire_block(arr,pos,wait) { \
   size_t _w = bitset_wrd(arr,pos); \
   __typeof(*(arr)) _b = (__typeof(*(arr)))(1UL << bitset_idx(arr,pos)); \
-  while(!__sync_bool_compare_and_swap((arr)+_w, (arr)[_w] & ~_b, (arr)[_w] | _b)); \
+  while(1) { \
+    while((arr)[_w] & _b) { wait } \
+    if(__sync_bool_compare_and_swap((arr)+_w, (arr)[_w] & ~_b, (arr)[_w] | _b)) \
+      break; \
+  } \
+  __sync_synchronize(); /* Must not move commands to before acquiring lock */ \
 }
 
 // Undefined behaviour if you do not already hold the lock
-#define bitlock_release(arr,pos) { \
+#define bitlock_release_block(arr,pos,wait) { \
   size_t _w = bitset_wrd(arr,pos); \
   __typeof(*(arr)) _b = (__typeof(*(arr)))(1UL << bitset_idx(arr,pos)); \
-  while(!__sync_bool_compare_and_swap((arr) + _w, (arr)[_w], (arr)[_w] & ~_b)); \
+  __sync_synchronize(); /* Must get the lock before releasing it */ \
+  while(!__sync_bool_compare_and_swap((arr) + _w, (arr)[_w], (arr)[_w] & ~_b)) \
+  { wait } \
 }
+
+#define bitlock_acquire(arr,pos) bitlock_acquire_block(arr,pos,)
+#define bitlock_release(arr,pos) bitlock_release_block(arr,pos,)
+
+// calls yield if cannot acquire the lock
+#define bitlock_yield_acquire(arr,pos) bitlock_acquire_block(arr,pos,sched_yield();)
 
 #endif /* BITLOCK_H_ */

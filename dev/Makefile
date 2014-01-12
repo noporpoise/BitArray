@@ -12,7 +12,7 @@ CFLAGS = -Wall -Wextra -Wc++-compat
 
 all: bit_array_test bit_array_generate
 
-bit_array_test: bit_array_test.c
+bit_array_test: bit_array_test.c ../libbitarr.a
 	$(CC) $(OPT) $(CFLAGS) -I.. -L.. -o bit_array_test bit_array_test.c -lbitarr
 
 bit_array_generate:
