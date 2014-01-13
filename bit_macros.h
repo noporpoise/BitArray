@@ -88,11 +88,11 @@
 // Thread safe versions
 //
 #define bitset2_set_mt(arr,wrd,idx) \
-        __sync_or_and_fetch(&(arr)[wrd], (__typeof(*(arr)))1 << (idx))
+        __sync_or_and_fetch(&(arr)[wrd], (__typeof(*(arr))(__typeof(*(arr)))1 << (idx))
 #define bitset2_del_mt(arr,wrd,idx) \
-        __sync_and_and_fetch(&(arr)[wrd], ~((__typeof(*(arr)))1 << (idx)))
+        __sync_and_and_fetch(&(arr)[wrd], ~(__typeof(*(arr))((__typeof(*(arr)))1 << (idx)))
 #define bitset2_tgl_mt(arr,wrd,idx) \
-        __sync_xor_and_fetch(&(arr)[wrd], ~((__typeof(*(arr)))1 << (idx)))
+        __sync_xor_and_fetch(&(arr)[wrd], ~(__typeof(*(arr))((__typeof(*(arr)))1 << (idx)))
 #define bitset2_cpy_mt(arr,wrd,idx,bit) \
         ((bit) ? bitset2_set_mt(arr,wrd,idx) : bitset2_del_mt(arr,wrd,idx))
 
