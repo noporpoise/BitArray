@@ -530,7 +530,7 @@ BIT_ARRAY* bit_array_alloc(BIT_ARRAY* bitarr, bit_index_t nbits)
   bitarr->num_of_bits = nbits;
   bitarr->num_of_words = roundup_bits2words64(nbits);
   bitarr->capacity_in_words = roundup2pow(bitarr->num_of_words);
-  bitarr->words = calloc(bitarr->capacity_in_words, sizeof(word_t));
+  bitarr->words = (word_t*)calloc(bitarr->capacity_in_words, sizeof(word_t));
   if(bitarr->words == NULL) {
     errno = ENOMEM;
     return NULL;
@@ -546,7 +546,7 @@ void bit_array_dealloc(BIT_ARRAY* bitarr)
 // If cannot allocate memory, set errno to ENOMEM, return NULL
 BIT_ARRAY* bit_array_create(bit_index_t nbits)
 {
-  BIT_ARRAY* bitarr = malloc(sizeof(BIT_ARRAY));
+  BIT_ARRAY* bitarr = (BIT_ARRAY*)malloc(sizeof(BIT_ARRAY));
 
   // error if could not allocate enough memory
   if(bitarr == NULL || bit_array_alloc(bitarr, nbits) == NULL)
