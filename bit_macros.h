@@ -88,11 +88,11 @@
 // Thread safe versions
 //
 #define bitset2_set_mt(arr,wrd,idx) \
-        __sync_or_and_fetch(&(arr)[wrd], (__typeof(*(arr)))((__typeof(*(arr)))1 << (idx)))
+  __sync_or_and_fetch(&(arr)[wrd], (__typeof(*(arr)))((__typeof(*(arr)))1<<(idx)))
 #define bitset2_del_mt(arr,wrd,idx) \
-        __sync_and_and_fetch(&(arr)[wrd], ~(__typeof(*(arr)))((__typeof(*(arr)))1 << (idx)))
+  __sync_and_and_fetch(&(arr)[wrd], ~(__typeof(*(arr)))((__typeof(*(arr)))1<<(idx)))
 #define bitset2_tgl_mt(arr,wrd,idx) \
-        __sync_xor_and_fetch(&(arr)[wrd], ~(__typeof(*(arr)))((__typeof(*(arr)))1 << (idx)))
+  __sync_xor_and_fetch(&(arr)[wrd], ~(__typeof(*(arr)))((__typeof(*(arr)))1<<(idx)))
 #define bitset2_cpy_mt(arr,wrd,idx,bit) \
         ((bit) ? bitset2_set_mt(arr,wrd,idx) : bitset2_del_mt(arr,wrd,idx))
 
@@ -103,8 +103,8 @@
         bitset2_cpy_mt(arr, bitset_wrd(arr,pos), bitset_idx(arr,pos), (bit))
 
 // The following do not need atomics
-#define bitset2_get_mt(arr,wrd,idx) bitset2_get(arr,wrd,idx)
-#define bitset_get_mt(arr,pos) bitset_op(bitset2_get, arr, pos)
+#define bitset_get_mt(arr,pos)        bitset_get(arr,pos)
+#define bitset2_get_mt(arr,wrd,idx)   bitset2_get(arr,wrd,idx)
 #define bitset_clear_word_mt(arr,pos) bitset_clear_word(arr,pos)
 
 //
