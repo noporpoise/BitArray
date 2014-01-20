@@ -70,8 +70,8 @@
 #define bitset2_set(arr,wrd,idx)     ((arr)[wrd] |= ((__typeof(*(arr)))1 << (idx)))
 #define bitset2_del(arr,wrd,idx)     ((arr)[wrd] &=~((__typeof(*(arr)))1 << (idx)))
 #define bitset2_tgl(arr,wrd,idx)     ((arr)[wrd] ^=~((__typeof(*(arr)))1 << (idx)))
-#define bitset2_cpy(arr,wrd,idx,bit) (((arr)[wrd] &~ ((__typeof(*(arr)))1 << (idx))) | \
-                                      ((__typeof(*(arr)))(bit) << (idx)))
+#define bitset2_cpy(arr,wrd,idx,bit) ((arr)[wrd] = ((arr)[wrd] &~ ((__typeof(*(arr)))1 << (idx))) | \
+                                                   ((__typeof(*(arr)))(bit) << (idx)))
 
 #define bitset_op(func,arr,pos) func(arr, bitset_wrd(arr,pos), bitset_idx(arr,pos))
 
