@@ -112,28 +112,26 @@
 // These are most effecient when arr is of type: volatile char*
 //
 // Acquire a lock
-#define bitlock_acquire_block(arr,pos,wait) { \
-  size_t _w = bitset_wrd(arr,pos); \
-  __typeof(*(arr)) _b = (__typeof(*(arr)))(1UL << bitset_idx(arr,pos)); \
-  while(1) { \
-    while((arr)[_w] & _b) { wait } \
-    if(__sync_bool_compare_and_swap((arr)+_w, (arr)[_w] & ~_b, (arr)[_w] | _b)) \
-      break; \
-  } \
-  __sync_synchronize(); /* Must not move commands to before acquiring lock */ \
+#define bitlock_acquire_block(arr,pos,wait) {                                  \
+  size_t _w = bitset_wrd(arr,pos);                                             \
+  __typeof(*(arr)) _o, _n, _b = (__typeof(*(arr)))1 << bitset_idx(arr,pos);    \
+  do {                                                                         \
+    while((arr)[_w] & _b) { wait }                                             \
+    _o = (arr)[_w] & ~_b; _n = (arr)[_w] | _b;                                 \
+  } while(!__sync_bool_compare_and_swap(&(arr)[_w], _o, _n));                  \
+  __sync_synchronize(); /* Must not move commands to before acquiring lock */  \
 }
 
 // Undefined behaviour if you do not already hold the lock
-#define bitlock_release_block(arr,pos,wait) { \
-  size_t _w = bitset_wrd(arr,pos); \
-  __typeof(*(arr)) _b = (__typeof(*(arr)))(1UL << bitset_idx(arr,pos)); \
-  __sync_synchronize(); /* Must get the lock before releasing it */ \
-  while(!__sync_bool_compare_and_swap((arr) + _w, (arr)[_w], (arr)[_w] & ~_b)) \
-  { wait } \
+#define bitlock_release(arr,pos) {                                             \
+  size_t _w = bitset_wrd(arr,pos);                                             \
+  __typeof(*(arr)) _o, _b = (__typeof(*(arr)))1 << bitset_idx(arr,pos);        \
+  __sync_synchronize(); /* Must get the lock before releasing it */            \
+  do { _o = (arr)[_w]; }                                                       \
+  while(!__sync_bool_compare_and_swap(&(arr)[_w], _o, _o & ~_b));              \
 }
 
-#define bitlock_acquire(arr,pos) bitlock_acquire_block(arr,pos,)
-#define bitlock_release(arr,pos) bitlock_release_block(arr,pos,)
+#define bitlock_acquire(arr,pos) bitlock_acquire_block(arr,pos,{})
 
 // calls yield if cannot acquire the lock
 #define bitlock_yield_acquire(arr,pos) bitlock_acquire_block(arr,pos,sched_yield();)
