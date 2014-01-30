@@ -53,6 +53,7 @@
 //
 // bitsetX_wrd(): get word for a given position
 // bitsetX_idx(): get index within word for a given position
+#define _TYP(x) (__typeof(*(x)))
 
 #define bitsetX_wrd(wrdbits,pos) ((pos) / (wrdbits))
 #define bitsetX_idx(wrdbits,pos) ((pos) % (wrdbits))
@@ -67,11 +68,12 @@
 #define bitset_idx(arr,pos) ((pos) % (sizeof(*(arr))*8))
 
 #define bitset2_get(arr,wrd,idx)     (((arr)[wrd] >> (idx)) & 0x1)
-#define bitset2_set(arr,wrd,idx)     ((arr)[wrd] |= ((__typeof(*(arr)))1 << (idx)))
-#define bitset2_del(arr,wrd,idx)     ((arr)[wrd] &=~((__typeof(*(arr)))1 << (idx)))
-#define bitset2_tgl(arr,wrd,idx)     ((arr)[wrd] ^=~((__typeof(*(arr)))1 << (idx)))
-#define bitset2_cpy(arr,wrd,idx,bit) ((arr)[wrd] = (((arr)[wrd] &~ ((__typeof(*(arr)))1 << (idx))) | \
-                                                    ((__typeof(*(arr)))(bit) << (idx))))
+#define bitset2_set(arr,wrd,idx)     ((arr)[wrd] |= (_TYP(arr)1 << (idx)))
+#define bitset2_del(arr,wrd,idx)     ((arr)[wrd] &=~(_TYP(arr)1 << (idx)))
+#define bitset2_tgl(arr,wrd,idx)     ((arr)[wrd] ^=~(_TYP(arr)1 << (idx)))
+#define bitset2_cpy(arr,wrd,idx,bit) \
+   ((arr)[wrd] = (((arr)[wrd] &~ _TYP(arr)(_TYP(arr)1 << (idx))) | \
+                 _TYP(arr)(_TYP(arr)(bit) << (idx))))
 
 #define bitset_op(func,arr,pos) func(arr, bitset_wrd(arr,pos), bitset_idx(arr,pos))
 
@@ -88,11 +90,11 @@
 // Thread safe versions
 //
 #define bitset2_set_mt(arr,wrd,idx) \
-  __sync_or_and_fetch(&(arr)[wrd], (__typeof(*(arr)))((__typeof(*(arr)))1<<(idx)))
+  __sync_or_and_fetch(&(arr)[wrd], _TYP(arr)(_TYP(arr)1<<(idx)))
 #define bitset2_del_mt(arr,wrd,idx) \
-  __sync_and_and_fetch(&(arr)[wrd], ~(__typeof(*(arr)))((__typeof(*(arr)))1<<(idx)))
+  __sync_and_and_fetch(&(arr)[wrd], ~_TYP(arr)(_TYP(arr)1<<(idx)))
 #define bitset2_tgl_mt(arr,wrd,idx) \
-  __sync_xor_and_fetch(&(arr)[wrd], ~(__typeof(*(arr)))((__typeof(*(arr)))1<<(idx)))
+  __sync_xor_and_fetch(&(arr)[wrd], ~_TYP(arr)(_TYP(arr)1<<(idx)))
 #define bitset2_cpy_mt(arr,wrd,idx,bit) \
         ((bit) ? bitset2_set_mt(arr,wrd,idx) : bitset2_del_mt(arr,wrd,idx))
 
@@ -114,7 +116,7 @@
 // Acquire a lock
 #define bitlock_acquire_block(arr,pos,wait) {                                  \
   size_t _w = bitset_wrd(arr,pos);                                             \
-  __typeof(*(arr)) _o, _n, _b = (__typeof(*(arr)))1 << bitset_idx(arr,pos);    \
+  __typeof(*(arr)) _o, _n, _b = _TYP(arr)(_TYP(arr)1 << bitset_idx(arr,pos));  \
   do {                                                                         \
     while((arr)[_w] & _b) { wait }                                             \
     _o = (arr)[_w] & ~_b; _n = (arr)[_w] | _b;                                 \
@@ -125,7 +127,7 @@
 // Undefined behaviour if you do not already hold the lock
 #define bitlock_release(arr,pos) {                                             \
   size_t _w = bitset_wrd(arr,pos);                                             \
-  __typeof(*(arr)) _o, _b = (__typeof(*(arr)))1 << bitset_idx(arr,pos);        \
+  __typeof(*(arr)) _o, _b = _TYP(arr)(_TYP(arr)1 << bitset_idx(arr,pos));      \
   __sync_synchronize(); /* Must get the lock before releasing it */            \
   do { _o = (arr)[_w]; }                                                       \
   while(!__sync_bool_compare_and_swap(&(arr)[_w], _o, _o & ~_b));              \
