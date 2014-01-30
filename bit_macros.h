@@ -54,6 +54,7 @@
 // bitsetX_wrd(): get word for a given position
 // bitsetX_idx(): get index within word for a given position
 #define _TYP(x) (__typeof(*(x)))
+#define _VTYPTR(x) (volatile __typeof(*(x)) *)
 
 #define bitsetX_wrd(wrdbits,pos) ((pos) / (wrdbits))
 #define bitsetX_idx(wrdbits,pos) ((pos) % (wrdbits))
@@ -120,7 +121,7 @@
   do {                                                                         \
     while((arr)[_w] & _b) { wait }                                             \
     _o = (arr)[_w] & ~_b; _n = (arr)[_w] | _b;                                 \
-  } while(!__sync_bool_compare_and_swap(&(arr)[_w], _o, _n));                  \
+  } while(!__sync_bool_compare_and_swap(_VTYPTR(arr)&(arr)[_w], _o, _n));     \
   __sync_synchronize(); /* Must not move commands to before acquiring lock */  \
 }
 
@@ -130,7 +131,7 @@
   __typeof(*(arr)) _o, _b = _TYP(arr)(_TYP(arr)1 << bitset_idx(arr,pos));      \
   __sync_synchronize(); /* Must get the lock before releasing it */            \
   do { _o = (arr)[_w]; }                                                       \
-  while(!__sync_bool_compare_and_swap(&(arr)[_w], _o, _o & ~_b));              \
+  while(!__sync_bool_compare_and_swap(_VTYPTR(arr)&(arr)[_w], _o, _o & ~_b)); \
 }
 
 #define bitlock_acquire(arr,pos) bitlock_acquire_block(arr,pos,{})
