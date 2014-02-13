@@ -242,11 +242,11 @@ static inline char* _word_to_str(word_t word, char str[WORD_SIZE+1])
 }
 
 // Error reporting code
-void call_die(const char *file, int line, const char *fmt, ...)
+static void call_die(const char *file, int line, const char *fmt, ...)
 __attribute__((format(printf, 3, 4)))
 __attribute__((noreturn));
 
-void call_die(const char *file, int line, const char *fmt, ...)
+static void call_die(const char *file, int line, const char *fmt, ...)
 {
   va_list argptr;
   fflush(stdout);
