@@ -36,4 +36,4 @@ clean:
 
 # Comment this line out to keep .o files
 .INTERMEDIATE: $(OBJS)
-.PHONY: all clean dev examples
+.PHONY: all clean test examples
