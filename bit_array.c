@@ -242,15 +242,17 @@ static inline char* _word_to_str(word_t word, char str[WORD_SIZE+1])
 }
 
 // Error reporting code
-static void call_die(const char *file, int line, const char *fmt, ...)
-__attribute__((format(printf, 3, 4)))
+static void call_die(const char *file, int line, const char *func,
+                     const char *fmt, ...)
+__attribute__((format(printf, 4, 5)))
 __attribute__((noreturn));
 
-static void call_die(const char *file, int line, const char *fmt, ...)
+static void call_die(const char *file, int line, const char *func,
+                     const char *fmt, ...)
 {
   va_list argptr;
   fflush(stdout);
-  fprintf(stderr, "[%s:%i] Error: ", file, line);
+  fprintf(stderr, "[%s:%i] Error %s: ", file, line, func);
   va_start(argptr, fmt);
   vfprintf(stderr, fmt, argptr);
   va_end(argptr);
@@ -272,16 +274,15 @@ void validate_bitarr(BIT_ARRAY *arr, char *file, int lineno)
   {
     _print_word(arr->words[tw], stderr);
     fprintf(stderr, "\n");
-    call_die(file, lineno, "VALIDATE_BIT_ARRAY(): Fail -- "
-                           "expected %i bits in top word[%i]:\n",
-            (int)top_bits, (int)tw);
+    call_die(file, lineno, __func__, "Expected %i bits in top word[%i]",
+             (int)top_bits, (int)tw);
   }
 
   // Check num of words is correct
   word_addr_t num_words = roundup_bits2words64(arr->num_of_bits);
   if(num_words != arr->num_of_words)
   {
-    call_die(file, lineno, "VALIDATE_BIT_ARRAY(): Fail -- num of words wrong "
+    call_die(file, lineno, __func__, "num of words wrong "
              "[bits: %i, word: %i, actual words: %i]\n",
              (int)arr->num_of_bits, (int)num_words, (int)arr->num_of_words);
   }
@@ -320,8 +321,9 @@ static inline void _bounds_check_start(const BIT_ARRAY* bitarr,
 {
   if(start >= bitarr->num_of_bits)
   {
-    call_die(file, line, "%s() - out of bounds error (index: %zu, num_of_bits: %zu)",
-             func, (size_t)start, (size_t)bitarr->num_of_bits);
+    call_die(file, line, func,
+             "Out of bounds error (index: %zu, num_of_bits: %zu)",
+             (size_t)start, (size_t)bitarr->num_of_bits);
   }
 }
 
@@ -332,10 +334,9 @@ static inline void _bounds_check_offset(const BIT_ARRAY* bitarr,
 {
   if(start + len > bitarr->num_of_bits)
   {
-    call_die(file, line, "%s() - out of bounds error "
-             "(start: %zu; length: %zu; num_of_bits: %zu)\n",
-             func, (size_t)start, (size_t)len,
-             (size_t)bitarr->num_of_bits);
+    call_die(file, line, func,
+             "Out of bounds error (start: %zu; length: %zu; num_of_bits: %zu)",
+             (size_t)start, (size_t)len, (size_t)bitarr->num_of_bits);
   }
 }
 
@@ -529,7 +530,7 @@ BIT_ARRAY* bit_array_alloc(BIT_ARRAY* bitarr, bit_index_t nbits)
 {
   bitarr->num_of_bits = nbits;
   bitarr->num_of_words = roundup_bits2words64(nbits);
-  bitarr->capacity_in_words = roundup2pow(bitarr->num_of_words);
+  bitarr->capacity_in_words = MAX(4, roundup2pow(bitarr->num_of_words));
   bitarr->words = (word_t*)calloc(bitarr->capacity_in_words, sizeof(word_t));
   if(bitarr->words == NULL) {
     errno = ENOMEM;
@@ -589,7 +590,6 @@ bit_index_t bit_array_length(const BIT_ARRAY* bit_arr)
 char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
 {
   word_addr_t old_num_of_words = bitarr->num_of_words;
-
   word_addr_t new_num_of_words = roundup_bits2words64(new_num_of_bits);
 
   bitarr->num_of_bits = new_num_of_bits;
@@ -653,12 +653,8 @@ void bit_array_resize_critical(BIT_ARRAY* bitarr, bit_index_t num_of_bits,
 
   if(!bit_array_resize(bitarr, num_of_bits))
   {
-    fprintf(stderr, "%s:%i:%s(): Ran out of memory resizing [%lu -> %lu]\n",
-            file, lineno, func,
-            (unsigned long)old_num_of_bits, (unsigned long)num_of_bits);
-    kill(getpid(), SIGABRT);
-    // errno = ENOMEM;
-    // exit(EXIT_FAILURE);
+    call_die(file, lineno, func, "Ran out of memory resizing [%lu -> %lu]",
+             (unsigned long)old_num_of_bits, (unsigned long)num_of_bits);
   }
 }
 
@@ -671,6 +667,27 @@ char bit_array_ensure_size(BIT_ARRAY* bitarr, bit_index_t ensure_num_of_bits)
   }
 
   return 1;
+}
+
+void bit_array_ensure_nwords(BIT_ARRAY* bitarr, word_addr_t nwords,
+                             const char *file, int lineno, const char *func)
+{
+  size_t newmem, oldmem;
+  if(bitarr->capacity_in_words < nwords) {
+    oldmem = bitarr->capacity_in_words * sizeof(word_t);
+    bitarr->capacity_in_words = roundup2pow(nwords);
+    newmem = bitarr->capacity_in_words * sizeof(word_t);
+    bitarr->words = (word_t*)realloc(bitarr->words, newmem);
+
+    if(bitarr->words == NULL) {
+      call_die(file, lineno, func, "Ran out of memory resizing [%zu -> %zu]",
+               oldmem, newmem);
+    }
+
+    #ifdef DEBUG
+      printf("Ensure nwords realloc %zu -> %zu\n", oldmem, newmem);
+    #endif
+  }
 }
 
 
@@ -962,7 +979,7 @@ uint64_t _bit_array_get_wordn(const char *file, int line,
 {
   // Bounds checking
   _bounds_check_start(bitarr, start, file, line, "bit_array_wordn");
-  if(n > 64) call_die(file, line, "_bit_array_get_wordn(): n > 64");
+  if(n > 64) call_die(file, line, __func__, "n > 64");
   return (uint64_t)(_get_word(bitarr, start) & bitmask64(n));
 }
 
@@ -1210,11 +1227,8 @@ void _bit_array_from_substr(const char *file, int line,
     }
     else if(strchr(off, str[i]) == NULL)
     {
-      fprintf(stderr, "%s:%i:bit_array_from_substr(): Invalid char '%c' "
-                      "(on: %s; off: %s)\n", file, line, str[i], on, off);
-      kill(getpid(), SIGABRT);
-      // errno = EDOM;
-      // exit(EXIT_FAILURE);
+      call_die(file, line, __func__, "Invalid char '%c' (on: %s; off: %s)",
+               str[i], on, off);
     }
   }
 
@@ -2189,25 +2203,20 @@ void _bit_array_interleave(const char *file, int line,
 {
   if(dst == src1 || dst == src2)
   {
-    fprintf(stderr, "%s:%i:bit_array_interleave(): dst cannot point to "
-                    "src1 or src2\n", file, line);
-    kill(getpid(), SIGABRT);
-    // exit(EXIT_FAILURE);
+    call_die(file, line, __func__, "dst cannot point to src1 or src2");
   }
   else if(src1->num_of_bits != src2->num_of_bits)
   {
-    fprintf(stderr, "%s:%i:bit_array_interleave(): Behaviour undefined when"
-                    "src1 length (%lu) != src2 length (%lu)", file, line,
-            (unsigned long)src1->num_of_bits, (unsigned long)src2->num_of_bits);
-    kill(getpid(), SIGABRT);
-    // exit(EXIT_FAILURE);
+    call_die(file, line,  __func__,
+             "Behaviour undefined when src1 length (%lu) != src2 length (%lu)",
+             (unsigned long)src1->num_of_bits, (unsigned long)src2->num_of_bits);
   }
 
-  if(dst->num_of_bits < 2 * src1->num_of_bits)
-  {
-    bit_array_resize_critical(dst, 2 * src1->num_of_bits,
-                              file, line, "bit_array_and");
-  }
+  // Need at least src1->num_of_words + src2->num_of_words
+  size_t nwords = MIN(src1->num_of_words + src2->num_of_words, 2);
+  bit_array_ensure_nwords(dst, nwords, file, line, __func__);
+  dst->num_of_bits = src1->num_of_bits + src2->num_of_bits;
+  dst->num_of_words = roundup_bits2words64(dst->num_of_bits);
 
   word_addr_t i, j;
 
@@ -2253,10 +2262,7 @@ void _bit_array_random(const char *file, int line, BIT_ARRAY* bitarr, float prob
   }
   else if(prob > 1)
   {
-    fprintf(stderr, "%s:%i:bit_array_random(): Behaviour undefined when "
-                    "prob > 1 (%f)", file, line, prob);
-    kill(getpid(), SIGABRT);
-    // exit(EXIT_FAILURE);
+    call_die(file, line, __func__, "Behaviour undefined when prob > 1 (%f)", prob);
   }
   else if(prob == 1)
   {
@@ -2595,10 +2601,7 @@ void _bit_array_difference(const char *file, int line, BIT_ARRAY* dst,
   if(bit_array_cmp(src1, src2) < 0)
   {
     // Error
-    fprintf(stderr, "%s:%i:bit_array_difference(): bit_array_substract "
-                    "requires src1 >= src2\n", file, line);
-    kill(getpid(), SIGABRT);
-    // exit(EXIT_FAILURE);
+    call_die(file, line, __func__, "Require src1 >= src2");
   }
 
   if(dst->num_of_bits < src1->num_of_bits)
@@ -2706,10 +2709,8 @@ void _bit_array_add_words(const char *file, int line, BIT_ARRAY *bitarr,
   if(bitarr == add)
   {
     // Error
-    fprintf(stderr, "%s:%i:bit_array_add_words() bitarr and add cannot "
-                    "point to the same bit array\n", file, line);
-    kill(getpid(), SIGABRT);
-    // exit(EXIT_FAILURE);
+    call_die(file, line, __func__,
+             "bitarr and add cannot point to the same bit array");
   }
 
   bit_index_t add_top_bit_set;
@@ -2855,10 +2856,8 @@ char _bit_array_minus_words(const char *file, int line,
   if(bitarr == minus)
   {
     // Error
-    fprintf(stderr, "%s:%i:bit_array_minus_words() bitarr and minus cannot "
-                    "point to the same bit array\n", file, line);
-    kill(getpid(), SIGABRT);
-    // exit(EXIT_FAILURE);
+    call_die(file, line, __func__,
+             "bitarr and minus cannot point to the same bit array");
   }
 
   int cmp = bit_array_cmp_words(bitarr, pos, minus);
@@ -2936,10 +2935,7 @@ void _bit_array_product(const char *file, int line,
   }
   else if(dst == src1 && src1 == src2)
   {
-    fprintf(stderr, "%s:%i:bit_array_product(): Cannot pass the same array "
-                    "as dst, src1 AND src2\n", file, line);
-    kill(getpid(), SIGABRT);
-    // exit(EXIT_FAILURE);
+    call_die(file, line, __func__, "Cannot pass the same array as dst, src1 AND src2");
   }
   // Dev: multiplier == 1?
 
@@ -2984,9 +2980,7 @@ void _bit_array_div(const char *file, int line,
 {
   if(divisor == 0)
   {
-    fprintf(stderr, "%s:%i:bit_array_div(): Cannot divide by zero\n", file, line);
-    kill(getpid(), SIGABRT);
-    // exit(EXIT_FAILURE);
+    call_die(file, line, __func__, "Cannot divide by zero");
   }
 
   bit_index_t div_top_bit = 63 - leading_zeros(divisor);
@@ -3057,10 +3051,7 @@ void _bit_array_divide(const char *file, int line, BIT_ARRAY *dividend,
 {
   if(bit_array_compare_num(divisor, 0) == 0)
   {
-    fprintf(stderr, "%s:%i:bit_array_divide(): Cannot divide by zero\n",
-            file, line);
-    kill(getpid(), SIGABRT);
-    // exit(EXIT_FAILURE);
+    call_die(file, line, __func__, "Cannot divide by zero");
   }
 
   bit_array_clear_all(quotient);
@@ -3184,9 +3175,7 @@ uint64_t bit_array_crc(const BIT_ARRAY *bitarr, uint64_t crc)
 
   if(crc == 0 || crc & tbm)
   {
-    fprintf(stderr, "Error: n must be 0 < n < 64\n");
-    errno = EDOM;
-    return 0;
+    call_die(__FILE__,__LINE__,__func__,"n must be 0 < n < 64");
   }
 
   // crcn is the number of bits set in crc

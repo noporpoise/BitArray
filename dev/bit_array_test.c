@@ -709,11 +709,12 @@ void _test_random_and_shuffle()
   float prob = 0.5f;
 
   int *counts = (int*)malloc(max_len*sizeof(int));
-  int *hist = (int*)malloc(num_hits*sizeof(int));
+  int *hist = (int*)malloc((num_hits+1)*sizeof(int));
 
   for(k = 0; k < num_repetitions; k++)
   {
     int len = RAND(max_len-5)+5;
+    ASSERT(len <= max_len);
 
     bit_array_resize(arr, len);
     bit_array_random(arr, prob);
@@ -721,7 +722,7 @@ void _test_random_and_shuffle()
     bit_index_t bitset = bit_array_num_bits_set(arr);
 
     memset(counts, 0, len*sizeof(int));
-    memset(hist, 0, num_hits*sizeof(int));
+    memset(hist, 0, (num_hits+1)*sizeof(int));
 
     for(i = 0; i < num_hits; i++)
     {
@@ -740,7 +741,7 @@ void _test_random_and_shuffle()
     }
 
     int maxi = 0;
-    for(i = 1; i < num_hits; i++) {
+    for(i = 1; i <= num_hits; i++) {
       if(hist[i] > hist[maxi]) {
         maxi = i;
       }
@@ -754,6 +755,7 @@ void _test_random_and_shuffle()
   ASSERT(average >= expected-10 && average <= expected+10);
 
   free(hist);
+  free(counts);
   bit_array_free(arr);
 }
 
@@ -1541,6 +1543,9 @@ void _test_string_functions(BIT_ARRAY *arr)
 
   // compare
   ASSERT(bit_array_cmp(arr, arr2) == 0);
+
+  free(str);
+  bit_array_free(arr2);
 }
 
 // bit_array_from_str(), bit_array_from_substr()
@@ -1615,6 +1620,8 @@ void test_hex_functions()
   _test_hex_functions(arr, "0x123456789ABcDeF0", 1, 0, "0x123456789abcdef0");
   _test_hex_functions(arr, "0x123456789ABcDeF0", 40, 0, "0x123456789abcdef0");
 
+  bit_array_free(arr);
+
   SUITE_END();
 }
 
@@ -1680,6 +1687,8 @@ void test_next_permutation()
       ASSERT(strcmp(tmp, correct) == 0);
     }
   }
+
+  bit_array_free(arr);
 
   SUITE_END();
 }
@@ -2085,6 +2094,8 @@ void _test_to_from_decimal(char *str)
     // debug output
     printf("%s -> %s\n", str, new_str);
   }
+
+  bit_array_free(bitarr);
 }
 
 void test_to_from_decimal()

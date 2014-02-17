@@ -5,6 +5,8 @@ https://github.com/noporpoise/BitArray/
 License: Public Domain, no warranty  
 Isaac Turner <turner.isaac@gmail.com>
 
+[![Build Status](https://travis-ci.org/noporpoise/BitArray.png?branch=master)](https://travis-ci.org/noporpoise/BitArray)
+
 About
 =====
 
