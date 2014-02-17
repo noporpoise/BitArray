@@ -1,0 +1,9 @@
+# Control file for continuous integration testing at http://travis-ci.org/
+
+language: c
+compiler:
+  - clang
+  - gcc
+
+install: make all
+script: make test
