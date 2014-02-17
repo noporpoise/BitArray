@@ -1,14 +1,21 @@
-ifndef CC
-	CC = gcc
-endif
+CC ?= gcc
+
+PLATFORM := $(shell uname)
+COMPILER := $(shell ($(CC) -v 2>&1) | tr A-Z a-z )
 
 ifdef DEBUG
-	OPT = -DDEBUG=1 --debug -g
+	OPT = -O0 -DDEBUG=1 --debug -g -ggdb
 else
-	OPT = -O3 -flto
+	ifneq (,$(findstring clang,$(COMPILER)))
+		# clang Link Time Optimisation (lto) seems to have issues atm
+		OPT = -O3
+	else
+		OPT = -O4 -flto
+	endif
 endif
 
-CFLAGS = -Wall -Wextra -Wc++-compat -I.
+CFLAGS = -Wall -Wextra -Wc++-compat -I. $(OPT)
+OBJFLAGS = -fPIC
 
 all: libbitarr.a dev/bit_array_test examples
 
@@ -18,7 +25,7 @@ libbitarr.a: bit_array.o
 	ar -csru libbitarr.a bit_array.o
 
 %.o: %.c %.h
-	$(CC) $(OPT) $(CFLAGS) -fPIC -c $< -o $@
+	$(CC) $(CFLAGS) $(OBJFLAGS) -c $< -o $@
 
 dev/bit_array_test: libbitarr.a
 	cd dev; make
@@ -28,6 +35,7 @@ examples: libbitarr.a
 
 test: dev/bit_array_test
 	./dev/bit_array_test
+	cd examples; make test
 
 clean:
 	rm -rf libbitarr.a *.o *.dSYM *.greg
