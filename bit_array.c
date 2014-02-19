@@ -622,7 +622,7 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
 
     // Need to zero new memory
     size_t num_bytes_to_zero = new_capacity_in_bytes - old_capacity_in_bytes;
-    memset(bitarr->words + old_capacity_in_words, 0x0, num_bytes_to_zero);
+    memset(bitarr->words + old_capacity_in_words, 0, num_bytes_to_zero);
 
     #ifdef DEBUG
     printf("zeroing from word %i for %i bytes\n", (int)old_capacity_in_words,
@@ -633,7 +633,7 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
   {
     // Shrunk -- need to zero old memory
     size_t num_bytes_to_zero = (old_num_of_words - new_num_of_words)*sizeof(word_t);
-    memset(bitarr->words + new_num_of_words, 0x0, num_bytes_to_zero);
+    memset(bitarr->words + new_num_of_words, 0, num_bytes_to_zero);
   }
 
   // Mask top word
@@ -1648,8 +1648,7 @@ static void _logical_or_xor(BIT_ARRAY* dst,
 
   if(dst->num_of_bits < max_bits)
   {
-    bit_array_resize_critical(dst, max_bits, __FILE__, __LINE__,
-                              "bit_array_xor");
+    bit_array_resize_critical(dst, max_bits, __FILE__, __LINE__, __func__);
   }
 
   word_addr_t min_words = MIN(src1->num_of_words, src2->num_of_words);
@@ -1704,8 +1703,7 @@ void bit_array_not(BIT_ARRAY* dst, const BIT_ARRAY* src)
 {
   if(dst->num_of_bits < src->num_of_bits)
   {
-    bit_array_resize_critical(dst, src->num_of_bits, __FILE__, __LINE__,
-                              "bit_array_not");
+    bit_array_resize_critical(dst, src->num_of_bits, __FILE__, __LINE__, __func__);
   }
 
   word_addr_t i;
@@ -2280,7 +2278,7 @@ void _bit_array_random(const char *file, int line, BIT_ARRAY* bitarr, float prob
   word_offset_t o;
 
   // Initialise to zero
-  memset(bitarr->words, 0x0, bitarr->num_of_words * sizeof(word_t));
+  memset(bitarr->words, 0, bitarr->num_of_words * sizeof(word_t));
 
   for(w = 0; w < bitarr->num_of_words - 1; w++)
   {
