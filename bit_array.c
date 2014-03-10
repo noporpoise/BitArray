@@ -3370,11 +3370,12 @@ uint32_t       *pb)               /* IN: more seed OUT: secondary hash value */
 // Using bob jenkins hash lookup3
 uint64_t bit_array_hash(const BIT_ARRAY* bitarr, uint64_t seed)
 {
-  uint32_t *pc = (uint32_t*)&seed;
-  uint32_t *pb = pc+1;
+  uint32_t seed32[2];
+  memcpy(seed32, &seed, sizeof(uint32_t)*2);
 
   // Round up length to number 32bit words
-  hashword2((uint32_t*)bitarr->words, (bitarr->num_of_bits + 31) / 32, pc, pb);
+  hashword2((uint32_t*)bitarr->words, (bitarr->num_of_bits + 31) / 32,
+            &seed32[0], &seed32[1]);
 
   // XOR with array length. This ensures arrays with different length but same
   // contents have different hash values
