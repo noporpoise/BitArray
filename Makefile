@@ -33,9 +33,9 @@ dev/bit_array_test: libbitarr.a
 examples: libbitarr.a
 	cd examples; make
 
-test: dev/bit_array_test
-	./dev/bit_array_test
-	cd examples; make test
+test:
+	cd dev && make test
+	cd examples && make test
 
 clean:
 	rm -rf libbitarr.a *.o *.dSYM *.greg
