@@ -16,7 +16,7 @@ bit_array_test: bit_array_test.c ../libbitarr.a
 	$(CC) $(OPT) $(CFLAGS) -I.. -L.. -o bit_array_test bit_array_test.c -lbitarr
 
 bitlock_test: bitlock_test.c ../bit_macros.h
-	$(CC) $(OPT) $(CFLAGS) -I.. -o bitlock_test bitlock_test.c
+	$(CC) $(OPT) $(CFLAGS) -I.. -o bitlock_test bitlock_test.c -lpthread
 
 bit_array_generate:
 	$(CC) $(OPT) $(CFLAGS) -o bit_array_generate bit_array_generate.c
