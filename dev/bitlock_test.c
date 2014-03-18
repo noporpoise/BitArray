@@ -34,7 +34,7 @@ void* worker(void *ptr)
 }
 
 // sum of 0 up to num (inclusive)
-#define cumm_sum(num) ((num)*(((num)+1)/2)+(num&1 ? 0 : (num)/2))
+#define cumm_sum(num) ((num)*(((num)+1)/2)+(((num)&1) ? 0 : (num)/2))
 
 int main()
 {
@@ -52,11 +52,13 @@ int main()
   for(i = 0; i < num_threads; i++) {
     workers[i] = (TestThread){.id = i+1, .result = 0};
     rc = pthread_create(&workers[i].th, NULL, worker, &workers[i]);
+    if(!rc) { fprintf(stderr, "pthread error: %s\n", strerror(rc)); }
   }
 
   // Wait for threads to finish
   for(i = 0; i < num_threads; i++) {
     rc = pthread_join(workers[i].th, NULL);
+    if(!rc) { fprintf(stderr, "pthread error: %s\n", strerror(rc)); }
   }
 
   size_t sum = 0, expsum = 0;
