@@ -14,9 +14,8 @@ typedef struct {
 
 // Do a million loops
 #define NUM_LOOPS 10000
-char locks[(NUM_LOOPS+7)/8] = {0};
-char data[NUM_LOOPS] = {0};
-pthread_mutex_t mutx;
+char *locks, *data;
+pthread_mutex_t *mutexes;
 
 void* worker_bitlock(void *ptr)
 {
@@ -55,11 +54,27 @@ void* worker_mutex(void *ptr)
   TestThread *wrkr = (TestThread*)ptr;
   size_t i;
   for(i = 0; i < NUM_LOOPS; i++) {
-    pthread_mutex_lock(&mutx);
+    pthread_mutex_lock(&mutexes[0]);
     wrkr->result += i + *(volatile char *)&data[i];
     data[i] = wrkr->id;
     usleep(5);
-    pthread_mutex_unlock(&mutx);
+    pthread_mutex_unlock(&mutexes[0]);
+    usleep(5);
+  }
+
+  return NULL;
+}
+
+void* worker_mutexes(void *ptr)
+{
+  TestThread *wrkr = (TestThread*)ptr;
+  size_t i;
+  for(i = 0; i < NUM_LOOPS; i++) {
+    pthread_mutex_lock(&mutexes[i]);
+    wrkr->result += i + *(volatile char *)&data[i];
+    data[i] = wrkr->id;
+    usleep(5);
+    pthread_mutex_unlock(&mutexes[i]);
     usleep(5);
   }
 
@@ -76,8 +91,12 @@ int main(int argc, char **argv)
 
   if(argc == 2 && strcmp(argv[1],"bits") == 0) {}
   else if(argc == 2 && strcmp(argv[1],"mutex") == 0) {
-    method = "Mutexes";
+    method = "Mutex";
     func = worker_mutex;
+  }
+  else if(argc == 2 && strcmp(argv[1],"mutexes") == 0) {
+    method = "Mutexes";
+    func = worker_mutexes;
   }
   else if(argc == 2 && strcmp(argv[1],"spin") == 0) {
     method = "Bitlocks-Spin";
@@ -94,9 +113,12 @@ int main(int argc, char **argv)
   size_t i, num_threads = 30;
   TestThread workers[num_threads];
 
-  memset(data, 0, sizeof(data));
+  locks = calloc(1, (NUM_LOOPS+7)/8);
+  data = calloc(1, NUM_LOOPS);
+  mutexes = calloc(NUM_LOOPS, sizeof(pthread_mutex_t));
 
-  pthread_mutex_init(&mutx, NULL);
+  for(i = 0; i < NUM_LOOPS; i++)
+    pthread_mutex_init(&mutexes[i], NULL);
 
   // for(i = 0; i < num_threads; i++)
   //   printf("cummulative sum %zu: %zu\n", i, cumm_sum(i));
@@ -114,11 +136,16 @@ int main(int argc, char **argv)
     if(rc) { fprintf(stderr, "pthread error: %s\n", strerror(rc)); exit(-1); }
   }
 
-  pthread_mutex_destroy(&mutx);
+  for(i = 0; i < NUM_LOOPS; i++)
+    pthread_mutex_destroy(&mutexes[i]);
 
   size_t sum = 0, expsum = 0;
   for(i = 0; i < NUM_LOOPS; i++) sum += data[i];
   for(i = 0; i < num_threads; i++) sum += workers[i].result;
+
+  free(mutexes);
+  free(data);
+  free(locks);
 
   // for(i = 0; i < num_threads; i++) printf("got: %zu %zu\n", i, workers[i].result);
 
@@ -134,6 +161,7 @@ int main(int argc, char **argv)
     printf("locks not zeroed!\n");
     pass = false;
   }
+
 
   printf("sum: %zu exp: %zu\n", sum, expsum);
   printf("%s.\n\n", pass ? "Pass" : "Fail");

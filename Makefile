@@ -17,7 +17,7 @@ endif
 CFLAGS = -Wall -Wextra -Wc++-compat -I. $(OPT)
 OBJFLAGS = -fPIC
 
-all: libbitarr.a dev examples dev
+all: libbitarr.a dev examples
 
 bit_array.o: bit_array.c bit_array.h bit_macros.h
 
