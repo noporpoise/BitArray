@@ -52,13 +52,13 @@ int main()
   for(i = 0; i < num_threads; i++) {
     workers[i] = (TestThread){.id = i+1, .result = 0};
     rc = pthread_create(&workers[i].th, NULL, worker, &workers[i]);
-    if(!rc) { fprintf(stderr, "pthread error: %s\n", strerror(rc)); }
+    if(rc) { fprintf(stderr, "pthread error: %s\n", strerror(rc)); exit(-1); }
   }
 
   // Wait for threads to finish
   for(i = 0; i < num_threads; i++) {
     rc = pthread_join(workers[i].th, NULL);
-    if(!rc) { fprintf(stderr, "pthread error: %s\n", strerror(rc)); }
+    if(rc) { fprintf(stderr, "pthread error: %s\n", strerror(rc)); exit(-1); }
   }
 
   size_t sum = 0, expsum = 0;
