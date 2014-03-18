@@ -6,11 +6,11 @@ COMPILER := $(shell ($(CC) -v 2>&1) | tr A-Z a-z )
 ifdef DEBUG
 	OPT = -O0 -DDEBUG=1 --debug -g -ggdb
 else
-	ifneq (,$(findstring clang,$(COMPILER)))
-		# clang Link Time Optimisation (lto) seems to have issues atm
-		OPT = -O3
+	ifneq (,$(findstring gcc,$(COMPILER)))
+		OPT = -O4
+		TGTFLAGS = -fwhole-program
 	else
-		OPT = -O4 -flto
+		OPT = -O3
 	endif
 endif
 
