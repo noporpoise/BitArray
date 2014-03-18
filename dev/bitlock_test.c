@@ -16,8 +16,9 @@ typedef struct {
 #define NUM_LOOPS 10000
 char locks[(NUM_LOOPS+7)/8] = {0};
 char data[NUM_LOOPS] = {0};
+pthread_mutex_t mutx;
 
-void* worker(void *ptr)
+void* worker_bitlock(void *ptr)
 {
   TestThread *wrkr = (TestThread*)ptr;
   size_t i;
@@ -33,17 +34,69 @@ void* worker(void *ptr)
   return NULL;
 }
 
+void* worker_bitlock_spin(void *ptr)
+{
+  TestThread *wrkr = (TestThread*)ptr;
+  size_t i;
+  for(i = 0; i < NUM_LOOPS; i++) {
+    bitlock_acquire(locks, i);
+    wrkr->result += i + *(volatile char *)&data[i];
+    data[i] = wrkr->id;
+    usleep(5);
+    bitlock_release(locks, i);
+    usleep(5);
+  }
+
+  return NULL;
+}
+
+void* worker_mutex(void *ptr)
+{
+  TestThread *wrkr = (TestThread*)ptr;
+  size_t i;
+  for(i = 0; i < NUM_LOOPS; i++) {
+    pthread_mutex_lock(&mutx);
+    wrkr->result += i + *(volatile char *)&data[i];
+    data[i] = wrkr->id;
+    usleep(5);
+    pthread_mutex_unlock(&mutx);
+    usleep(5);
+  }
+
+  return NULL;
+}
+
 // sum of 0 up to num (inclusive)
 #define cumm_sum(num) ((num)*(((num)+1)/2)+(((num)&1) ? 0 : (num)/2))
 
-int main()
+int main(int argc, char **argv)
 {
-  printf("\nTesting Multithreaded Bitlocks\n\n");
+  char *method = "Bitlocks";
+  void* (*func)(void*) = worker_bitlock;
+
+  if(argc == 2 && strcmp(argv[1],"bits") == 0) {}
+  else if(argc == 2 && strcmp(argv[1],"mutex") == 0) {
+    method = "Mutexes";
+    func = worker_mutex;
+  }
+  else if(argc == 2 && strcmp(argv[1],"spin") == 0) {
+    method = "Bitlocks-Spin";
+    func = worker_bitlock_spin;
+  }
+  else if(argc != 1) {
+    fprintf(stderr, "usage: ./bitlock_test <bits|mutex|spin>\n");
+    exit(-1);
+  }
+
+  printf("\nTesting %s\n\n", method);
 
   int rc;
   size_t i, num_threads = 30;
   TestThread workers[num_threads];
+
   memset(data, 0, sizeof(data));
+
+  pthread_mutex_init(&mutx, NULL);
 
   // for(i = 0; i < num_threads; i++)
   //   printf("cummulative sum %zu: %zu\n", i, cumm_sum(i));
@@ -51,7 +104,7 @@ int main()
   // Create threads
   for(i = 0; i < num_threads; i++) {
     workers[i] = (TestThread){.id = i+1, .result = 0};
-    rc = pthread_create(&workers[i].th, NULL, worker, &workers[i]);
+    rc = pthread_create(&workers[i].th, NULL, func, &workers[i]);
     if(rc) { fprintf(stderr, "pthread error: %s\n", strerror(rc)); exit(-1); }
   }
 
@@ -60,6 +113,8 @@ int main()
     rc = pthread_join(workers[i].th, NULL);
     if(rc) { fprintf(stderr, "pthread error: %s\n", strerror(rc)); exit(-1); }
   }
+
+  pthread_mutex_destroy(&mutx);
 
   size_t sum = 0, expsum = 0;
   for(i = 0; i < NUM_LOOPS; i++) sum += data[i];

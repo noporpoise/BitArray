@@ -17,7 +17,7 @@ endif
 CFLAGS = -Wall -Wextra -Wc++-compat -I. $(OPT)
 OBJFLAGS = -fPIC
 
-all: libbitarr.a dev/bit_array_test examples
+all: libbitarr.a dev/bit_array_test examples dev
 
 bit_array.o: bit_array.c bit_array.h bit_macros.h
 
@@ -27,11 +27,11 @@ libbitarr.a: bit_array.o
 %.o: %.c %.h
 	$(CC) $(CFLAGS) $(OBJFLAGS) -c $< -o $@
 
-dev/bit_array_test: libbitarr.a
-	cd dev; make
+dev: libbitarr.a bit_macros.h
+	cd dev && make
 
 examples: libbitarr.a
-	cd examples; make
+	cd examples && make
 
 test:
 	cd dev && make test
@@ -39,9 +39,9 @@ test:
 
 clean:
 	rm -rf libbitarr.a *.o *.dSYM *.greg
-	cd dev; make clean
-	cd examples; make clean
+	cd dev && make clean
+	cd examples && make clean
 
 # Comment this line out to keep .o files
 .INTERMEDIATE: $(OBJS)
-.PHONY: all clean test examples
+.PHONY: all clean test examples dev
