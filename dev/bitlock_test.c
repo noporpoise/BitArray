@@ -143,10 +143,6 @@ int main(int argc, char **argv)
   for(i = 0; i < NUM_LOOPS; i++) sum += data[i];
   for(i = 0; i < num_threads; i++) sum += workers[i].result;
 
-  free(mutexes);
-  free(data);
-  free(locks);
-
   // for(i = 0; i < num_threads; i++) printf("got: %zu %zu\n", i, workers[i].result);
 
   // 0 1 2 3 4 5
@@ -162,8 +158,12 @@ int main(int argc, char **argv)
     pass = false;
   }
 
-
   printf("sum: %zu exp: %zu\n", sum, expsum);
   printf("%s.\n\n", pass ? "Pass" : "Fail");
+
+  free(mutexes);
+  free(data);
+  free(locks);
+
   return pass ? EXIT_SUCCESS : EXIT_FAILURE;
 }
