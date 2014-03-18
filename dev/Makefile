@@ -21,6 +21,9 @@ bitlock_test: bitlock_test.c ../bit_macros.h
 bit_array_generate:
 	$(CC) $(OPT) $(CFLAGS) -o bit_array_generate bit_array_generate.c
 
+../libbitarr.a:
+	cd .. && make
+
 test: bit_array_test bitlock_test
 	./bit_array_test && ./bitlock_test
 

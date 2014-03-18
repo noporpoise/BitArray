@@ -231,6 +231,9 @@ static inline void _print_word(word_t word, FILE* out)
 
 // prints right to left
 static inline char* _word_to_str(word_t word, char str[WORD_SIZE+1])
+  __attribute__((unused));
+
+static inline char* _word_to_str(word_t word, char str[WORD_SIZE+1])
 {
   word_offset_t i;
   for(i = 0; i < WORD_SIZE; i++)
