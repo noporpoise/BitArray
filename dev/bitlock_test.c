@@ -113,9 +113,9 @@ int main(int argc, char **argv)
   size_t i, num_threads = 30;
   TestThread workers[num_threads];
 
-  locks = calloc(1, (NUM_LOOPS+7)/8);
-  data = calloc(1, NUM_LOOPS);
-  mutexes = calloc(NUM_LOOPS, sizeof(pthread_mutex_t));
+  locks = (char*)calloc(1, (NUM_LOOPS+7)/8);
+  data = (char*)calloc(1, NUM_LOOPS);
+  mutexes = (pthread_mutex_t*)calloc(NUM_LOOPS, sizeof(pthread_mutex_t));
 
   for(i = 0; i < NUM_LOOPS; i++)
     pthread_mutex_init(&mutexes[i], NULL);
