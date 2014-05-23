@@ -110,9 +110,9 @@
         bitset2_cpy_mt(arr, bitset_wrd(arr,pos), bitset_idx(arr,pos), (bit))
 
 // The following do not need atomics
-#define bitset_get_mt(arr,pos)        bitset_get(arr,pos)
-#define bitset2_get_mt(arr,wrd,idx)   bitset2_get(arr,wrd,idx)
-#define bitset_clear_word_mt(arr,pos) bitset_clear_word(arr,pos)
+#define bitset_get_mt(arr,pos)        bitset_get(_VOLPTR(*arr),pos)
+#define bitset2_get_mt(arr,wrd,idx)   bitset2_get(_VOLPTR(*arr),wrd,idx)
+#define bitset_clear_word_mt(arr,pos) bitset_clear_word(_VOLPTR(*arr),pos)
 
 //
 // Compact bit array of spin locks
@@ -141,5 +141,12 @@
 
 // calls yield if cannot acquire the lock
 #define bitlock_yield_acquire(arr,pos) bitlock_acquire_block(arr,pos,sched_yield();)
+
+// Block until we get the lock or someone else does
+// sets the memory pointed to by retptr to 1 if we got the lock, 0 otherwise
+#define bitlock_try_acquire(arr,pos,retptr) do {                               \
+  bitlock_acquire_block(arr,pos,{*retptr=0;break;});                           \
+  *retptr = 1;                                                                 \
+} while(0)
 
 #endif /* BITLOCK_H_ */
