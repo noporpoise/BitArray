@@ -545,6 +545,7 @@ BIT_ARRAY* bit_array_alloc(BIT_ARRAY* bitarr, bit_index_t nbits)
 void bit_array_dealloc(BIT_ARRAY* bitarr)
 {
   free(bitarr->words);
+  memset(bitarr, 0, sizeof(BIT_ARRAY));
 }
 
 // If cannot allocate memory, set errno to ENOMEM, return NULL

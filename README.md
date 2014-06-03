@@ -616,4 +616,9 @@ Development
 ===========
 
 To do:
+* search function
+    int bit_array_search(const BIT_ARRAY *arr, const BIT_ARRAY *query);
+* windows support
+* endianness
+* 32 bit support?
 * faster multiply / divide? (i.e. Karatsuba)
