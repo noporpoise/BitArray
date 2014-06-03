@@ -119,11 +119,12 @@
 // These are most effecient when arr is of type: volatile char*
 //
 // Acquire a lock
-#define bitlock_acquire_block(arr,pos,wait) do {                               \
+#define bitlock_acquire_block(arr,pos,wait,abandon) do {                       \
   size_t _w = bitset_wrd(arr,pos);                                             \
   _ARRTYP(arr) _o, _n, _b = _TYPESHIFT(arr, 1, bitset_idx(arr,pos));           \
   do {                                                                         \
     while((_o = _VOLVALUE((arr)[_w])) & _b) { wait }                           \
+    abandon                                                                    \
     _n = _o | _b;                                                              \
   } while(!__sync_bool_compare_and_swap(_VOLPTR((arr)[_w]), _o, _n));          \
   __sync_synchronize(); /* Must not move commands to before acquiring lock */  \
@@ -137,16 +138,16 @@
   __sync_and_and_fetch(_VOLPTR((arr)[_w]), ~_mask);                            \
 } while(0)
 
-#define bitlock_acquire(arr,pos) bitlock_acquire_block(arr,pos,{})
+#define bitlock_acquire(arr,pos) bitlock_acquire_block(arr,pos,{},{})
 
 // calls yield if cannot acquire the lock
-#define bitlock_yield_acquire(arr,pos) bitlock_acquire_block(arr,pos,sched_yield();)
+#define bitlock_yield_acquire(arr,pos) bitlock_acquire_block(arr,pos,sched_yield();,{})
 
 // Block until we get the lock or someone else does
 // sets the memory pointed to by retptr to 1 if we got the lock, 0 otherwise
 #define bitlock_try_acquire(arr,pos,retptr) do {                               \
-  bitlock_acquire_block(arr,pos,{*retptr=0;break;});                           \
-  *retptr = 1;                                                                 \
+  *retptr = 1; /* default to success, set to zero if locked */                 \
+  bitlock_acquire_block(arr,pos,{*retptr=0;break;},if(!*retptr){break;});      \
 } while(0)
 
 #endif /* BITLOCK_H_ */
