@@ -53,13 +53,11 @@
 //
 // bitsetX_wrd(): get word for a given position
 // bitsetX_idx(): get index within word for a given position
-#define _ARRTYP(x) __typeof(*(x))
-
-#define _VOLPTR(x) (volatile __typeof(x) *)(&(x))
+#define _VOLPTR(x) ((volatile __typeof(x) *)(&(x)))
 #define _VOLVALUE(x) (*_VOLPTR(x))
 
-#define _TYPESHIFT(type,word,shift) \
-        ((_ARRTYP(type))((_ARRTYP(type))(word) << (shift)))
+#define _TYPESHIFT(arr,word,shift) \
+        ((__typeof(*(arr)))((__typeof(*(arr)))(word) << (shift)))
 
 #define bitsetX_wrd(wrdbits,pos) ((pos) / (wrdbits))
 #define bitsetX_idx(wrdbits,pos) ((pos) % (wrdbits))
@@ -76,38 +74,42 @@
 #define bitset2_get(arr,wrd,idx)     (((arr)[wrd] >> (idx)) & 0x1)
 #define bitset2_set(arr,wrd,idx)     ((arr)[wrd] |=  _TYPESHIFT(arr,1,idx))
 #define bitset2_del(arr,wrd,idx)     ((arr)[wrd] &=~ _TYPESHIFT(arr,1,idx))
-#define bitset2_tgl(arr,wrd,idx)     ((arr)[wrd] ^=~ _TYPESHIFT(arr,1,idx))
-#define bitset2_cpy(arr,wrd,idx,bit) \
-  ((arr)[wrd] = ((arr)[wrd] &~ _TYPESHIFT(arr,1,idx)) | _TYPESHIFT(arr,bit,idx))
+#define bitset2_tgl(arr,wrd,idx)     ((arr)[wrd] ^=  _TYPESHIFT(arr,1,idx))
+#define bitset2_or(arr,wrd,idx,bit)  ((arr)[wrd] |=  _TYPESHIFT(arr,bit,idx))
+#define bitset2_xor(arr,wrd,idx,bit) ((arr)[wrd]  = ~((arr)[wrd] ^ (~_TYPESHIFT(arr,bit,idx))))
+#define bitset2_and(arr,wrd,idx,bit) ((arr)[wrd] &= (_TYPESHIFT(arr,bit,idx) | ~_TYPESHIFT(arr,1,idx)))
+#define bitset2_cpy(arr,wrd,idx,bit) ((arr)[wrd]  = ((arr)[wrd] &~ _TYPESHIFT(arr,1,idx)) | _TYPESHIFT(arr,bit,idx))
 
-#define bitset_op(func,arr,pos) func(arr, bitset_wrd(arr,pos), bitset_idx(arr,pos))
+#define bitset_op(func,arr,pos)      func(arr, bitset_wrd(arr,pos), bitset_idx(arr,pos))
+#define bitset_op2(func,arr,pos,bit) func(arr, bitset_wrd(arr,pos), bitset_idx(arr,pos), bit)
 
-#define bitset_get(arr,pos) bitset_op(bitset2_get, arr, pos)
-#define bitset_set(arr,pos) bitset_op(bitset2_set, arr, pos)
-#define bitset_del(arr,pos) bitset_op(bitset2_del, arr, pos)
-#define bitset_tgl(arr,pos) bitset_op(bitset2_tgl, arr, pos)
-#define bitset_cpy(arr,pos,bit) \
-        bitset2_cpy(arr, bitset_wrd(arr,pos), bitset_idx(arr,pos), (bit))
+#define bitset_get(arr,pos)     bitset_op(bitset2_get, arr, pos)
+#define bitset_set(arr,pos)     bitset_op(bitset2_set, arr, pos)
+#define bitset_del(arr,pos)     bitset_op(bitset2_del, arr, pos)
+#define bitset_tgl(arr,pos)     bitset_op(bitset2_tgl, arr, pos)
+#define bitset_or(arr,pos,bit)  bitset_op2(bitset2_or, arr, pos, bit)
+#define bitset_xor(arr,pos,bit) bitset_op2(bitset2_xor, arr, pos, bit)
+#define bitset_and(arr,pos,bit) bitset_op2(bitset2_and, arr, pos, bit)
+#define bitset_cpy(arr,pos,bit) bitset_op2(bitset2_cpy, arr, pos, bit)
 
 #define bitset_clear_word(arr,pos) ((arr)[bitset_wrd(arr,pos)] = 0)
 
 //
 // Thread safe versions
 //
-#define bitset2_set_mt(arr,wrd,idx) \
-  __sync_or_and_fetch(&(arr)[wrd], _TYPESHIFT(arr,1,idx))
-#define bitset2_del_mt(arr,wrd,idx) \
-  __sync_and_and_fetch(&(arr)[wrd], ~_TYPESHIFT(arr,1,idx))
-#define bitset2_tgl_mt(arr,wrd,idx) \
-  __sync_xor_and_fetch(&(arr)[wrd], ~_TYPESHIFT(arr,1,idx))
-#define bitset2_cpy_mt(arr,wrd,idx,bit) \
-        ((bit) ? bitset2_set_mt(arr,wrd,idx) : bitset2_del_mt(arr,wrd,idx))
+#define bitset2_set_mt(arr,wrd,idx)     __sync_or_and_fetch (_VOLPTR((arr)[wrd]),  _TYPESHIFT(arr,1,idx))
+#define bitset2_del_mt(arr,wrd,idx)     __sync_and_and_fetch(_VOLPTR((arr)[wrd]), ~_TYPESHIFT(arr,1,idx))
+#define bitset2_tgl_mt(arr,wrd,idx)     __sync_xor_and_fetch(_VOLPTR((arr)[wrd]),  _TYPESHIFT(arr,1,idx))
+#define bitset2_or_mt(arr,wrd,idx,bit)  __sync_or_and_fetch (_VOLPTR((arr)[wrd]),  _TYPESHIFT(arr,bit,idx))
+#define bitset2_and_mt(arr,wrd,idx,bit) __sync_and_and_fetch(_VOLPTR((arr)[wrd]), (_TYPESHIFT(arr,bit,idx) | ~_TYPESHIFT(arr,1,idx)))
+#define bitset2_cpy_mt(arr,wrd,idx,bit) ((bit) ? bitset2_set_mt(arr,wrd,idx) : bitset2_del_mt(arr,wrd,idx))
 
-#define bitset_set_mt(arr,pos) bitset_op(bitset2_set_mt, arr, pos)
-#define bitset_del_mt(arr,pos) bitset_op(bitset2_del_mt, arr, pos)
-#define bitset_tgl_mt(arr,pos) bitset_op(bitset2_tgl_mt, arr, pos)
-#define bitset_cpy_mt(arr,pos,bit) \
-        bitset2_cpy_mt(arr, bitset_wrd(arr,pos), bitset_idx(arr,pos), (bit))
+#define bitset_set_mt(arr,pos)     bitset_op(bitset2_set_mt,  arr, pos)
+#define bitset_del_mt(arr,pos)     bitset_op(bitset2_del_mt,  arr, pos)
+#define bitset_tgl_mt(arr,pos)     bitset_op(bitset2_tgl_mt,  arr, pos)
+#define bitset_or_mt(arr,pos,bit)  bitset_op2(bitset2_or_mt,  arr, pos, bit)
+#define bitset_and_mt(arr,pos,bit) bitset_op2(bitset2_and_mt, arr, pos, bit)
+#define bitset_cpy_mt(arr,pos,bit) bitset_op2(bitset2_cpy_mt, arr, pos, bit)
 
 // The following do not need atomics
 #define bitset_get_mt(arr,pos)        bitset_get(_VOLPTR(*arr),pos)
@@ -121,7 +123,7 @@
 // Acquire a lock
 #define bitlock_acquire_block(arr,pos,wait,abandon) do {                       \
   size_t _w = bitset_wrd(arr,pos);                                             \
-  _ARRTYP(arr) _o, _n, _b = _TYPESHIFT(arr, 1, bitset_idx(arr,pos));           \
+  __typeof(*(arr)) _o, _n, _b = _TYPESHIFT(arr, 1, bitset_idx(arr,pos));       \
   do {                                                                         \
     while((_o = _VOLVALUE((arr)[_w])) & _b) { wait }                           \
     abandon                                                                    \
@@ -133,9 +135,9 @@
 // Undefined behaviour if you do not already hold the lock
 #define bitlock_release(arr,pos) do {                                          \
   size_t _w = bitset_wrd(arr,pos);                                             \
-  _ARRTYP(arr) _mask = _TYPESHIFT(arr, 1, bitset_idx(arr,pos));                \
+  __typeof(*(arr)) _mask = ~_TYPESHIFT(arr, 1, bitset_idx(arr,pos));           \
   __sync_synchronize(); /* Must get the lock before releasing it */            \
-  __sync_and_and_fetch(_VOLPTR((arr)[_w]), ~_mask);                            \
+  __sync_and_and_fetch(_VOLPTR((arr)[_w]), _mask);                             \
 } while(0)
 
 #define bitlock_acquire(arr,pos) bitlock_acquire_block(arr,pos,{},{})
