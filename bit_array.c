@@ -1043,8 +1043,8 @@ void _bit_array_set_wordn(const char *file, int line,
 
 // Find the index of the next bit that is set, at or after `offset`
 // Returns 1 if a bit is set, otherwise 0
-// Index of next set bit is stored in the integer pointed to by result
-// If no next bit is set result is not changed
+// Index of next set bit is stored in the integer pointed to by `result`
+// If no next bit is set, value at `result` is not changed
 char bit_array_find_next_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
                                  bit_index_t* result)
 {
@@ -1071,10 +1071,10 @@ char bit_array_find_next_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
   return 0;
 }
 
-// Find the index of the previous bit that is set, before offset.
+// Find the index of the previous bit that is set, before `offset`.
 // Returns 1 if a bit is set, otherwise 0
 // Index of previous set bit is stored in the integer pointed to by `result`
-// If no previous bit is set result is not changed
+// If no previous bit is set, value at `result` is not changed
 char bit_array_find_prev_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
                                  bit_index_t* result)
 {
@@ -1111,7 +1111,7 @@ char bit_array_find_prev_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
 // Find the index of the first bit that is set.
 // Returns 1 if a bit is set, otherwise 0
 // Index of first set bit is stored in the integer pointed to by result
-// If not bit is set result is not changed
+// If no bits are set, value at `result` is not changed
 char bit_array_find_first_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
 {
   return bit_array_find_next_set_bit(bitarr, 0, result);
@@ -1120,7 +1120,7 @@ char bit_array_find_first_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
 // Find the index of the last bit that is set.
 // Returns 1 if a bit is set, otherwise 0
 // Index of last set bit is stored in the integer pointed to by `result`
-// If no bit is set result is not changed
+// If no bits are set, value at `result` is not changed
 char bit_array_find_last_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
 {
   return bit_array_find_prev_set_bit(bitarr, bitarr->num_of_bits, result);

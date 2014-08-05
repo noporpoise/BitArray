@@ -213,16 +213,33 @@ Get the number of bits not set (`length - hamming weight`)
 Find the index of the first bit that is set.
 Returns 1 if a bit is set, otherwise 0.
 Index of first set bit is stored in the integer pointed to by `result`.
-If no bit is set `result` is not changed and zero is returned.
+If no bits are set, value at `result` is not changed and zero is returned.
 
     char bit_array_find_first_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
 
 Find the index of the last bit that is set.
 Returns 1 if a bit is set, otherwise 0.
 Index of last set bit is stored in the integer pointed to by `result`.
-If no bit is set result is not changed and zero is returned.
+If no bits are set, value at `result` is not changed and zero is returned.
 
     char bit_array_find_last_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
+
+Find the index of the next bit that is set, at or after `offset`.
+Returns 1 if a bit is set, otherwise 0.
+Index of next set bit is stored in the integer pointed to by `result`.
+If no next bit is set, value at `result` is not changed and 0 is returned.
+
+    char bit_array_find_next_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
+                                     bit_index_t* result)
+
+Find the index of the previous bit that is set, before `offset`.
+Note: 'before' does not include `offset`.
+Returns 1 if a bit is set, otherwise 0
+Index of previous set bit is stored in the integer pointed to by `result`
+If no previous bit is set, value at `result` is not changed
+
+    char bit_array_find_prev_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
+                                     bit_index_t* result)
 
 Get parity: returns 1 if odd number of bits set, 0 if even.
 
