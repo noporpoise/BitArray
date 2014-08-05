@@ -255,10 +255,11 @@ void _check_first_last_bit_set(BIT_ARRAY* arr, char not_zero,
 {
   bit_index_t first_bit = 0, last_bit = 0;
 
-  char bit_set = bit_array_find_first_set_bit(arr, &first_bit);
-  bit_array_find_last_set_bit(arr, &last_bit);
+  char bit_set0 = bit_array_find_first_set_bit(arr, &first_bit);
+  char bit_set1 = bit_array_find_last_set_bit(arr,  &last_bit);
 
-  ASSERT(not_zero == bit_set);
+  ASSERT(not_zero == bit_set0);
+  ASSERT(not_zero == bit_set1);
 
   if(not_zero)
   {
@@ -305,6 +306,99 @@ void test_first_last_bit_set()
     bit_array_clear_all(arr);
     bit_array_set_bit(arr, pos);
     _check_first_last_bit_set(arr, 1, pos, pos);
+  }
+
+  bit_array_free(arr);
+
+  SUITE_END();
+}
+
+void test_next_prev_bit_set()
+{
+  SUITE_START("next/prev bit set");
+
+  BIT_ARRAY *arr = bit_array_create(100);
+  bit_index_t pos = 0;
+  char found;
+
+  // Simple test
+  // Nothing set
+  found = bit_array_find_next_set_bit(arr, 0, &pos);
+  ASSERT(!found && pos == 0);
+  found = bit_array_find_next_set_bit(arr, 50, &pos);
+  ASSERT(!found && pos == 0);
+  found = bit_array_find_next_set_bit(arr, 99, &pos);
+  ASSERT(!found && pos == 0);
+  found = bit_array_find_prev_set_bit(arr, 0, &pos);
+  ASSERT(!found && pos == 0);
+  found = bit_array_find_prev_set_bit(arr, 50, &pos);
+  ASSERT(!found && pos == 0);
+  found = bit_array_find_prev_set_bit(arr, 100, &pos);
+  ASSERT(!found && pos == 0);
+
+  bit_array_set_bit(arr, 0);
+  found = bit_array_find_prev_set_bit(arr, 0, &pos);
+  ASSERT(!found && pos == 0);
+  found = bit_array_find_next_set_bit(arr, 0, &pos);
+  ASSERT(found && pos == 0);
+
+  bit_array_set_bit(arr, 99);
+  found = bit_array_find_prev_set_bit(arr, 99, &pos);
+  ASSERT(found && pos == 0);
+  found = bit_array_find_next_set_bit(arr, 99, &pos);
+  ASSERT(found && pos == 99);
+
+  bit_array_set_bits(arr, 3, 10, 20, 64);
+  found = bit_array_find_prev_set_bit(arr, 99, &pos);
+  ASSERT(found && pos == 64);
+  found = bit_array_find_prev_set_bit(arr, 64, &pos);
+  ASSERT(found && pos == 20);
+  found = bit_array_find_next_set_bit(arr, 1, &pos);
+  ASSERT(found && pos == 10);
+  found = bit_array_find_next_set_bit(arr, 11, &pos);
+  ASSERT(found && pos == 20);
+
+  // Automated test
+  bit_index_t indices[] = {0, 1, 2, 5, 24, 50, 51, 64, 80, 99};
+  size_t i, n, num_idx = sizeof(indices)/sizeof(indices[0]);
+
+  // Loop over setting diff numbers of bits - check next_bit_set
+  for(n = 0; n <= num_idx; n++) {
+    bit_array_clear_all(arr);
+    for(i = 0; i < n; i++) bit_array_set_bit(arr, indices[i]);
+
+    for(i = 0; i < n; i++) {
+      found = bit_array_find_next_set_bit(arr, indices[i], &pos);
+      ASSERT(found == 1);
+      ASSERT(pos == indices[i]);
+
+      // Check from bit after index if in range
+      if(indices[i]+1 < arr->num_of_bits) {
+        found = bit_array_find_next_set_bit(arr, indices[i]+1, &pos);
+        if(i+1 < n) {
+          ASSERT(found == 1);
+          ASSERT(pos == indices[i+1]);
+        } else {
+          ASSERT(found == 0);
+        }
+      }
+    }
+  }
+
+  // Loop over setting diff numbers of bits - check prev_bit_set
+  for(n = 0; n <= num_idx; n++) {
+    bit_array_clear_all(arr);
+    for(i = 0; i < n; i++) bit_array_set_bit(arr, indices[num_idx-i-1]);
+
+    for(i = 0; i < n; i++) {
+      found = bit_array_find_prev_set_bit(arr, indices[num_idx-i-1], &pos);
+      if(i+1 < n) {
+        ASSERT(found == 1);
+        ASSERT(pos == indices[num_idx-i-2]);
+      } else {
+        ASSERT(found == 0);
+      }
+    }
   }
 
   bit_array_free(arr);
@@ -963,7 +1057,7 @@ void _test_shift(BIT_ARRAY *arr, size_t dist, char left, char fill)
 
   char *str1 = (char*)malloc((len+1) * sizeof(char));
   char *str2 = (char*)malloc((len+1) * sizeof(char));
-  memset(str1, fill ? '1' : '0', len+1);
+  memset(str1, fill ? '1' : '0', len);
   str1[len] = '\0';
   str2[len] = '\0';
 
@@ -2326,13 +2420,11 @@ int main(int argc, char* argv[])
   test_toggle();
   test_cycle();
   test_shift();
-  test_next_permutation();
-
-  test_random_and_shuffle();
 
   test_compare();
   test_compare2();
   test_first_last_bit_set();
+  test_next_prev_bit_set();
   test_hamming_weight();
   test_save_load();
 
@@ -2355,6 +2447,10 @@ int main(int argc, char* argv[])
   test_div();
   test_small_products();
   test_product_divide();
+
+  // slooow
+  test_next_permutation();
+  test_random_and_shuffle();
 
   // Tests that need re-writing
   // test_hash();

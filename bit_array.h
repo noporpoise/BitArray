@@ -21,7 +21,8 @@ typedef struct BIT_ARRAY BIT_ARRAY;
 typedef uint64_t word_t, word_addr_t, bit_index_t;
 typedef uint8_t word_offset_t; // Offset within a 64 bit word
 
-extern const bit_index_t BIT_INDEX_MIN, BIT_INDEX_MAX;
+#define BIT_INDEX_MIN 0
+#define BIT_INDEX_MAX (~(bit_index_t)0)
 
 #ifdef __cplusplus
 extern "C" {
@@ -262,6 +263,20 @@ bit_index_t bit_array_hamming_distance(const BIT_ARRAY* arr1,
 
 // Get the number of bits not set (length - hamming weight)
 bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr);
+
+// Find the index of the next bit that is set, at or after `offset`
+// Returns 1 if a bit is set, otherwise 0
+// Index of next set bit is stored in the integer pointed to by result
+// If no next bit is set result is not changed
+char bit_array_find_next_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
+                                 bit_index_t* result);
+
+// Find the index of the previous bit that is set, before offset.
+// Returns 1 if a bit is set, otherwise 0
+// Index of previous set bit is stored in the integer pointed to by `result`
+// If no previous bit is set result is not changed
+char bit_array_find_prev_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
+                                 bit_index_t* result);
 
 // Find the index of the first bit that is set.  
 // Returns 1 if a bit is set, otherwise 0

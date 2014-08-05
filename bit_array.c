@@ -37,7 +37,7 @@
 //
 
 // byte reverse look up table
-static const word_t reverse_table[256] = 
+static const word_t reverse_table[256] =
 {
   0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0,
   0x10, 0x90, 0x50, 0xD0, 0x30, 0xB0, 0x70, 0xF0,
@@ -74,7 +74,7 @@ static const word_t reverse_table[256] =
 };
 
 // Morton table for interleaving bytes
-static const word_t morton_table0[256] = 
+static const word_t morton_table0[256] =
 {
   0x0000, 0x0001, 0x0004, 0x0005, 0x0010, 0x0011, 0x0014, 0x0015,
   0x0040, 0x0041, 0x0044, 0x0045, 0x0050, 0x0051, 0x0054, 0x0055,
@@ -111,7 +111,7 @@ static const word_t morton_table0[256] =
 };
 
 // Morton table for interleaving bytes, shifted left 1 bit
-static const word_t morton_table1[256] = 
+static const word_t morton_table1[256] =
 {
   0x0000, 0x0002, 0x0008, 0x000A, 0x0020, 0x0022, 0x0028, 0x002A,
   0x0080, 0x0082, 0x0088, 0x008A, 0x00A0, 0x00A2, 0x00A8, 0x00AA,
@@ -146,9 +146,6 @@ static const word_t morton_table1[256] =
   0xAA00, 0xAA02, 0xAA08, 0xAA0A, 0xAA20, 0xAA22, 0xAA28, 0xAA2A,
   0xAA80, 0xAA82, 0xAA88, 0xAA8A, 0xAAA0, 0xAAA2, 0xAAA8, 0xAAAA,
 };
-
-const bit_index_t BIT_INDEX_MIN = 0;
-const bit_index_t BIT_INDEX_MAX = ~(bit_index_t)0;
 
 //
 // Macros
@@ -295,10 +292,10 @@ void validate_bitarr(BIT_ARRAY *arr, char *file, int lineno)
 static inline word_t _reverse_word(word_t word)
 {
   word_t reverse = (reverse_table[(word)       & 0xff] << 56) |
-                   (reverse_table[(word >>  8) & 0xff] << 48) | 
+                   (reverse_table[(word >>  8) & 0xff] << 48) |
                    (reverse_table[(word >> 16) & 0xff] << 40) |
                    (reverse_table[(word >> 24) & 0xff] << 32) |
-                   (reverse_table[(word >> 32) & 0xff] << 24) | 
+                   (reverse_table[(word >> 32) & 0xff] << 24) |
                    (reverse_table[(word >> 40) & 0xff] << 16) |
                    (reverse_table[(word >> 48) & 0xff] << 8) |
                    (reverse_table[(word >> 56) & 0xff]);
@@ -314,8 +311,9 @@ static inline void _mask_top_word(BIT_ARRAY* bitarr)
   bitarr->words[num_of_words-1] &= bitmask64(bits_active);
 }
 
+//
 // Bounds check
-
+//
 
 static inline void _bounds_check_start(const BIT_ARRAY* bitarr,
                                        bit_index_t start,
@@ -382,7 +380,7 @@ static inline void _set_word(BIT_ARRAY* bitarr, bit_index_t start, word_t word)
     bitarr->words[word_index]
       = (word << word_offset) |
         (bitarr->words[word_index] & bitmask64(word_offset));
-  
+
     if(word_index+1 < bitarr->num_of_words)
     {
       bitarr->words[word_index+1]
@@ -769,7 +767,7 @@ void _bit_array_assign_bit(const char *file, int lineno,
 // Set, clear and toggle several bits at once
 //
 
-// Set multiple bits at once. 
+// Set multiple bits at once.
 // e.g. set bits 1, 20 & 31: bit_array_set_bits(bitarr, 3, 1,20,31);
 void _bit_array_set_bits(const char* file, int line,
                          BIT_ARRAY* bitarr, size_t n, ...)
@@ -923,7 +921,7 @@ void bit_array_clear_all(BIT_ARRAY* bitarr)
 
 // Set all 1 bits to 0, and all 0 bits to 1. AKA flip
 void bit_array_toggle_all(BIT_ARRAY* bitarr)
-{ 
+{
   word_addr_t i;
   for(i = 0; i < bitarr->num_of_words; i++)
   {
@@ -1043,16 +1041,25 @@ void _bit_array_set_wordn(const char *file, int line,
 // Number/position of bits set
 //
 
-// Find the index of the first bit that is set.  
+// Find the index of the next bit that is set, at or after `offset`
 // Returns 1 if a bit is set, otherwise 0
-// Index of first set bit is stored in the integer pointed to by result
-// If not bit is set result is not changed
-char bit_array_find_first_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
+// Index of next set bit is stored in the integer pointed to by result
+// If no next bit is set result is not changed
+char bit_array_find_next_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
+                                 bit_index_t* result)
 {
+  assert(offset < bitarr->num_of_bits);
+
   // Find first word that is greater than zero
-  word_addr_t i;
-  
-  for(i = 0; i < bitarr->num_of_words; i++)
+  word_addr_t i = bitset64_wrd(offset);
+  word_t w = bitarr->words[i] >> bitset64_idx(offset);
+
+  if(w > 0) {
+    *result = offset + trailing_zeros(w);
+    return 1;
+  }
+
+  for(++i; i < bitarr->num_of_words; i++)
   {
     if(bitarr->words[i] > 0)
     {
@@ -1064,37 +1071,59 @@ char bit_array_find_first_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
   return 0;
 }
 
-// Find the index of the last bit that is set.  
+// Find the index of the previous bit that is set, before offset.
 // Returns 1 if a bit is set, otherwise 0
-// Index of last set bit is stored in the integer pointed to by `result`
-// If no bit is set result is not changed
-char bit_array_find_last_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
+// Index of previous set bit is stored in the integer pointed to by `result`
+// If no previous bit is set result is not changed
+char bit_array_find_prev_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
+                                 bit_index_t* result)
 {
-  if(bitarr->num_of_bits == 0)
+  assert(offset <= bitarr->num_of_bits);
+
+  if(bitarr->num_of_bits == 0 || offset == 0)
   {
     return 0;
   }
 
-  // Find last word that is greater than zero
-  word_addr_t i = bitarr->num_of_words - 1;
+  // Find prev word that is greater than zero
+  word_addr_t i = bitset64_wrd(offset-1);
+  word_t w = bitarr->words[i] & bitmask64(bitset64_idx(offset-1)+1);
+
+  if(w > 0)
+  {
+    *result = (i+1) * WORD_SIZE - leading_zeros(w) - 1;
+    return 1;
+  }
 
   // i is unsigned so have to use break when i == 0
-  while(1)
+  for(--i; i != BIT_INDEX_MAX; i--)
   {
     if(bitarr->words[i] > 0)
     {
       *result = (i+1) * WORD_SIZE - leading_zeros(bitarr->words[i]) - 1;
       return 1;
     }
-    else if(i == 0)
-    {
-      return 0;
-    }
-
-    i--;
   }
 
   return 0;
+}
+
+// Find the index of the first bit that is set.
+// Returns 1 if a bit is set, otherwise 0
+// Index of first set bit is stored in the integer pointed to by result
+// If not bit is set result is not changed
+char bit_array_find_first_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
+{
+  return bit_array_find_next_set_bit(bitarr, 0, result);
+}
+
+// Find the index of the last bit that is set.
+// Returns 1 if a bit is set, otherwise 0
+// Index of last set bit is stored in the integer pointed to by `result`
+// If no bit is set result is not changed
+char bit_array_find_last_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
+{
+  return bit_array_find_prev_set_bit(bitarr, bitarr->num_of_bits, result);
 }
 
 // Parity - returns 1 if odd number of bits set, 0 if even
@@ -1115,7 +1144,7 @@ char bit_array_parity(const BIT_ARRAY* bitarr)
 bit_index_t bit_array_num_bits_set(const BIT_ARRAY* bitarr)
 {
   word_addr_t i;
-  
+
   bit_index_t num_of_bits_set = 0;
 
   for(i = 0; i < bitarr->num_of_words; i++)
@@ -1252,7 +1281,7 @@ void bit_array_from_str(BIT_ARRAY* bitarr, const char* str)
 char* bit_array_to_str(const BIT_ARRAY* bitarr, char* str)
 {
   bit_index_t i;
-  
+
   for(i = 0; i < bitarr->num_of_bits; i++)
   {
     str[i] = bit_array_get(bitarr, i) ? '1' : '0';
@@ -1266,7 +1295,7 @@ char* bit_array_to_str(const BIT_ARRAY* bitarr, char* str)
 char* bit_array_to_str_rev(const BIT_ARRAY* bitarr, char* str)
 {
   bit_index_t i;
-  
+
   for(i = 0; i < bitarr->num_of_bits; i++)
   {
     str[i] = bit_array_get(bitarr, bitarr->num_of_bits-i-1) ? '1' : '0';
@@ -1305,7 +1334,7 @@ void _bit_array_to_substr(const char *file, int line,
 void bit_array_print(const BIT_ARRAY* bitarr, FILE* fout)
 {
   bit_index_t i;
-  
+
   for(i = 0; i < bitarr->num_of_bits; i++)
   {
     fprintf(fout, "%c", bit_array_get(bitarr, i) ? '1' : '0');
@@ -1324,7 +1353,7 @@ void _bit_array_print_substr(const char *file, int line,
 
   bit_index_t i, j;
   bit_index_t end = start + length - 1;
-  
+
   for(i = 0; i < length; i++)
   {
     j = (left_to_right ? start + i : end - i);
@@ -1597,7 +1626,7 @@ void _bit_array_copy(const char *file, int line,
   // Bounds checking in both arrays
   _bounds_check_offset(src, srcindx, length, file, line, "bit_array_copy");
   _bounds_check_offset(dst, dstindx, length, file, line, "bit_array_copy");
-  
+
   _array_copy(dst, dstindx, src, srcindx, length);
 
   #ifdef DEBUG
@@ -1913,7 +1942,7 @@ static void _reverse_region(BIT_ARRAY* bitarr,
                             bit_index_t length)
 {
   bit_index_t left = start;
-  bit_index_t right = (start + length - WORD_SIZE) % bitarr->num_of_bits; 
+  bit_index_t right = (start + length - WORD_SIZE) % bitarr->num_of_bits;
 
   while(length >= 2 * WORD_SIZE)
   {
@@ -2103,11 +2132,11 @@ void bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
 // Next permutation
 //
 
-static word_t _next_permutation(word_t v) 
+static word_t _next_permutation(word_t v)
 {
   // From http://graphics.stanford.edu/~seander/bithacks.html#NextBitPermutation
   word_t t = v | (v - 1); // t gets v's least significant 0 bits set to 1
-  // Next set to 1 the most significant bit to change, 
+  // Next set to 1 the most significant bit to change,
   // set to 0 the least significant ones, and add the necessary 1 bits.
   return (t+1) | (((~t & (t+1)) - 1) >> (trailing_zeros(v) + 1));
 }
@@ -2325,7 +2354,7 @@ void bit_array_shuffle(BIT_ARRAY* bitarr)
   for(i = bitarr->num_of_bits - 1; i > 0; i--)
   {
     j = (bit_index_t)rand() % i;
-  
+
     // Swap i and j
     char x = (bitarr->words[bitset64_wrd(i)] >> bitset64_idx(i)) & 0x1;
     char y = (bitarr->words[bitset64_wrd(j)] >> bitset64_idx(j)) & 0x1;
@@ -2334,7 +2363,7 @@ void bit_array_shuffle(BIT_ARRAY* bitarr)
       bitarr->words[bitset64_wrd(i)] &= ~((word_t)0x1 << bitset64_idx(i));
     else
       bitarr->words[bitset64_wrd(i)] |= (word_t)0x1 << bitset64_idx(i);
-  
+
     if(!x)
       bitarr->words[bitset64_wrd(j)] &= ~((word_t)0x1 << bitset64_idx(j));
     else
@@ -2516,7 +2545,7 @@ static void _arithmetic(BIT_ARRAY* dst,
 
   word_addr_t i;
   word_t word1, word2;
-  
+
   for(i = 0; i < max_words; i++)
   {
     word1 = (i < src1->num_of_words ? src1->words[i] : 0);
@@ -2632,7 +2661,7 @@ void bit_array_add_word(BIT_ARRAY *bitarr, bit_index_t pos, uint64_t add)
   {
     // Resize and add!
     bit_index_t num_bits_required = pos + (WORD_SIZE - leading_zeros(add));
-    
+
     bit_array_resize_critical(bitarr, num_bits_required,
                               __FILE__, __LINE__, "bit_array_add_word");
 
@@ -2726,7 +2755,7 @@ void _bit_array_add_words(const char *file, int line, BIT_ARRAY *bitarr,
   {
     // Just resize and copy!
     bit_index_t num_bits_required = pos + add_top_bit_set + 1;
-    
+
     bit_array_resize_critical(bitarr, num_bits_required,
                               file, line, "bit_array_add_words");
 
@@ -3168,67 +3197,6 @@ size_t bit_array_from_decimal(BIT_ARRAY *bitarr, const char* decimal)
   }
 
   return i;
-}
-
-uint64_t bit_array_crc(const BIT_ARRAY *bitarr, uint64_t crc)
-{
-  // Top bit mask
-  word_t tbm = (word_t)0x1 << (WORD_SIZE - 1);
-
-  if(crc == 0 || crc & tbm)
-  {
-    call_die(__FILE__,__LINE__,__func__,"n must be 0 < n < 64");
-  }
-
-  // crcn is the number of bits set in crc
-  word_offset_t crcn = top_set_bit(crc);
-
-  bit_index_t top_bit;
-
-  if(!bit_array_find_last_set_bit(bitarr, &top_bit))
-  {
-    // All bits zero
-    return 0;
-  }
-
-  bit_index_t offset = MAX(top_bit, WORD_SIZE) - WORD_SIZE;
-
-  word_t w = _get_word(bitarr, offset);
-  word_t m = crcn == 64 ? crc : crc << (WORD_SIZE - crcn);
-
-  if(w & tbm)
-  {
-    w ^= m;
-  }
-
-  while(offset > 0)
-  {
-    offset--;
-    w = (w << 1) | bit_array_get(bitarr, offset);
-    
-    if(w & tbm)
-    {
-      w ^= m;
-    }
-  }
-
-  word_offset_t i;
-  for(i = 0; i < crcn - 1; i++)
-  {
-    w <<= 1;
-
-    if(w & tbm)
-    {
-      w ^= m;
-    }
-  }
-
-  if(crcn < WORD_SIZE)
-  {
-    w >>= (WORD_SIZE - crcn);
-  }
-
-  return w;
 }
 
 //
