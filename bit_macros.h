@@ -19,8 +19,8 @@
   #define trailing_zeros(x) ({ __typeof(x) _r; _BitScanReverse64(&_r, x); _r; })
   #define leading_zeros(x) ({ __typeof(x) _r; _BitScanForward64(&_r, x); _r; })
 #else
-  #define trailing_zeros(x) ((x) ? (__typeof(x))__builtin_ctzl(x) : (__typeof(x))sizeof(x)*8)
-  #define leading_zeros(x) ((x) ? (__typeof(x))__builtin_clzl(x) : (__typeof(x))sizeof(x)*8)
+  #define trailing_zeros(x) ((x) ? (__typeof(x))__builtin_ctzll(x) : (__typeof(x))sizeof(x)*8)
+  #define leading_zeros(x) ((x) ? (__typeof(x))__builtin_clzll(x) : (__typeof(x))sizeof(x)*8)
 #endif
 
 // Get index of top set bit. If x is 0 return nbits

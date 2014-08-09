@@ -23,6 +23,7 @@
 #include <time.h> // needed for rand()
 #include <unistd.h>  // need for getpid() for getting setting rand number
 #include <ctype.h>  // need for tolower()
+#include <errno.h>	// perror
 
 // Windows includes
 #if defined(_WIN32)
@@ -180,8 +181,8 @@ static word_t __inline windows_parity(word_t w)
 #define POPCOUNT(x) windows_popcountl(x)
 #define PARITY(x) windows_parity(x)
 #else
-#define POPCOUNT(x) (unsigned)__builtin_popcountl(x)
-#define PARITY(x) (unsigned)__builtin_parityl(x)
+#define POPCOUNT(x) (unsigned)__builtin_popcountll(x)
+#define PARITY(x) (unsigned)__builtin_parityll(x)
 #endif
 
 #define MIN(a, b)  (((a) <= (b)) ? (a) : (b))
@@ -531,7 +532,7 @@ BIT_ARRAY* bit_array_alloc(BIT_ARRAY* bitarr, bit_index_t nbits)
 {
   bitarr->num_of_bits = nbits;
   bitarr->num_of_words = roundup_bits2words64(nbits);
-  bitarr->capacity_in_words = MAX(4, roundup2pow(bitarr->num_of_words));
+  bitarr->capacity_in_words = MAX(8, roundup2pow(bitarr->num_of_words));
   bitarr->words = (word_t*)calloc(bitarr->capacity_in_words, sizeof(word_t));
   if(bitarr->words == NULL) {
     errno = ENOMEM;
@@ -604,13 +605,14 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
 
   if(new_num_of_words > bitarr->capacity_in_words)
   {
-    assert(bitarr->capacity_in_words > 0);
+//    assert(bitarr->capacity_in_words > 0);
 
     // Need to change the amount of memory used
     word_addr_t old_capacity_in_words = bitarr->capacity_in_words;
     size_t old_capacity_in_bytes = old_capacity_in_words * sizeof(word_t);
 
     bitarr->capacity_in_words = roundup2pow(new_num_of_words);
+    bitarr->capacity_in_words = MAX(8, bitarr->capacity_in_words);
 
     size_t new_capacity_in_bytes = bitarr->capacity_in_words * sizeof(word_t);
     bitarr->words = (word_t*)realloc(bitarr->words, new_capacity_in_bytes);
@@ -618,12 +620,14 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
     if(bitarr->words == NULL)
     {
       // error - could not allocate enough memory
+perror("resize realloc");
       errno = ENOMEM;
       return 0;
     }
 
     // Need to zero new memory
     size_t num_bytes_to_zero = new_capacity_in_bytes - old_capacity_in_bytes;
+// printf("calling memset with %p(%p + %d), %d, %d\n", bitarr->words + old_capacity_in_words, bitarr->words, old_capacity_in_words, 0, num_bytes_to_zero);
     memset(bitarr->words + old_capacity_in_words, 0, num_bytes_to_zero);
 
     #ifdef DEBUG
@@ -635,6 +639,7 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
   {
     // Shrunk -- need to zero old memory
     size_t num_bytes_to_zero = (old_num_of_words - new_num_of_words)*sizeof(word_t);
+
     memset(bitarr->words + new_num_of_words, 0, num_bytes_to_zero);
   }
 
@@ -699,17 +704,26 @@ void bit_array_ensure_nwords(BIT_ARRAY* bitarr, word_addr_t nwords,
 
 // Get the value of a bit (returns 0 or 1)
 char _bit_array_get_bit(const char *file, int lineno,
-                        const BIT_ARRAY* bitarr, bit_index_t b)
+                        BIT_ARRAY* bitarr, bit_index_t b)
 {
-  _bounds_check_start(bitarr, b, file, lineno, "bit_array_get_bit");
 
-  return bit_array_get(bitarr, b);
+	if (b >= bitarr->num_of_bits) {
+		bit_array_resize_critical(bitarr, b+1, file, lineno,
+		    "bit_array_get_bit");
+	}
+	_bounds_check_start(bitarr, b, file, lineno, "bit_array_get_bit");
+
+	return bit_array_get(bitarr, b);
 }
 
 // set a bit (to 1) at position b
 void _bit_array_set_bit(const char *file, int lineno,
                         BIT_ARRAY* bitarr, bit_index_t b)
 {
+	if (b >= bitarr->num_of_bits) {
+		bit_array_resize_critical(bitarr, b+1, file, lineno,
+		    "bit_array_set_bit");
+	}
   _bounds_check_start(bitarr, b, file, lineno, "bit_array_set_bit");
 
   bit_array_set(bitarr,b);
@@ -723,6 +737,10 @@ void _bit_array_set_bit(const char *file, int lineno,
 void _bit_array_clear_bit(const char *file, int lineno,
                           BIT_ARRAY* bitarr, bit_index_t b)
 {
+	if (b >= bitarr->num_of_bits) {
+		bit_array_resize_critical(bitarr, b+1, file, lineno,
+		    "bit_array_clear_bit");
+	}
   _bounds_check_start(bitarr, b, file, lineno, "bit_array_clear_bit");
 
   bit_array_clear(bitarr, b);
@@ -736,6 +754,10 @@ void _bit_array_clear_bit(const char *file, int lineno,
 void _bit_array_toggle_bit(const char *file, int lineno,
                            BIT_ARRAY* bitarr, bit_index_t b)
 {
+	if (b >= bitarr->num_of_bits) {
+		bit_array_resize_critical(bitarr, b+1, file, lineno,
+		    "bit_array_toggle_bit");
+	}
   _bounds_check_start(bitarr, b, file, lineno, "bit_array_toggle_bit");
 
   bit_array_toggle(bitarr, b);
@@ -749,6 +771,10 @@ void _bit_array_toggle_bit(const char *file, int lineno,
 void _bit_array_assign_bit(const char *file, int lineno,
                            BIT_ARRAY* bitarr, bit_index_t b, char c)
 {
+	if (b >= bitarr->num_of_bits) {
+		bit_array_resize_critical(bitarr, b+1, file, lineno,
+		    "bit_array_assign_bit");
+	}
   _bounds_check_start(bitarr, b, file, lineno, "bit_array_assign_bit");
 
   c ? bit_array_set(bitarr, b) : bit_array_clear(bitarr, b);
@@ -1069,6 +1095,48 @@ char bit_array_find_next_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
   }
 
   return 0;
+}
+
+// Find the index of the next bit that is NOT set, at or after `offset`
+// Returns 1 if a bit is NOT set, otherwise 0
+// Index of next clear bit is stored in the integer pointed to by `result`
+// If no next bit is zero, value at `result` is not changed
+// we use ctz of inverse to do ffz operation.
+char bit_array_find_next_clear_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
+                                 bit_index_t* result)
+{
+  assert(offset < bitarr->num_of_bits);
+
+  // Find first word that is not all 1's.
+  word_addr_t i = bitset64_wrd(offset);
+  word_t w = (~bitarr->words[i]) >> bitset64_idx(offset);
+
+  if(w > 0) {
+    *result = offset + trailing_zeros(w);
+    return 1;
+  }
+
+  for(++i; i < bitarr->num_of_words; i++)
+  {
+	w = ~ bitarr->words[i];
+    if(w > 0)
+    {
+      *result = i * WORD_SIZE + trailing_zeros(w);
+	// this violates the interface contract, but oh well...
+	if (*result >= bitarr->num_of_bits) {
+		return 0;
+	}
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+// same same
+char bit_array_find_first_clear_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
+{
+  return bit_array_find_next_clear_bit(bitarr, 0, result);
 }
 
 // Find the index of the previous bit that is set, before `offset`.
@@ -1524,6 +1592,7 @@ size_t _bit_array_print_hex(const char *file, int line,
 //
 
 // Returns NULL if cannot malloc
+#define bit_array_dup	bit_array_clone
 BIT_ARRAY* bit_array_clone(const BIT_ARRAY* bitarr)
 {
   BIT_ARRAY* cpy = bit_array_create(bitarr->num_of_bits);
@@ -1633,6 +1702,32 @@ void _bit_array_copy(const char *file, int line,
   VALIDATE_BIT_ARRAY(dst);
   #endif
 }
+
+// MOD: self-resizing bit array copy. copies src to dst, and 
+// resizes dst if needed.  Assumes index of 0 for both and length of
+// src.
+void _bit_array_copy_all(const char *file, int line,
+                     BIT_ARRAY* dst, const BIT_ARRAY* src)
+{
+
+
+	if (src->num_of_bits > dst->num_of_bits) {
+		bit_array_resize_critical(dst, src->num_of_bits, file, line,
+		    "bit_array_copy_all");
+	}
+  // Bounds checking in both arrays
+//  _bounds_check_offset(src, srcindx, length, file, line, "bit_array_copy");
+//  _bounds_check_offset(dst, dstindx, length, file, line, "bit_array_copy");
+
+  _array_copy(dst, 0, src, 0, src->num_of_bits);
+
+  #ifdef DEBUG
+  VALIDATE_BIT_ARRAY(dst);
+  #endif
+}
+
+
+
 
 //
 // Logic operators
@@ -2057,6 +2152,27 @@ void bit_array_shift_left(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
   _set_region(bitarr, 0, shift_dist, action);
 }
 
+// MOD: shift left extend - don't truncate bits when shifting UP, instead
+// make room for them.
+void bit_array_shift_left_extend(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
+{
+   bit_index_t newlen = bitarr->num_of_bits + shift_dist;
+   bit_index_t cpy_length = bitarr->num_of_bits;
+
+  if(shift_dist == 0)
+  {
+    return;
+  }
+
+  bit_array_resize_critical(bitarr, newlen, __FILE__, __LINE__, __func__);
+
+  FillAction action = fill ? FILL_REGION : ZERO_REGION;
+
+  _array_copy(bitarr, shift_dist, bitarr, 0, cpy_length);
+
+  _set_region(bitarr, 0, shift_dist, action);
+}
+
 // Shift towards LSB / lower index
 void bit_array_shift_right(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
 {
@@ -2182,7 +2298,7 @@ void bit_array_next_permutation(BIT_ARRAY* bitarr)
       // set new word
       bitarr->words[w] = tmp;
 
-      // note: w in unsigned
+      // note: w is unsigned
       // Zero words while counting bits set
       while(w > 0)
       {
@@ -3210,11 +3326,29 @@ bit_index_t bit_array_save(const BIT_ARRAY* bitarr, FILE* f)
 {
   bit_index_t num_of_bytes = roundup_bits2bytes(bitarr->num_of_bits);
   bit_index_t bytes_written = 0;
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  int lastbytes;
+#endif
 
   // Write 8 bytes to store the number of bits in the array
   bytes_written += fwrite(&bitarr->num_of_bits, 8, 1, f);
+
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	// for big endian, shift last word to remove 0 bytes.
+	lastbytes = num_of_bytes % sizeof(word_t);
+	if (lastbytes) {
+		bitarr->words[bitarr->num_of_words-1] <<= (WORD_SIZE - lastbytes * 8);
+	}
+#endif
+
   // Write the array
   bytes_written += fwrite(bitarr->words, 1, num_of_bytes, f);
+
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	if (lastbytes) {
+		bitarr->words[bitarr->num_of_words-1] >>= (WORD_SIZE - lastbytes * 8);
+	}
+#endif
 
   return bytes_written;
 }
@@ -3224,6 +3358,9 @@ bit_index_t bit_array_save(const BIT_ARRAY* bitarr, FILE* f)
 char bit_array_load(BIT_ARRAY* bitarr, FILE* f)
 {
   bit_index_t items_read;
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  word_t lastbytes;
+#endif
 
   // Read in number of bits
   bit_index_t num_bits = 0;
@@ -3248,6 +3385,13 @@ char bit_array_load(BIT_ARRAY* bitarr, FILE* f)
   {
     return 0;
   }
+
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	lastbytes = num_of_bytes_in_file % sizeof(word_t);
+	if (lastbytes) {
+		bitarr->words[bitarr->num_of_words-1] >>= (WORD_SIZE - lastbytes * 8);
+	}
+#endif
 
   // Mask top word
   _mask_top_word(bitarr);

@@ -217,6 +217,13 @@ If no bits are set, value at `result` is not changed and zero is returned.
 
     char bit_array_find_first_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
 
+Find the index of the first bit that is clear.
+Returns 1 if a bit is clear, otherwise 0.
+Index of first clear bit is stored in the integer pointed to by `result`.
+If no bits are clear, zero is returned.
+
+    char bit_array_find_first_clear_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
+
 Find the index of the last bit that is set.
 Returns 1 if a bit is set, otherwise 0.
 Index of last set bit is stored in the integer pointed to by `result`.
@@ -230,6 +237,14 @@ Index of next set bit is stored in the integer pointed to by `result`.
 If no next bit is set, value at `result` is not changed and 0 is returned.
 
     char bit_array_find_next_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
+                                     bit_index_t* result)
+
+Find the index of the next bit that is clear, at or after `offset`.
+Returns 1 if a bit is clear, otherwise 0.
+Index of next clear bit is stored in the integer pointed to by `result`.
+If no next bit is clear, 0 is returned.
+
+    char bit_array_find_next_clear_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
                                      bit_index_t* result)
 
 Find the index of the previous bit that is set, before `offset`.
@@ -404,14 +419,10 @@ Shift array left/right with a given `fill` (0 or 1)
     void bit_array_shift_right(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
     void bit_array_shift_left(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
 
-To shift and add digits instead of losing data, use resize and copy instead:
+To shift and add digits instead of losing data, use the extend left shift
+function:
 
-    // Example to shift left 3 places and fill with zeros
-    bit_index_t len = bit_array_length(big);
-    int shift = 3;
-    bit_array_resize(big, len + shift);
-    bit_array_copy(arr, shift, arr, 0, len);
-    bit_array_clear_region(arr, 0, shift);
+    void bit_array_shift_left_extend(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
 
 Circular or cycle shifts.  Bits wrap around once shifted off the end
 
@@ -600,6 +611,11 @@ e.g. 0b11010 (26 in decimal) would come out as "01011"
 
     // Same as above but in reverse
     char* bit_array_word2str_rev(const void *ptr, size_t num_of_bits, char *str);
+
+For those who hate all that typing: the file "bar.h" contains macros to
+supply short "bar*" names for the most used bit array operations.
+This is meant to be similar to the "str*" function names for string
+manipulation.
 
 Constants
 ---------

@@ -5,6 +5,9 @@
  author: Isaac Turner <turner.isaac@gmail.com>
  license: Public Domain, no warranty
  date: Dec 2013
+
+Modified by Chris J. Kiick 8/7/2014
+
 */
 
 #ifndef BIT_ARRAY_HEADER_SEEN
@@ -116,6 +119,9 @@ char bit_array_ensure_size(BIT_ARRAY* bitarr, bit_index_t ensure_num_of_bits);
 #define bit_array_copy(dst,dstindx,src,srcindx,len) \
         _bit_array_copy(__FILE__,__LINE__,dst,dstindx,src,srcindx,len)
 
+#define bit_array_copy_all(dst,src) \
+        _bit_array_copy_all(__FILE__,__LINE__,dst,src)
+
 #define bit_array_random(arr,prob) _bit_array_random(__FILE__,__LINE__,arr,prob)
 
 #define bit_array_difference(dst,src1,src2) _bit_array_difference(__FILE__,__LINE__,dst,src1,src2)
@@ -149,7 +155,7 @@ char bit_array_ensure_size(BIT_ARRAY* bitarr, bit_index_t ensure_num_of_bits);
 
 // Get the value of a bit (returns 0 or 1)
 char _bit_array_get_bit(const char *file, int line,
-                        const BIT_ARRAY* bitarr, bit_index_t b);
+                        BIT_ARRAY* bitarr, bit_index_t b);
 
 // set a bit (to 1) at position b
 void _bit_array_set_bit(const char *file, int line,
@@ -271,6 +277,9 @@ bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr);
 char bit_array_find_next_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
                                  bit_index_t* result);
 
+char bit_array_find_next_clear_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
+                                 bit_index_t* result);
+
 // Find the index of the previous bit that is set, before offset.
 // Returns 1 if a bit is set, otherwise 0
 // Index of previous set bit is stored in the integer pointed to by `result`
@@ -283,6 +292,8 @@ char bit_array_find_prev_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
 // Index of first set bit is stored in the integer pointed to by `result`
 // If no bit is set result is not changed
 char bit_array_find_first_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
+
+char bit_array_find_first_clear_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
 
 // Find the index of the last bit that is set.  
 // Returns 1 if a bit is set, otherwise 0
@@ -376,6 +387,7 @@ size_t _bit_array_print_hex(const char *file, int line, const BIT_ARRAY* bitarr,
 //
 
 // Copy a BIT_ARRAY struct and the data it holds - returns pointer to new object
+#define bit_array_dup	bit_array_clone
 BIT_ARRAY* bit_array_clone(const BIT_ARRAY* bitarr);
 
 // Copy bits from one array to another
@@ -387,6 +399,9 @@ void _bit_array_copy(const char *file, int line,
                      const BIT_ARRAY* src, bit_index_t srcindx,
                      bit_index_t length);
 
+// copy all of src to dst. dst is resized if too small.
+void _bit_array_copy_all(const char *file, int line,
+                     BIT_ARRAY* dst, const BIT_ARRAY* src);
 //
 // Logic operators
 //
@@ -431,6 +446,9 @@ int bit_array_cmp_words(const BIT_ARRAY *bitarr,
 // Shift array left/right.  If fill is zero, filled with 0, otherwise 1
 void bit_array_shift_right(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
 void bit_array_shift_left (BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
+
+// shift left without losing any bits. Resizes bitarr.
+void bit_array_shift_left_extend (BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
 
 // Cyclic shift
 void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t dist);

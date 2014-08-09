@@ -28,19 +28,19 @@ libbitarr.a: bit_array.o
 	$(CC) $(CFLAGS) $(OBJFLAGS) -c $< -o $@
 
 dev: libbitarr.a bit_macros.h
-	cd dev && make
+	cd dev && $(MAKE) 
 
 examples: libbitarr.a
-	cd examples && make
+	cd examples && $(MAKE)
 
 test:
-	cd dev && make test
-	cd examples && make test
+	cd dev && $(MAKE) test
+	cd examples && $(MAKE) test
 
 clean:
 	rm -rf libbitarr.a *.o *.dSYM *.greg
-	cd dev && make clean
-	cd examples && make clean
+	cd dev && $(MAKE) clean
+	cd examples && $(MAKE) clean
 
 # Comment this line out to keep .o files
 .INTERMEDIATE: $(OBJS)
