@@ -95,3 +95,5 @@ code.
 The bartest will fail an assert if any of the tests fail, so if it runs to
 completion it passes.  Exit value is 0.
 
+14)
+created .gitignore
