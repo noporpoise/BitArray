@@ -3,8 +3,6 @@
 // like the str* function names.  The prefix "bar" is used to represent
 // bit_array and is analogous to "str".
 
-#include "bit_array.h"
-
 #define bar	BIT_ARRAY
 
 #define	barcreate	bit_array_create
