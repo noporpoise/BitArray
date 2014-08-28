@@ -10,13 +10,10 @@ endif
 
 CFLAGS = -Wall -Wextra -Wc++-compat
 
-all: bit_array_test bitlock_test bitlock_try_test bit_array_generate bartest
+all: bit_array_test bitlock_test bitlock_try_test bit_array_generate
 
-bit_array_test: bit_array_test.c ../libbitarr.a
+bit_array_test: bit_array_test.c ../bar.h ../libbitarr.a
 	$(CC) $(OPT) $(CFLAGS) -I.. -L.. -o bit_array_test bit_array_test.c -lbitarr
-
-bartest:	bartest.c  ../libbitarr.a ../bar.h
-	$(CC) $(OPT) $(CFLAGS) -I.. -L.. -o bartest bartest.c -lbitarr
 
 bitlock_test: bitlock_test.c ../bit_macros.h
 	$(CC) $(OPT) $(CFLAGS) -I.. -o bitlock_test bitlock_test.c -lpthread
@@ -31,9 +28,8 @@ bit_array_generate:
 ../libbitarr.a:
 	cd .. && make
 
-test: bit_array_test bitlock_test bartest
+test: bit_array_test bitlock_test
 	./bit_array_test && ./bitlock_test
-	./bartest
 
 clean:
 	rm -rf  bit_array_test bitlock_test bit_array_generate

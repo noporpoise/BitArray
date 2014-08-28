@@ -231,6 +231,13 @@ If no bits are set, value at `result` is not changed and zero is returned.
 
     char bit_array_find_last_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
 
+Find the index of the last bit that is NOT set.
+Returns 1 if a bit is zero, otherwise 0.
+Index of last zero bit is stored in the integer pointed to by `result`.
+If no bits are zero, value at `result` is not changed and zero is returned.
+
+    char bit_array_find_last_clear_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
+
 Find the index of the next bit that is set, at or after `offset`.
 Returns 1 if a bit is set, otherwise 0.
 Index of next set bit is stored in the integer pointed to by `result`.
@@ -245,7 +252,7 @@ Index of next clear bit is stored in the integer pointed to by `result`.
 If no next bit is clear, 0 is returned.
 
     char bit_array_find_next_clear_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
-                                     bit_index_t* result)
+                                       bit_index_t* result)
 
 Find the index of the previous bit that is set, before `offset`.
 Note: 'before' does not include `offset`.
@@ -255,6 +262,18 @@ If no previous bit is set, value at `result` is not changed
 
     char bit_array_find_prev_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
                                      bit_index_t* result)
+
+Find the index of the previous bit that is NOT set, before `offset`.
+Note: 'before' does not include `offset`.
+Returns 1 if a bit is clear, otherwise 0
+Index of previous zero bit is stored in the integer pointed to by `result`
+If no previous bit is zero, value at `result` is not changed
+
+    char bit_array_find_prev_clear_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
+                                       bit_index_t* result)
+
+Parity / Permutation
+--------------------
 
 Get parity: returns 1 if odd number of bits set, 0 if even.
 

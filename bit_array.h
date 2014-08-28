@@ -1,13 +1,10 @@
 /*
- bit_array.h
+ bit_array.c
  project: bit array C library
  url: https://github.com/noporpoise/BitArray/
- author: Isaac Turner <turner.isaac@gmail.com>
+ maintainer: Isaac Turner <turner.isaac@gmail.com>
  license: Public Domain, no warranty
- date: Dec 2013
-
-Modified by Chris J. Kiick 8/7/2014
-
+ date: Aug 2014
 */
 
 #ifndef BIT_ARRAY_HEADER_SEEN
@@ -155,7 +152,7 @@ char bit_array_ensure_size(BIT_ARRAY* bitarr, bit_index_t ensure_num_of_bits);
 
 // Get the value of a bit (returns 0 or 1)
 char _bit_array_get_bit(const char *file, int line,
-                        BIT_ARRAY* bitarr, bit_index_t b);
+                        const BIT_ARRAY* bitarr, bit_index_t b);
 
 // set a bit (to 1) at position b
 void _bit_array_set_bit(const char *file, int line,
@@ -177,7 +174,7 @@ void _bit_array_assign_bit(const char *file, int line,
 // Set, clear and toggle several bits at once
 //
 
-// Set multiple bits at once. 
+// Set multiple bits at once.
 // e.g. set bits 1, 20 & 31: bit_array_set_bits(bitarr, 3, 1,20,31);
 // Note: variable args are of type unsigned int
 void _bit_array_set_bits(const char *file, int lineno,
@@ -277,6 +274,10 @@ bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr);
 char bit_array_find_next_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
                                  bit_index_t* result);
 
+// Find the index of the next bit that is NOT set, at or after `offset`
+// Returns 1 if a bit is NOT set, otherwise 0
+// Index of next zero bit is stored in the integer pointed to by `result`
+// If no next bit is zero, value at `result` is not changed
 char bit_array_find_next_clear_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
                                  bit_index_t* result);
 
@@ -287,19 +288,36 @@ char bit_array_find_next_clear_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
 char bit_array_find_prev_set_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
                                  bit_index_t* result);
 
-// Find the index of the first bit that is set.  
+// Find the index of the previous bit that is NOT set, before offset.
+// Returns 1 if a bit is clear, otherwise 0
+// Index of previous zero bit is stored in the integer pointed to by `result`
+// If no previous bit is zero result is not changed
+char bit_array_find_prev_clear_bit(const BIT_ARRAY* bitarr, bit_index_t offset,
+                                   bit_index_t* result);
+
+// Find the index of the first bit that is set.
 // Returns 1 if a bit is set, otherwise 0
 // Index of first set bit is stored in the integer pointed to by `result`
 // If no bit is set result is not changed
 char bit_array_find_first_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
 
+// Find the index of the first bit that is NOT set.
+// Returns 1 if a bit is clear, otherwise 0
+// Index of first zero bit is stored in the integer pointed to by `result`
+// If no bit is zero result is not changed
 char bit_array_find_first_clear_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
 
-// Find the index of the last bit that is set.  
+// Find the index of the last bit that is set.
 // Returns 1 if a bit is set, otherwise 0
 // Index of last set bit is stored in the integer pointed to by `result`
 // If no bit is set result is not changed
 char bit_array_find_last_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
+
+// Find the index of the last bit that is NOT set.
+// Returns 1 if a bit is clear, otherwise 0
+// Index of last zero bit is stored in the integer pointed to by `result`
+// If no bit is zero result is not changed
+char bit_array_find_last_clear_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
 
 // Parity - returns 1 if odd number of bits set, 0 if even
 char bit_array_parity(const BIT_ARRAY* bitarr);
@@ -320,7 +338,7 @@ void bit_array_sort_bits_rev(BIT_ARRAY* bitarr);
 // String and printing methods
 //
 
-// Construct a BIT_ARRAY from a string. 
+// Construct a BIT_ARRAY from a string.
 void bit_array_from_str(BIT_ARRAY* bitarr, const char* bitstr);
 
 // Construct a BIT_ARRAY from a substring with given on and off characters.
@@ -335,7 +353,7 @@ char* bit_array_to_str(const BIT_ARRAY* bitarr, char* str);
 char* bit_array_to_str_rev(const BIT_ARRAY* bitarr, char* str);
 
 // Get a string representations for a given region, using given on/off
-// characters. 
+// characters.
 // Note: does not null-terminate
 void _bit_array_to_substr(const char *file, int line, const BIT_ARRAY* bitarr,
                           bit_index_t start, bit_index_t length,
@@ -399,16 +417,16 @@ void _bit_array_copy(const char *file, int line,
                      const BIT_ARRAY* src, bit_index_t srcindx,
                      bit_index_t length);
 
-// copy all of src to dst. dst is resized if too small.
+// copy all of src to dst. dst is resized to match src.
 void _bit_array_copy_all(const char *file, int line,
-                     BIT_ARRAY* dst, const BIT_ARRAY* src);
+                         BIT_ARRAY* dst, const BIT_ARRAY* src);
 //
 // Logic operators
 //
 
 // BIT_ARRAYs can all be different or the same object
 // dest array will be resized if it is too short
-// 
+//
 void bit_array_and(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 void bit_array_or (BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 void bit_array_xor(BIT_ARRAY* dest, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
@@ -448,7 +466,8 @@ void bit_array_shift_right(BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill)
 void bit_array_shift_left (BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
 
 // shift left without losing any bits. Resizes bitarr.
-void bit_array_shift_left_extend (BIT_ARRAY* bitarr, bit_index_t shift_dist, char fill);
+void bit_array_shift_left_extend(BIT_ARRAY* bitarr, bit_index_t shift_dist,
+                                 char fill);
 
 // Cyclic shift
 void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t dist);

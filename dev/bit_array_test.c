@@ -2,9 +2,9 @@
  bit_array_test.h
  project: bit array C library
  url: https://github.com/noporpoise/BitArray/
- author: Isaac Turner <turner.isaac@gmail.com>
+ maintainer: Isaac Turner <turner.isaac@gmail.com>
  license: Public Domain, no warranty
- date: Dec 2013
+ date: Aug 2014
 */
 
 #include <stdlib.h>
@@ -313,6 +313,44 @@ void test_first_last_bit_set()
   SUITE_END();
 }
 
+// Check finding set/clear bits return the same results
+bit_index_t _test_find_next_bit(BIT_ARRAY *arr, bit_index_t offset,
+                                bit_index_t *result)
+{
+  bit_index_t pos1 = 0, pos2 = 0;
+  char found1, found2;
+  found1 = bit_array_find_next_set_bit(arr, offset, &pos1);
+  bit_array_toggle_all(arr);
+  found2 = bit_array_find_next_clear_bit(arr, offset, &pos2);
+  bit_array_toggle_all(arr);
+
+  // printf("next (%i,%zu) vs (%i,%zu)\n", (int)found1, (size_t)pos1,
+  //                                       (int)found2, (size_t)pos2);
+  ASSERT(found1  == found2);
+  ASSERT(pos1 == pos2);
+  *result = pos1;
+  return found1;
+}
+
+// Check finding set/clear bits return the same results
+bit_index_t _test_find_prev_bit(BIT_ARRAY *arr, bit_index_t offset,
+                                bit_index_t *result)
+{
+  bit_index_t pos1 = 0, pos2 = 0;
+  char found1, found2;
+  found1 = bit_array_find_prev_set_bit(arr, offset, &pos1);
+  bit_array_toggle_all(arr);
+  found2 = bit_array_find_prev_clear_bit(arr, offset, &pos2);
+  bit_array_toggle_all(arr);
+
+  // printf("prev (%i,%zu) vs (%i,%zu)\n", (int)found1, (size_t)pos1,
+  //                                       (int)found2, (size_t)pos2);
+  ASSERT(found1  == found2);
+  ASSERT(pos1 == pos2);
+  *result = pos1;
+  return found1;
+}
+
 void test_next_prev_bit_set()
 {
   SUITE_START("next/prev bit set");
@@ -323,39 +361,39 @@ void test_next_prev_bit_set()
 
   // Simple test
   // Nothing set
-  found = bit_array_find_next_set_bit(arr, 0, &pos);
+  found = _test_find_next_bit(arr, 0, &pos);
   ASSERT(!found && pos == 0);
-  found = bit_array_find_next_set_bit(arr, 50, &pos);
+  found = _test_find_next_bit(arr, 50, &pos);
   ASSERT(!found && pos == 0);
-  found = bit_array_find_next_set_bit(arr, 99, &pos);
+  found = _test_find_next_bit(arr, 99, &pos);
   ASSERT(!found && pos == 0);
-  found = bit_array_find_prev_set_bit(arr, 0, &pos);
+  found = _test_find_prev_bit(arr, 0, &pos);
   ASSERT(!found && pos == 0);
-  found = bit_array_find_prev_set_bit(arr, 50, &pos);
+  found = _test_find_prev_bit(arr, 50, &pos);
   ASSERT(!found && pos == 0);
-  found = bit_array_find_prev_set_bit(arr, 100, &pos);
+  found = _test_find_prev_bit(arr, 100, &pos);
   ASSERT(!found && pos == 0);
 
   bit_array_set_bit(arr, 0);
-  found = bit_array_find_prev_set_bit(arr, 0, &pos);
+  found = _test_find_prev_bit(arr, 0, &pos);
   ASSERT(!found && pos == 0);
-  found = bit_array_find_next_set_bit(arr, 0, &pos);
+  found = _test_find_next_bit(arr, 0, &pos);
   ASSERT(found && pos == 0);
 
   bit_array_set_bit(arr, 99);
-  found = bit_array_find_prev_set_bit(arr, 99, &pos);
+  found = _test_find_prev_bit(arr, 99, &pos);
   ASSERT(found && pos == 0);
-  found = bit_array_find_next_set_bit(arr, 99, &pos);
+  found = _test_find_next_bit(arr, 99, &pos);
   ASSERT(found && pos == 99);
 
   bit_array_set_bits(arr, 3, 10, 20, 64);
-  found = bit_array_find_prev_set_bit(arr, 99, &pos);
+  found = _test_find_prev_bit(arr, 99, &pos);
   ASSERT(found && pos == 64);
-  found = bit_array_find_prev_set_bit(arr, 64, &pos);
+  found = _test_find_prev_bit(arr, 64, &pos);
   ASSERT(found && pos == 20);
-  found = bit_array_find_next_set_bit(arr, 1, &pos);
+  found = _test_find_next_bit(arr, 1, &pos);
   ASSERT(found && pos == 10);
-  found = bit_array_find_next_set_bit(arr, 11, &pos);
+  found = _test_find_next_bit(arr, 11, &pos);
   ASSERT(found && pos == 20);
 
   // Automated test
@@ -368,13 +406,13 @@ void test_next_prev_bit_set()
     for(i = 0; i < n; i++) bit_array_set_bit(arr, indices[i]);
 
     for(i = 0; i < n; i++) {
-      found = bit_array_find_next_set_bit(arr, indices[i], &pos);
+      found = _test_find_next_bit(arr, indices[i], &pos);
       ASSERT(found == 1);
       ASSERT(pos == indices[i]);
 
       // Check from bit after index if in range
       if(indices[i]+1 < arr->num_of_bits) {
-        found = bit_array_find_next_set_bit(arr, indices[i]+1, &pos);
+        found = _test_find_next_bit(arr, indices[i]+1, &pos);
         if(i+1 < n) {
           ASSERT(found == 1);
           ASSERT(pos == indices[i+1]);
@@ -391,7 +429,7 @@ void test_next_prev_bit_set()
     for(i = 0; i < n; i++) bit_array_set_bit(arr, indices[num_idx-i-1]);
 
     for(i = 0; i < n; i++) {
-      found = bit_array_find_prev_set_bit(arr, indices[num_idx-i-1], &pos);
+      found = _test_find_prev_bit(arr, indices[num_idx-i-1], &pos);
       if(i+1 < n) {
         ASSERT(found == 1);
         ASSERT(pos == indices[num_idx-i-2]);
@@ -2397,6 +2435,140 @@ void test_add_and_minus_single_word()
   SUITE_END();
 }
 
+// test new features of bitarr library.
+//   - resize from 0
+//   - get/set/clear/toggle/assign auto-resize
+//   - copy auto-resize
+//   - copy_all function (with auto-resize)
+//   - extended shift left
+//   - find clear bit
+// exercise short names. (some of them anyway)
+#include "bar.h"
+
+void test_bar_wrapper()
+{
+  SUITE_START("testing bar wrapper");
+
+  bar bars[7];
+  bar foo;
+  int i, j;
+  uint64_t res, w;
+  bit_index_t tb, rv, k; // test bit.
+
+  // make sure this works, too.
+  w = 0x00000FFFFFFFFF00;
+  rv = leading_zeros(w);
+  // printf("clz=%d\n", rv);
+  ASSERT(rv == 20);
+  rv = trailing_zeros(w);
+  ASSERT(rv == 8);
+  rv = __builtin_ctzll(w);
+  ASSERT(rv == 8);
+  rv = __builtin_clzll(w);
+  ASSERT(rv == 20);
+  w = 0xFFFFFFFFFFFFFFFF;
+  w >>= 5;
+  rv = __builtin_clzll(w);
+  ASSERT(rv == 5);
+
+  // initialize to zeros.
+  memset((void *)bars, 0, sizeof(bars));
+  memset((void *)&foo, 0, sizeof(bar));
+
+  // test resize from nothing.
+  ASSERT(barlen(&foo) == 0);
+  rv = bit_array_resize(&foo, 23);
+  ASSERT(rv == 1);
+  ASSERT(barlen(&foo) == 23);
+  barfree(&foo);
+  ASSERT(barlen(&foo) == 0);
+
+  // Auto-resizing array turned off, so these tests fail
+  /*
+  // run through get/set/clear/toggle/assign.
+  // start with 0, increase size each time.
+
+  tb = 7;
+  ASSERT(barlen(&foo) == 0);
+  rv = barget(&foo, tb);
+  ASSERT(rv == 0);
+  ASSERT(barlen(&foo) >= tb);
+  tb *= 4;
+  barset(&foo, tb);
+  ASSERT(barlen(&foo) >= tb);
+  ASSERT(barget(&foo, tb) == 1);
+  tb *= 4;
+  barclr(&foo, tb);
+  ASSERT(barlen(&foo) >= tb);
+  ASSERT(barget(&foo, tb) == 0);
+  tb *= 4;
+  barflip(&foo, tb);
+  ASSERT(barlen(&foo) >= tb);
+  ASSERT(barget(&foo, tb) == 1);
+  tb *= 4;
+  barmake(&foo, tb, 1);
+  ASSERT(barlen(&foo) >= tb);
+  ASSERT(barget(&foo, tb) == 1);
+  tb *= 4;
+
+  for (i = 1; i < 5; i++) {
+    barcpy(&(bars[i]), &foo);
+    ASSERT(barlen(&(bars[i])) == barlen(&foo));
+    rv = barlen(&(bars[i]));
+    rv += 57;
+    barset(&(bars[i]), rv);
+    ASSERT(barlen(&(bars[i])) >= rv);
+    barcpy(&foo, &(bars[i]));
+    ASSERT(barlen(&foo) >= rv);
+  }
+
+  barfree(&foo);
+  ASSERT(barlen(&foo) == 0);
+  */
+
+  // Auto-resizing array turned off, set size here
+  bit_array_resize(&foo, 101);
+
+  barset(&foo, 100);
+  barfill(&foo);
+  rv = barffz(&foo, &res);
+  ASSERT(rv == 0);
+
+  barclr(&foo, 50);
+  rv = barffz(&foo, &res);
+  ASSERT(rv == 1);
+  ASSERT(res == 50);
+  barclr(&foo, 77);
+  rv = barfnz(&foo, res+1, &res);
+  ASSERT(rv == 1);
+  ASSERT(res == 77);
+
+  barfree(&foo);
+  ASSERT(barlen(&foo) == 0);
+
+  // Auto-resizing array turned off, set size here
+  bit_array_resize(&foo, 101);
+
+  barset(&foo, 1);
+  barset(&foo, 3);
+  barset(&foo, 15);
+  ASSERT(barlen(&foo) >= 15);
+
+  j = 9;
+  k = barlen(&foo);
+  for (i = 0; i < 10; i++) {
+    bareshl(&foo, j, 0);
+    k += j;
+    j *= 2;
+  }
+  ASSERT(barlen(&foo) >= k);
+
+  barfree(&foo);
+
+  SUITE_END();
+}
+
+
 int main(int argc, char* argv[])
 {
   if(argc != 1)
@@ -2447,6 +2619,8 @@ int main(int argc, char* argv[])
   test_div();
   test_small_products();
   test_product_divide();
+
+  test_bar_wrapper();
 
   // slooow
   test_next_permutation();

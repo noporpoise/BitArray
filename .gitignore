@@ -1,11 +1,11 @@
 dev/bartest
 dev/bit_array_generate
 dev/bit_array_test
-dev/bitarr_example.dump
 dev/bitlock_test
 dev/bitlock_try_test
 dev/core
 examples/example_c
 examples/example_cpp
-libbitarr.a
-bit_array.o
+*.dump
+*.a
+*.o
