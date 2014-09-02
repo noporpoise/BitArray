@@ -16,7 +16,7 @@ efficient implementation for C/C++.  Arrays can be enlarged or shrunk as needed.
 Bit arrays are initialised to zero when created or extended.  All operations
 have their bounds checked - an "Out of bounds" error is printed if you try to
 access a bit with index >= length. Arrays of length 0 are permitted. Indices
-must be >= 0. This implementation is not thread-safe.
+must be >= 0.
 
 Please get in touch if you have suggestions / requests / bugs.  
 
@@ -43,6 +43,13 @@ Add to your compiler arguments
 
     BIT_ARR_PATH=path/to/bit_array/
     gcc ... -I$(BIT_ARR_PATH) -L$(BIT_ARR_PATH) -libbitarr
+
+Thread safety
+-------------
+
+You cannot safely access the same BitArray in multiple threads at once. Use a
+lock to protect BitArray objects. The same methods can be safely called in
+separate threads as long as they are not accessing the same BitArray structs.
 
 Basics
 ------
@@ -640,10 +647,21 @@ Testing on different platforms is especially appreciated. I only have access
 to Mac OS X and Linux.
 
 License
-===================
+=======
 
 This software is in the *Public Domain*. That means you can do whatever you like
-with it. There are no warranties and there may be bugs. 
+with it. That includes being used in proprietary products without attribution or
+restrictions. There are no warranties and there may be bugs. 
+
+Formally we are using CC0 - a Creative Commons license to place this work in the
+public domain. A copy of CC0 is in the LICENSE file. 
+
+    "CC0 is a public domain dedication from Creative Commons. A work released
+    under CC0 is dedicated to the public domain to the fullest extent permitted
+    by law. If that is not possible for any reason, CC0 also provides a lax,
+    permissive license as a fallback. Both public domain works and the lax
+    license provided by CC0 are compatible with the GNU GPL."
+      - http://www.gnu.org/licenses/license-list.html#CC0
 
 Development
 ===========
@@ -652,6 +670,5 @@ To do:
 * search function
     int bit_array_search(const BIT_ARRAY *arr, const BIT_ARRAY *query);
 * windows support
-* endianness
-* 32 bit support?
+* 32 bit support
 * faster multiply / divide? (i.e. Karatsuba)
