@@ -656,11 +656,7 @@ Please feel free to submit issues and pull requests. I appreciate bug reports.
 
 Methods are named:
 * `_name()` indicates only used internally
-* `_bit_array_name()` exported and wrapped in a #define in the header
 * `bit_array_name()` exported as is
-
-`_bit_array_name()` functions are wrapped in a `#define` to allow reporting of
-file and line number of offending call in the case of an out of bounds error etc.
 
 Testing on different platforms is especially appreciated. I only have access
 to Mac OS X and Linux.
@@ -686,8 +682,7 @@ Development
 ===========
 
 To do:
-* search function
-    int bit_array_search(const BIT_ARRAY *arr, const BIT_ARRAY *query);
+* search function: `int bit_array_search(const BIT_ARRAY *arr, const BIT_ARRAY *query);`
 * windows support
 * 32 bit support
 * faster multiply / divide? (i.e. Karatsuba)
