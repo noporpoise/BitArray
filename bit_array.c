@@ -23,6 +23,7 @@
 #include <unistd.h>  // need for getpid() for getting setting rand number
 #include <ctype.h>  // need for tolower()
 #include <errno.h>  // perror
+#include <sys/time.h> // for seeding random
 
 // Windows includes
 #if defined(_WIN32)
@@ -205,7 +206,9 @@ static void _seed_rand()
   if(!rand_initiated)
   {
     // Initialise random number generator
-    srand((unsigned int)time(NULL) + getpid());
+    struct timeval time;
+    gettimeofday(&time, NULL);
+    srand((((time.tv_sec ^ getpid()) * 1000001) + time.tv_usec));
     rand_initiated = 1;
   }
 }
@@ -241,51 +244,41 @@ static inline char* _word_to_str(word_t word, char str[WORD_SIZE+1])
   return str;
 }
 
-// Error reporting code
-static void call_die(const char *file, int line, const char *func,
-                     const char *fmt, ...)
-__attribute__((format(printf, 4, 5)))
-__attribute__((noreturn));
-
-static void call_die(const char *file, int line, const char *func,
-                     const char *fmt, ...)
-{
-  va_list argptr;
-  fflush(stdout);
-  fprintf(stderr, "[%s:%i] Error %s: ", file, line, func);
-  va_start(argptr, fmt);
-  vfprintf(stderr, fmt, argptr);
-  va_end(argptr);
-  if(*(fmt + strlen(fmt) - 1) != '\n') fputc('\n', stderr);
-  kill(getpid(), SIGABRT);
-  exit(EXIT_FAILURE);
-}
-
 // Used in debugging
-#define VALIDATE_BIT_ARRAY(a) validate_bitarr((a), __FILE__, __LINE__)
+#ifdef DEBUG
+  #define DEBUG_PRINT(msg,...) printf("[%s:%i] "msg, __FILE__, __LINE__, ##__VA_ARGS__);
+  #define DEBUG_VALIDATE(a) validate_bitarr((a), __FILE__, __LINE__)
+#else
+  #define DEBUG_PRINT(msg,...)
+  #define DEBUG_VALIDATE(a)
+#endif
 
-void validate_bitarr(BIT_ARRAY *arr, char *file, int lineno)
+void validate_bitarr(BIT_ARRAY *arr, const char *file, int lineno)
 {
   // Check top word is masked
   word_addr_t tw = arr->num_of_words == 0 ? 0 : arr->num_of_words - 1;
   bit_index_t top_bits = bits_in_top_word(arr->num_of_bits);
+  int err = 0;
 
   if(arr->words[tw] > bitmask64(top_bits))
   {
     _print_word(arr->words[tw], stderr);
-    fprintf(stderr, "\n");
-    call_die(file, lineno, __func__, "Expected %i bits in top word[%i]",
-             (int)top_bits, (int)tw);
+    fprintf(stderr, "\n[%s:%i] Expected %i bits in top word[%i]\n",
+            file, lineno, (int)top_bits, (int)tw);
+    err = 1;
   }
 
   // Check num of words is correct
   word_addr_t num_words = roundup_bits2words64(arr->num_of_bits);
   if(num_words != arr->num_of_words)
   {
-    call_die(file, lineno, __func__, "num of words wrong "
-             "[bits: %i, word: %i, actual words: %i]\n",
-             (int)arr->num_of_bits, (int)num_words, (int)arr->num_of_words);
+    fprintf(stderr, "\n[%s:%i] num of words wrong "
+                    "[bits: %i, word: %i, actual words: %i]\n", file, lineno,
+            (int)arr->num_of_bits, (int)num_words, (int)arr->num_of_words);
+    err = 1;
   }
+
+  if(err) abort();
 }
 
 // Reverse a word
@@ -309,36 +302,6 @@ static inline void _mask_top_word(BIT_ARRAY* bitarr)
   word_addr_t num_of_words = MAX(1, bitarr->num_of_words);
   word_offset_t bits_active = bits_in_top_word(bitarr->num_of_bits);
   bitarr->words[num_of_words-1] &= bitmask64(bits_active);
-}
-
-//
-// Bounds check
-//
-
-static inline void _bounds_check_start(const BIT_ARRAY* bitarr,
-                                       bit_index_t start,
-                                       const char* file, int line,
-                                       const char* func)
-{
-  if(start >= bitarr->num_of_bits)
-  {
-    call_die(file, line, func,
-             "Out of bounds error (index: %zu, num_of_bits: %zu)",
-             (size_t)start, (size_t)bitarr->num_of_bits);
-  }
-}
-
-static inline void _bounds_check_offset(const BIT_ARRAY* bitarr,
-                                        bit_index_t start, bit_index_t len,
-                                        const char* file, int line,
-                                        const char* func)
-{
-  if(start + len > bitarr->num_of_bits)
-  {
-    call_die(file, line, func,
-             "Out of bounds error (start: %zu; length: %zu; num_of_bits: %zu)",
-             (size_t)start, (size_t)len, (size_t)bitarr->num_of_bits);
-  }
 }
 
 //
@@ -391,10 +354,7 @@ static inline void _set_word(BIT_ARRAY* bitarr, bit_index_t start, word_t word)
 
   // Mask top word
   _mask_top_word(bitarr);
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 static inline void _set_byte(BIT_ARRAY *bitarr, bit_index_t start, uint8_t byte)
@@ -559,14 +519,12 @@ BIT_ARRAY* bit_array_create(bit_index_t nbits)
     return NULL;
   }
 
-  #ifdef DEBUG
-  printf("Creating BIT_ARRAY (bits: %lu; allocated words: %lu; "
-         "using words: %lu; WORD_SIZE: %i)\n",
-         (unsigned long)nbits, (unsigned long)bitarr->capacity_in_words,
-         (unsigned long)roundup_bits2words64(nbits), (int)WORD_SIZE);
+  DEBUG_PRINT("Creating BIT_ARRAY (bits: %lu; allocated words: %lu; "
+              "using words: %lu; WORD_SIZE: %i)\n",
+              (unsigned long)nbits, (unsigned long)bitarr->capacity_in_words,
+              (unsigned long)roundup_bits2words64(nbits), (int)WORD_SIZE);
 
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 
   return bitarr;
 }
@@ -597,10 +555,8 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
   bitarr->num_of_bits = new_num_of_bits;
   bitarr->num_of_words = new_num_of_words;
 
-  #ifdef DEBUG
-  printf("Resize: old_num_of_words: %i; new_num_of_words: %i\n",
-         (int)old_num_of_words, (int)new_num_of_words);
-  #endif
+  DEBUG_PRINT("Resize: old_num_of_words: %i; new_num_of_words: %i\n",
+              (int)old_num_of_words, (int)new_num_of_words);
 
   if(new_num_of_words > bitarr->capacity_in_words)
   {
@@ -626,10 +582,8 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
     size_t num_bytes_to_zero = new_capacity_in_bytes - old_capacity_in_bytes;
     memset(bitarr->words + old_capacity_in_words, 0, num_bytes_to_zero);
 
-    #ifdef DEBUG
-    printf("zeroing from word %i for %i bytes\n", (int)old_capacity_in_words,
-           (int)num_bytes_to_zero);
-    #endif
+    DEBUG_PRINT("zeroing from word %i for %i bytes\n", (int)old_capacity_in_words,
+                (int)num_bytes_to_zero);
   }
   else if(new_num_of_words < old_num_of_words)
   {
@@ -641,23 +595,19 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
 
   // Mask top word
   _mask_top_word(bitarr);
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
-
+  DEBUG_VALIDATE(bitarr);
   return 1;
 }
 
-void bit_array_resize_critical(BIT_ARRAY* bitarr, bit_index_t num_of_bits,
-                               const char *file, int lineno, const char *func)
+void bit_array_resize_critical(BIT_ARRAY* bitarr, bit_index_t num_of_bits)
 {
   bit_index_t old_num_of_bits = bitarr->num_of_bits;
 
   if(!bit_array_resize(bitarr, num_of_bits))
   {
-    call_die(file, lineno, func, "Ran out of memory resizing [%lu -> %lu]",
-             (unsigned long)old_num_of_bits, (unsigned long)num_of_bits);
+    fprintf(stderr, "Ran out of memory resizing [%lu -> %lu]",
+            (unsigned long)old_num_of_bits, (unsigned long)num_of_bits);
+    abort();
   }
 }
 
@@ -672,8 +622,17 @@ char bit_array_ensure_size(BIT_ARRAY* bitarr, bit_index_t ensure_num_of_bits)
   return 1;
 }
 
-void bit_array_ensure_nwords(BIT_ARRAY* bitarr, word_addr_t nwords,
-                             const char *file, int lineno, const char *func)
+void bit_array_ensure_size_critical(BIT_ARRAY* bitarr, bit_index_t num_of_bits)
+{
+  if(num_of_bits > bitarr->num_of_bits)
+  {
+    bit_array_resize_critical(bitarr, num_of_bits);
+  }
+}
+
+static inline
+void _bit_array_ensure_nwords(BIT_ARRAY* bitarr, word_addr_t nwords,
+                              const char *file, int lineno, const char *func)
 {
   size_t newmem, oldmem;
   if(bitarr->capacity_in_words < nwords) {
@@ -683,13 +642,12 @@ void bit_array_ensure_nwords(BIT_ARRAY* bitarr, word_addr_t nwords,
     bitarr->words = (word_t*)realloc(bitarr->words, newmem);
 
     if(bitarr->words == NULL) {
-      call_die(file, lineno, func, "Ran out of memory resizing [%zu -> %zu]",
-               oldmem, newmem);
+      fprintf(stderr, "[%s:%i:%s()] Ran out of memory resizing [%zu -> %zu]",
+              file, lineno, func, oldmem, newmem);
+      abort();
     }
 
-    #ifdef DEBUG
-      printf("Ensure nwords realloc %zu -> %zu\n", oldmem, newmem);
-    #endif
+    DEBUG_PRINT("Ensure nwords realloc %zu -> %zu\n", oldmem, newmem);
   }
 }
 
@@ -699,66 +657,86 @@ void bit_array_ensure_nwords(BIT_ARRAY* bitarr, word_addr_t nwords,
 //
 
 // Get the value of a bit (returns 0 or 1)
-char _bit_array_get_bit(const char *file, int lineno,
-                        const BIT_ARRAY* bitarr, bit_index_t b)
+char bit_array_get_bit(const BIT_ARRAY* bitarr, bit_index_t b)
 {
-  _bounds_check_start(bitarr, b, file, lineno, "bit_array_get_bit");
+  assert(b < bitarr->num_of_bits);
   return bit_array_get(bitarr, b);
 }
 
 // set a bit (to 1) at position b
-void _bit_array_set_bit(const char *file, int lineno,
-                        BIT_ARRAY* bitarr, bit_index_t b)
+void bit_array_set_bit(BIT_ARRAY* bitarr, bit_index_t b)
 {
-  _bounds_check_start(bitarr, b, file, lineno, "bit_array_set_bit");
+  assert(b < bitarr->num_of_bits);
   bit_array_set(bitarr,b);
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 // clear a bit (to 0) at position b
-void _bit_array_clear_bit(const char *file, int lineno,
-                          BIT_ARRAY* bitarr, bit_index_t b)
+void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b)
 {
-  _bounds_check_start(bitarr, b, file, lineno, "bit_array_clear_bit");
+  assert(b < bitarr->num_of_bits);
   bit_array_clear(bitarr, b);
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 // If bit is 0 -> 1, if bit is 1 -> 0.  AKA 'flip'
-void _bit_array_toggle_bit(const char *file, int lineno,
-                           BIT_ARRAY* bitarr, bit_index_t b)
+void bit_array_toggle_bit(BIT_ARRAY* bitarr, bit_index_t b)
 {
-  _bounds_check_start(bitarr, b, file, lineno, "bit_array_toggle_bit");
+  assert(b < bitarr->num_of_bits);
   bit_array_toggle(bitarr, b);
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 // If char c != 0, set bit; otherwise clear bit
-void _bit_array_assign_bit(const char *file, int lineno,
-                           BIT_ARRAY* bitarr, bit_index_t b, char c)
+void bit_array_assign_bit(BIT_ARRAY* bitarr, bit_index_t b, char c)
 {
-  _bounds_check_start(bitarr, b, file, lineno, "bit_array_assign_bit");
-
-  c ? bit_array_set(bitarr, b) : bit_array_clear(bitarr, b);
-  /*
-  // Without branching
-  word_offset_t offset = bitset64_idx(b);
-  word_t w = (word_t)c << offset;
-  word_t m = (word_t)0x1 << offset;
-  word_addr_t index = bitset64_wrd(b);
-  bitarr->words[index] = (bitarr->words[index] & ~m) | w;
-  */
+  assert(b < bitarr->num_of_bits);
+  bit_array_assign(bitarr, b, c ? 1 : 0);
+  DEBUG_VALIDATE(bitarr);
 }
 
+//
+// Get, set etc with resize
+//
+
+// Get the value of a bit (returns 0 or 1)
+char bit_array_rget(BIT_ARRAY* bitarr, bit_index_t b)
+{
+  bit_array_ensure_size_critical(bitarr, b+1);
+  return bit_array_get(bitarr, b);
+}
+
+// set a bit (to 1) at position b
+void bit_array_rset(BIT_ARRAY* bitarr, bit_index_t b)
+{
+  bit_array_ensure_size_critical(bitarr, b+1);
+  bit_array_set(bitarr,b);
+  DEBUG_VALIDATE(bitarr);
+}
+
+// clear a bit (to 0) at position b
+void bit_array_rclear(BIT_ARRAY* bitarr, bit_index_t b)
+{
+  bit_array_ensure_size_critical(bitarr, b+1);
+  bit_array_clear(bitarr, b);
+  DEBUG_VALIDATE(bitarr);
+}
+
+// If bit is 0 -> 1, if bit is 1 -> 0.  AKA 'flip'
+void bit_array_rtoggle(BIT_ARRAY* bitarr, bit_index_t b)
+{
+  bit_array_ensure_size_critical(bitarr, b+1);
+  bit_array_toggle(bitarr, b);
+  DEBUG_VALIDATE(bitarr);
+}
+
+// If char c != 0, set bit; otherwise clear bit
+void bit_array_rassign(BIT_ARRAY* bitarr, bit_index_t b, char c)
+{
+  bit_array_ensure_size_critical(bitarr, b+1);
+  bit_array_assign(bitarr, b, c ? 1 : 0);
+  DEBUG_VALIDATE(bitarr);
+}
 
 //
 // Set, clear and toggle several bits at once
@@ -766,69 +744,56 @@ void _bit_array_assign_bit(const char *file, int lineno,
 
 // Set multiple bits at once.
 // e.g. set bits 1, 20 & 31: bit_array_set_bits(bitarr, 3, 1,20,31);
-void _bit_array_set_bits(const char* file, int line,
-                         BIT_ARRAY* bitarr, size_t n, ...)
-// void bit_array_set_bits(BIT_ARRAY* bitarr, size_t n, ...)
+void bit_array_set_bits(BIT_ARRAY* bitarr, size_t n, ...)
 {
+  size_t i;
   va_list argptr;
   va_start(argptr, n);
 
-  size_t i;
   for(i = 0; i < n; i++)
   {
     unsigned int bit_index = va_arg(argptr, unsigned int);
-    _bit_array_set_bit(file, line, bitarr, bit_index);
+    bit_array_set_bit(bitarr, bit_index);
   }
 
   va_end(argptr);
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 // Clear multiple bits at once.
 // e.g. clear bits 1, 20 & 31: bit_array_clear_bits(bitarr, 3, 1,20,31);
-void _bit_array_clear_bits(const char *file, int line,
-                           BIT_ARRAY* bitarr, size_t n, ...)
+void bit_array_clear_bits(BIT_ARRAY* bitarr, size_t n, ...)
 {
+  size_t i;
   va_list argptr;
   va_start(argptr, n);
 
-  size_t i;
   for(i = 0; i < n; i++)
   {
     unsigned int bit_index = va_arg(argptr, unsigned int);
-    _bit_array_clear_bit(file, line, bitarr, bit_index);
+    bit_array_clear_bit(bitarr, bit_index);
   }
 
   va_end(argptr);
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 // Toggle multiple bits at once
 // e.g. toggle bits 1, 20 & 31: bit_array_toggle_bits(bitarr, 3, 1,20,31);
-void _bit_array_toggle_bits(const char *file, int line,
-                            BIT_ARRAY* bitarr, size_t n, ...)
+void bit_array_toggle_bits(BIT_ARRAY* bitarr, size_t n, ...)
 {
+  size_t i;
   va_list argptr;
   va_start(argptr, n);
 
-  size_t i;
   for(i = 0; i < n; i++)
   {
     unsigned int bit_index = va_arg(argptr, unsigned int);
-    _bit_array_toggle_bit(file, line, bitarr, bit_index);
+    bit_array_toggle_bit(bitarr, bit_index);
   }
 
   va_end(argptr);
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 
@@ -837,55 +802,28 @@ void _bit_array_toggle_bits(const char *file, int line,
 //
 
 // Set all the bits in a region
-void _bit_array_set_region(const char *file, int line,
-                           BIT_ARRAY* bitarr,
-                           bit_index_t start,
-                           bit_index_t length)
+void bit_array_set_region(BIT_ARRAY* bitarr, bit_index_t start, bit_index_t len)
 {
-  // Bounds checking
-  _bounds_check_offset(bitarr, start, length, file, line,
-                      "bit_array_set_region");
-
-  SET_REGION(bitarr, start, length);
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  assert(start + len <= bitarr->num_of_bits);
+  SET_REGION(bitarr, start, len);
+  DEBUG_VALIDATE(bitarr);
 }
 
 
 // Clear all the bits in a region
-void _bit_array_clear_region(const char *file, int line,
-                             BIT_ARRAY* bitarr,
-                             bit_index_t start,
-                             bit_index_t length)
+void bit_array_clear_region(BIT_ARRAY* bitarr, bit_index_t start, bit_index_t len)
 {
-  // Bounds checking
-  _bounds_check_offset(bitarr, start, length, file, line,
-                      "bit_array_clear_region");
-
-  CLEAR_REGION(bitarr, start, length);
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  assert(start + len <= bitarr->num_of_bits);
+  CLEAR_REGION(bitarr, start, len);
+  DEBUG_VALIDATE(bitarr);
 }
 
 // Toggle all the bits in a region
-void _bit_array_toggle_region(const char *file, int line,
-                              BIT_ARRAY* bitarr,
-                              bit_index_t start,
-                              bit_index_t length)
+void bit_array_toggle_region(BIT_ARRAY* bitarr, bit_index_t start, bit_index_t len)
 {
-  // Bounds checking
-  _bounds_check_offset(bitarr, start, length, file, line,
-                      "bit_array_toggle_region");
-
-  TOGGLE_REGION(bitarr, start, length);
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  assert(start + len <= bitarr->num_of_bits);
+  TOGGLE_REGION(bitarr, start, len);
+  DEBUG_VALIDATE(bitarr);
 }
 
 
@@ -898,22 +836,15 @@ void bit_array_set_all(BIT_ARRAY* bitarr)
 {
   bit_index_t num_of_bytes = bitarr->num_of_words * sizeof(word_t);
   memset(bitarr->words, 0xFF, num_of_bytes);
-
   _mask_top_word(bitarr);
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 // set all elements of data to zero
 void bit_array_clear_all(BIT_ARRAY* bitarr)
 {
   memset(bitarr->words, 0, bitarr->num_of_words * sizeof(word_t));
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 // Set all 1 bits to 0, and all 0 bits to 1. AKA flip
@@ -926,59 +857,41 @@ void bit_array_toggle_all(BIT_ARRAY* bitarr)
   }
 
   _mask_top_word(bitarr);
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 //
 // Get a word at a time
 //
 
-uint64_t _bit_array_get_word64(const char *file, int line,
-                               const BIT_ARRAY* bitarr,
-                               bit_index_t start)
+uint64_t bit_array_get_word64(const BIT_ARRAY* bitarr, bit_index_t start)
 {
-  // Bounds checking
-  _bounds_check_start(bitarr, start, file, line, "bit_array_word64");
+  assert(start < bitarr->num_of_bits);
   return (uint64_t)_get_word(bitarr, start);
 }
 
-uint32_t _bit_array_get_word32(const char *file, int line,
-                               const BIT_ARRAY* bitarr,
-                               bit_index_t start)
+uint32_t bit_array_get_word32(const BIT_ARRAY* bitarr, bit_index_t start)
 {
-  // Bounds checking
-  _bounds_check_start(bitarr, start, file, line, "bit_array_word32");
+  assert(start < bitarr->num_of_bits);
   return (uint32_t)_get_word(bitarr, start);
 }
 
-uint16_t _bit_array_get_word16(const char *file, int line,
-                               const BIT_ARRAY* bitarr,
-                               bit_index_t start)
+uint16_t bit_array_get_word16(const BIT_ARRAY* bitarr, bit_index_t start)
 {
-  // Bounds checking
-  _bounds_check_start(bitarr, start, file, line, "bit_array_word16");
+  assert(start < bitarr->num_of_bits);
   return (uint16_t)_get_word(bitarr, start);
 }
 
-uint8_t _bit_array_get_word8(const char *file, int line,
-                             const BIT_ARRAY* bitarr,
-                             bit_index_t start)
+uint8_t bit_array_get_word8(const BIT_ARRAY* bitarr, bit_index_t start)
 {
-  // Bounds checking
-  _bounds_check_start(bitarr, start, file, line, "bit_array_word8");
+  assert(start < bitarr->num_of_bits);
   return (uint8_t)_get_word(bitarr, start);
 }
 
-uint64_t _bit_array_get_wordn(const char *file, int line,
-                              const BIT_ARRAY* bitarr,
-                              bit_index_t start, int n)
+uint64_t bit_array_get_wordn(const BIT_ARRAY* bitarr, bit_index_t start, int n)
 {
-  // Bounds checking
-  _bounds_check_start(bitarr, start, file, line, "bit_array_wordn");
-  if(n > 64) call_die(file, line, __func__, "n > 64");
+  assert(start < bitarr->num_of_bits);
+  assert(n <= 64);
   return (uint64_t)(_get_word(bitarr, start) & bitmask64(n));
 }
 
@@ -986,50 +899,36 @@ uint64_t _bit_array_get_wordn(const char *file, int line,
 // Set a word at a time
 //
 
-void _bit_array_set_word64(const char *file, int line,
-                           BIT_ARRAY* bitarr,
-                           bit_index_t start, uint64_t word)
+void bit_array_set_word64(BIT_ARRAY* bitarr, bit_index_t start, uint64_t word)
 {
-  // Bounds checking
-  _bounds_check_start(bitarr, start, file, line, "bit_array_set_word64");
+  assert(start < bitarr->num_of_bits);
   _set_word(bitarr, start, (word_t)word);
 }
 
-void _bit_array_set_word32(const char *file, int line,
-                           BIT_ARRAY* bitarr,
-                           bit_index_t start, uint32_t word)
+void bit_array_set_word32(BIT_ARRAY* bitarr, bit_index_t start, uint32_t word)
 {
-  // Bounds checking
-  _bounds_check_start(bitarr, start, file, line, "bit_array_set_word32");
+  assert(start < bitarr->num_of_bits);
   word_t w = _get_word(bitarr, start);
   _set_word(bitarr, start, (w & ~(word_t)0xffffffff) | word);
 }
 
-void _bit_array_set_word16(const char *file, int line,
-                           BIT_ARRAY* bitarr,
-                           bit_index_t start, uint16_t word)
+void bit_array_set_word16(BIT_ARRAY* bitarr, bit_index_t start, uint16_t word)
 {
-  // Bounds checking
-  _bounds_check_start(bitarr, start, file, line, "bit_array_set_word16");
+  assert(start < bitarr->num_of_bits);
   word_t w = _get_word(bitarr, start);
   _set_word(bitarr, start, (w & ~(word_t)0xffff) | word);
 }
 
-void _bit_array_set_word8(const char *file, int line,
-                          BIT_ARRAY* bitarr,
-                          bit_index_t start, uint8_t byte)
+void bit_array_set_word8(BIT_ARRAY* bitarr, bit_index_t start, uint8_t byte)
 {
-  // Bounds checking
-  _bounds_check_start(bitarr, start, file, line, "bit_array_set_word8");
+  assert(start < bitarr->num_of_bits);
   _set_byte(bitarr, start, byte);
 }
 
-void _bit_array_set_wordn(const char *file, int line,
-                          BIT_ARRAY* bitarr,
-                          bit_index_t start, uint64_t word, int n)
+void bit_array_set_wordn(BIT_ARRAY* bitarr, bit_index_t start, uint64_t word, int n)
 {
-  // Bounds checking
-  _bounds_check_start(bitarr, start, file, line, "bit_array_set_wordn");
+  assert(start < bitarr->num_of_bits);
+  assert(n <= 64);
   word_t w = _get_word(bitarr, start), m = bitmask64(n);
   _set_word(bitarr, start, bitmask_merge(word,w,m));
 }
@@ -1207,17 +1106,12 @@ void bit_array_sort_bits(BIT_ARRAY* bitarr)
   bit_index_t num_of_bits_set = bit_array_num_bits_set(bitarr);
   bit_index_t num_of_bits_cleared = bitarr->num_of_bits - num_of_bits_set;
 
-  #ifdef DEBUG
-  printf("sort_bits (bits set: %lu, bits unset: %lu)\n",
-         (unsigned long)num_of_bits_set, (unsigned long)num_of_bits_cleared);
-  #endif
+  DEBUG_PRINT("sort_bits (bits set: %zu, bits unset: %zu)\n",
+              (size_t)num_of_bits_set, (size_t)num_of_bits_cleared);
 
   bit_array_set_all(bitarr);
   CLEAR_REGION(bitarr, 0, num_of_bits_cleared);
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 // Put all the 1s before all the 0s
@@ -1225,16 +1119,11 @@ void bit_array_sort_bits_rev(BIT_ARRAY* bitarr)
 {
   bit_index_t num_of_bits_set = bit_array_num_bits_set(bitarr);
 
-  #ifdef DEBUG
-  printf("rev_sort_bits (bits set: %lu)\n", (unsigned long)num_of_bits_set);
-  #endif
+  DEBUG_PRINT("rev_sort_bits (bits set: %zu)\n", (size_t)num_of_bits_set);
 
   bit_array_clear_all(bitarr);
   SET_REGION(bitarr, 0, num_of_bits_set);
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 
@@ -1243,11 +1132,10 @@ void bit_array_sort_bits_rev(BIT_ARRAY* bitarr)
 //
 
 // Construct a BIT_ARRAY from a substring with given on and off characters.
-void _bit_array_from_substr(const char *file, int line,
-                            BIT_ARRAY* bitarr, bit_index_t offset,
-                            const char* str, size_t len,
-                            const char *on, const char *off,
-                            char left_to_right)
+void bit_array_from_substr(BIT_ARRAY* bitarr, bit_index_t offset,
+                           const char *str, size_t len,
+                           const char *on, const char *off,
+                           char left_to_right)
 {
   bit_array_ensure_size(bitarr, offset + len);
   bit_array_clear_region(bitarr, offset, len);
@@ -1263,16 +1151,10 @@ void _bit_array_from_substr(const char *file, int line,
       j = offset + (left_to_right ? i : len - i - 1);
       bit_array_set(bitarr, j);
     }
-    else if(strchr(off, str[i]) == NULL)
-    {
-      call_die(file, line, __func__, "Invalid char '%c' (on: %s; off: %s)",
-               str[i], on, off);
-    }
+    else { assert(strchr(off, str[i]) != NULL); }
   }
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 // From string method
@@ -1314,14 +1196,12 @@ char* bit_array_to_str_rev(const BIT_ARRAY* bitarr, char* str)
 
 // Get a string representations for a given region, using given on/off characters.
 // Note: does not null-terminate
-void _bit_array_to_substr(const char *file, int line,
-                          const BIT_ARRAY* bitarr,
-                          bit_index_t start, bit_index_t length,
-                          char* str, char on, char off,
-                          char left_to_right)
+void bit_array_to_substr(const BIT_ARRAY* bitarr,
+                         bit_index_t start, bit_index_t length,
+                         char* str, char on, char off,
+                         char left_to_right)
 {
-  // Bounds checking
-  _bounds_check_offset(bitarr, start, length, file, line, "bit_array_to_substr");
+  assert(start + length <= bitarr->num_of_bits);
 
   bit_index_t i, j;
   bit_index_t end = start + length - 1;
@@ -1347,14 +1227,12 @@ void bit_array_print(const BIT_ARRAY* bitarr, FILE* fout)
 }
 
 // Print a string representations for a given region, using given on/off characters.
-void _bit_array_print_substr(const char *file, int line,
-                             const BIT_ARRAY* bitarr,
-                             bit_index_t start, bit_index_t length,
-                             FILE* fout, char on, char off,
-                             char left_to_right)
+void bit_array_print_substr(const BIT_ARRAY* bitarr,
+                            bit_index_t start, bit_index_t length,
+                            FILE* fout, char on, char off,
+                            char left_to_right)
 {
-  // Bounds checking
-  _bounds_check_offset(bitarr, start, length, file, line, "bit_array_print_substr");
+  assert(start + length <= bitarr->num_of_bits);
 
   bit_index_t i, j;
   bit_index_t end = start + length - 1;
@@ -1431,12 +1309,11 @@ bit_index_t bit_array_from_hex(BIT_ARRAY* bitarr, bit_index_t offset,
 }
 
 // Returns number of characters written
-size_t _bit_array_to_hex(const char *file, int line, const BIT_ARRAY* bitarr,
-                         bit_index_t start, bit_index_t length,
-                         char* str, char uppercase)
+size_t bit_array_to_hex(const BIT_ARRAY* bitarr,
+                        bit_index_t start, bit_index_t length,
+                        char* str, char uppercase)
 {
-  _bounds_check_start(bitarr, start, file, line, "bit_array_to_hex");
-  _bounds_check_offset(bitarr, start, length, file, line, "bit_array_to_hex");
+  assert(start + length <= bitarr->num_of_bits);
 
   size_t k = 0;
   bit_index_t offset, end = start + length;
@@ -1477,13 +1354,11 @@ size_t _bit_array_to_hex(const char *file, int line, const BIT_ARRAY* bitarr,
 }
 
 // Print bit array as hex
-size_t _bit_array_print_hex(const char *file, int line,
-                            const BIT_ARRAY* bitarr,
-                            bit_index_t start, bit_index_t length,
-                            FILE* fout, char uppercase)
+size_t bit_array_print_hex(const BIT_ARRAY* bitarr,
+                           bit_index_t start, bit_index_t length,
+                           FILE* fout, char uppercase)
 {
-  _bounds_check_start(bitarr, start, file, line, "bit_array_to_hex");
-  _bounds_check_offset(bitarr, start, length, file, line, "bit_array_to_hex");
+  assert(start + length <= bitarr->num_of_bits);
 
   size_t k = 0;
   bit_index_t offset, end = start + length;
@@ -1541,10 +1416,7 @@ BIT_ARRAY* bit_array_clone(const BIT_ARRAY* bitarr)
   // Copy across bits
   memcpy(cpy->words, bitarr->words, bitarr->num_of_words * sizeof(word_t));
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(cpy);
-  #endif
-
+  DEBUG_VALIDATE(cpy);
   return cpy;
 }
 
@@ -1554,10 +1426,8 @@ static void _array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
                         const BIT_ARRAY* src, bit_index_t srcindx,
                         bit_index_t length)
 {
-  #ifdef DEBUG
-  printf("bit_array_copy(dst: %lu, src: %lu, length: %lu)\n",
-         (unsigned long)dstindx, (unsigned long)srcindx, (unsigned long)length);
-  #endif
+  DEBUG_PRINT("bit_array_copy(dst: %zu, src: %zu, length: %zu)\n",
+              (size_t)dstindx, (size_t)srcindx, (size_t)length);
 
   // Num of full words to copy
   word_addr_t num_of_full_words = length / WORD_SIZE;
@@ -1568,9 +1438,7 @@ static void _array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
   if(dst == src && srcindx > dstindx)
   {
     // Work left to right
-    #ifdef DEBUG
-    printf("work left to right\n");
-    #endif
+    DEBUG_PRINT("work left to right\n");
 
     for(i = 0; i < num_of_full_words; i++)
     {
@@ -1592,9 +1460,7 @@ static void _array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
   else
   {
     // Work right to left
-    #ifdef DEBUG
-    printf("work right to left\n");
-    #endif
+    DEBUG_PRINT("work right to left\n");
 
     for(i = 0; i < num_of_full_words; i++)
     {
@@ -1602,10 +1468,8 @@ static void _array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
       _set_word(dst, dstindx+length-(i+1)*WORD_SIZE, word);
     }
 
-    #ifdef DEBUG
-    printf("Copy %i,%i to %i\n", (int)srcindx, (int)bits_in_last_word,
-                                 (int)dstindx);
-    #endif
+    DEBUG_PRINT("Copy %i,%i to %i\n", (int)srcindx, (int)bits_in_last_word,
+                                      (int)dstindx);
 
     if(bits_in_last_word > 0)
     {
@@ -1623,34 +1487,22 @@ static void _array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
 
 // destination and source may be the same bit_array
 // and src/dst regions may overlap
-void _bit_array_copy(const char *file, int line,
-                     BIT_ARRAY* dst, bit_index_t dstindx,
-                     const BIT_ARRAY* src, bit_index_t srcindx,
-                     bit_index_t length)
+void bit_array_copy(BIT_ARRAY* dst, bit_index_t dstindx,
+                    const BIT_ARRAY* src, bit_index_t srcindx,
+                    bit_index_t length)
 {
-  // Bounds checking in both arrays
-  _bounds_check_offset(src, srcindx, length, file, line, "bit_array_copy");
-  _bounds_check_offset(dst, dstindx, length, file, line, "bit_array_copy");
-
+  assert(srcindx + length <= src->num_of_bits);
+  assert(dstindx <= dst->num_of_bits);
   _array_copy(dst, dstindx, src, srcindx, length);
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(dst);
-  #endif
+  DEBUG_VALIDATE(dst);
 }
 
 // Clone `src` into `dst`. Resizes `dst`.
-void _bit_array_copy_all(const char *file, int line,
-                         BIT_ARRAY* dst, const BIT_ARRAY* src)
+void bit_array_copy_all(BIT_ARRAY* dst, const BIT_ARRAY* src)
 {
-  bit_array_resize_critical(dst, src->num_of_bits, file, line,
-                            "bit_array_copy_all");
-
+  bit_array_resize_critical(dst, src->num_of_bits);
   memmove(dst->words, src->words, src->num_of_words * sizeof(word_t));
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(dst);
-  #endif
+  DEBUG_VALIDATE(dst);
 }
 
 
@@ -1663,12 +1515,7 @@ void bit_array_and(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 {
   // Ensure dst array is big enough
   word_addr_t max_bits = MAX(src1->num_of_bits, src2->num_of_bits);
-
-  if(dst->num_of_bits < max_bits)
-  {
-    bit_array_resize_critical(dst, max_bits, __FILE__, __LINE__,
-                              "bit_array_and");
-  }
+  bit_array_ensure_size_critical(dst, max_bits);
 
   word_addr_t min_words = MIN(src1->num_of_words, src2->num_of_words);
 
@@ -1685,9 +1532,7 @@ void bit_array_and(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
     dst->words[i] = (word_t)0;
   }
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(dst);
-  #endif
+  DEBUG_VALIDATE(dst);
 }
 
 // Destination can be the same as one or both of the sources
@@ -1697,12 +1542,7 @@ static void _logical_or_xor(BIT_ARRAY* dst,
                             char use_xor)
 {
   // Ensure dst array is big enough
-  word_addr_t max_bits = MAX(src1->num_of_bits, src2->num_of_bits);
-
-  if(dst->num_of_bits < max_bits)
-  {
-    bit_array_resize_critical(dst, max_bits, __FILE__, __LINE__, __func__);
-  }
+  bit_array_ensure_size_critical(dst, MAX(src1->num_of_bits, src2->num_of_bits));
 
   word_addr_t min_words = MIN(src1->num_of_words, src2->num_of_words);
   word_addr_t max_words = MAX(src1->num_of_words, src2->num_of_words);
@@ -1735,9 +1575,7 @@ static void _logical_or_xor(BIT_ARRAY* dst,
   size_t size = (dst->num_of_words - max_words) * sizeof(word_t);
   memset(dst->words + max_words, 0, size);
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(dst);
-  #endif
+  DEBUG_VALIDATE(dst);
 }
 
 void bit_array_or(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
@@ -1754,10 +1592,7 @@ void bit_array_xor(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 // If dst is longer than src, top bits are set to 1
 void bit_array_not(BIT_ARRAY* dst, const BIT_ARRAY* src)
 {
-  if(dst->num_of_bits < src->num_of_bits)
-  {
-    bit_array_resize_critical(dst, src->num_of_bits, __FILE__, __LINE__, __func__);
-  }
+  bit_array_ensure_size_critical(dst, src->num_of_bits);
 
   word_addr_t i;
 
@@ -1774,9 +1609,7 @@ void bit_array_not(BIT_ARRAY* dst, const BIT_ARRAY* src)
 
   _mask_top_word(dst);
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(dst);
-  #endif
+  DEBUG_VALIDATE(dst);
 }
 
 // Compare two bit arrays by value stored, with index 0 being the Least
@@ -2022,34 +1855,17 @@ static void _reverse_region(BIT_ARRAY* bitarr,
   _set_word_cyclic(bitarr, left, word);
 }
 
-void _bit_array_reverse_region(const char *file, int line,
-                               BIT_ARRAY* bitarr,
-                               bit_index_t start, bit_index_t length)
+void bit_array_reverse_region(BIT_ARRAY* bitarr, bit_index_t start, bit_index_t len)
 {
-  // Bounds checking
-  _bounds_check_start(bitarr, start, file, line, "bit_array_reverse_region");
-  _bounds_check_offset(bitarr, start, length, file, line, "bit_array_reverse_region");
-
-  if(length > 0)
-  {
-    _reverse_region(bitarr, start, length);
-  }
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  assert(start + len <= bitarr->num_of_bits);
+  if(len > 0) _reverse_region(bitarr, start, len);
+  DEBUG_VALIDATE(bitarr);
 }
 
 void bit_array_reverse(BIT_ARRAY* bitarr)
 {
-  if(bitarr->num_of_bits > 0)
-  {
-    _reverse_region(bitarr, 0, bitarr->num_of_bits);
-  }
-
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  if(bitarr->num_of_bits > 0) _reverse_region(bitarr, 0, bitarr->num_of_bits);
+  DEBUG_VALIDATE(bitarr);
 }
 
 //
@@ -2089,7 +1905,7 @@ void bit_array_shift_left_extend(BIT_ARRAY* bitarr, bit_index_t shift_dist,
     return;
   }
 
-  bit_array_resize_critical(bitarr, newlen, __FILE__, __LINE__, __func__);
+  bit_array_resize_critical(bitarr, newlen);
 
   FillAction action = fill ? FILL_REGION : ZERO_REGION;
   _array_copy(bitarr, shift_dist, bitarr, 0, cpy_length);
@@ -2251,9 +2067,7 @@ void bit_array_next_permutation(BIT_ARRAY* bitarr)
     SET_REGION(bitarr, 0, num_bits_set);
   }
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 
@@ -2267,24 +2081,18 @@ void bit_array_next_permutation(BIT_ARRAY* bitarr)
 // 0011 0000 -> 00001010
 // 1111 0000 -> 10101010
 // 0101 1010 -> 01100110
-void _bit_array_interleave(const char *file, int line,
-                           BIT_ARRAY* dst, const BIT_ARRAY* src1,
-                           const BIT_ARRAY* src2)
+void bit_array_interleave(BIT_ARRAY* dst,
+                          const BIT_ARRAY* src1,
+                          const BIT_ARRAY* src2)
 {
-  if(dst == src1 || dst == src2)
-  {
-    call_die(file, line, __func__, "dst cannot point to src1 or src2");
-  }
-  else if(src1->num_of_bits != src2->num_of_bits)
-  {
-    call_die(file, line,  __func__,
-             "Behaviour undefined when src1 length (%lu) != src2 length (%lu)",
-             (unsigned long)src1->num_of_bits, (unsigned long)src2->num_of_bits);
-  }
+  // dst cannot be either src1 or src2
+  assert(dst != src1 && dst != src2);
+  // Behaviour undefined when src1 length != src2 length",
+  assert(src1->num_of_bits == src2->num_of_bits);
 
   // Need at least src1->num_of_words + src2->num_of_words
   size_t nwords = MIN(src1->num_of_words + src2->num_of_words, 2);
-  bit_array_ensure_nwords(dst, nwords, file, line, __func__);
+  _bit_array_ensure_nwords(dst, nwords, __FILE__, __LINE__, __func__);
   dst->num_of_bits = src1->num_of_bits + src2->num_of_bits;
   dst->num_of_words = roundup_bits2words64(dst->num_of_bits);
 
@@ -2314,9 +2122,7 @@ void _bit_array_interleave(const char *file, int line,
                       (morton_table1[(b >> 56)       ] << 48);
   }
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(dst);
-  #endif
+  DEBUG_VALIDATE(dst);
 }
 
 //
@@ -2324,15 +2130,13 @@ void _bit_array_interleave(const char *file, int line,
 //
 
 // Set bits randomly with probability prob : 0 <= prob <= 1
-void _bit_array_random(const char *file, int line, BIT_ARRAY* bitarr, float prob)
+void bit_array_random(BIT_ARRAY* bitarr, float prob)
 {
+  assert(prob >= 0 && prob <= 1);
+
   if(bitarr->num_of_bits == 0)
   {
     return;
-  }
-  else if(prob > 1)
-  {
-    call_die(file, line, __func__, "Behaviour undefined when prob > 1 (%f)", prob);
   }
   else if(prob == 1)
   {
@@ -2375,9 +2179,7 @@ void _bit_array_random(const char *file, int line, BIT_ARRAY* bitarr, float prob
     }
   }
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 // Shuffle the bits in an array randomly
@@ -2409,9 +2211,7 @@ void bit_array_shuffle(BIT_ARRAY* bitarr)
       bitarr->words[bitset64_wrd(j)] |= (word_t)0x1 << bitset64_idx(j);
   }
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 //
@@ -2475,9 +2275,7 @@ void bit_array_add(BIT_ARRAY* bitarr, uint64_t value)
   }
   else if(bitarr->num_of_bits == 0)
   {
-    bit_array_resize_critical(bitarr, WORD_SIZE - leading_zeros(value),
-                              __FILE__, __LINE__, "bit_array_and");
-
+    bit_array_resize_critical(bitarr, WORD_SIZE - leading_zeros(value));
     bitarr->words[0] = (word_t)value;
     return;
   }
@@ -2504,8 +2302,7 @@ void bit_array_add(BIT_ARRAY* bitarr, uint64_t value)
   if(carry)
   {
     // Bit array full, need another bit after all words filled
-    bit_array_resize_critical(bitarr, bitarr->num_of_words * WORD_SIZE + 1,
-                              __FILE__, __LINE__, "bit_array_add");
+    bit_array_resize_critical(bitarr, bitarr->num_of_words * WORD_SIZE + 1);
 
     // Set top word to 1
     bitarr->words[bitarr->num_of_words-1] = 1;
@@ -2623,8 +2420,7 @@ static void _arithmetic(BIT_ARRAY* dst,
       if(dst->num_of_words == max_words)
       {
         // Need to resize for the carry bit
-        bit_array_resize_critical(dst, dst->num_of_bits+1,
-                                  __FILE__, __LINE__, "_arithmetic");
+        bit_array_resize_critical(dst, dst->num_of_bits+1);
       }
 
       dst->words[max_words] = (word_t)1;
@@ -2637,23 +2433,14 @@ static void _arithmetic(BIT_ARRAY* dst,
     dst->words[i] = (word_t)0;
   }
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(dst);
-  #endif
+  DEBUG_VALIDATE(dst);
 }
 
 // src1, src2 and dst can all be the same BIT_ARRAY
 // If dst is shorter than either of src1, src2, it is enlarged
 void bit_array_sum(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 {
-  bit_index_t max_src_bits = MAX(src1->num_of_bits, src2->num_of_bits);
-
-  if(dst->num_of_bits < max_src_bits)
-  {
-    bit_array_resize_critical(dst, max_src_bits,
-                              __FILE__, __LINE__, "bit_array_sum");
-  }
-
+  bit_array_ensure_size_critical(dst, MAX(src1->num_of_bits, src2->num_of_bits));
   _arithmetic(dst, src1, src2, 0);
 }
 
@@ -2661,25 +2448,15 @@ void bit_array_sum(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 // src1, src2 and dst can all be the same BIT_ARRAY
 // If dst is shorter than src1, it will be extended to be as long as src1
 // src1 must be greater than or equal to src2 (src1 >= src2)
-void _bit_array_difference(const char *file, int line, BIT_ARRAY* dst,
-                           const BIT_ARRAY* src1, const BIT_ARRAY* src2)
+void bit_array_difference(BIT_ARRAY* dst,
+                          const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 {
   // subtraction by method of complements:
   // a - b = a + ~b + 1 = src1 + ~src2 +1
 
-  // src1 must be >= src2
-  if(bit_array_cmp(src1, src2) < 0)
-  {
-    // Error
-    call_die(file, line, __func__, "Require src1 >= src2");
-  }
+  assert(bit_array_cmp(src1, src2) >= 0); // Require src1 >= src2
 
-  if(dst->num_of_bits < src1->num_of_bits)
-  {
-    bit_array_resize_critical(dst, src1->num_of_bits,
-                              file, line, "bit_array_difference");
-  }
-
+  bit_array_ensure_size_critical(dst, src1->num_of_bits);
   _arithmetic(dst, src1, src2, 1);
 }
 
@@ -2688,9 +2465,7 @@ void _bit_array_difference(const char *file, int line, BIT_ARRAY* dst,
 // Bounds checking not needed as out of bounds is valid
 void bit_array_add_word(BIT_ARRAY *bitarr, bit_index_t pos, uint64_t add)
 {
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 
   if(add == 0)
   {
@@ -2700,10 +2475,7 @@ void bit_array_add_word(BIT_ARRAY *bitarr, bit_index_t pos, uint64_t add)
   {
     // Resize and add!
     bit_index_t num_bits_required = pos + (WORD_SIZE - leading_zeros(add));
-
-    bit_array_resize_critical(bitarr, num_bits_required,
-                              __FILE__, __LINE__, "bit_array_add_word");
-
+    bit_array_resize_critical(bitarr, num_bits_required);
     _set_word(bitarr, pos, (word_t)add);
     return;
   }
@@ -2752,36 +2524,26 @@ void bit_array_add_word(BIT_ARRAY *bitarr, bit_index_t pos, uint64_t add)
 
       if(addr == bitarr->num_of_words)
       {
-        bit_array_resize_critical(bitarr, addr * WORD_SIZE + 1,
-                              __FILE__, __LINE__, "bit_array_add_word");
+        bit_array_resize_critical(bitarr, addr * WORD_SIZE + 1);
       }
       else if(addr == bitarr->num_of_words-1 &&
               bitarr->words[addr] == bitmask64(bits_in_top_word(bitarr->num_of_bits)))
       {
-        bit_array_resize_critical(bitarr, bitarr->num_of_bits + 1,
-                                  __FILE__, __LINE__, "bit_array_add_word");
+        bit_array_resize_critical(bitarr, bitarr->num_of_bits + 1);
       }
 
       bitarr->words[addr]++;
     }
   }
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 // Add `add` to `bitarr` at `pos`
 // Bounds checking not needed as out of bounds is valid
-void _bit_array_add_words(const char *file, int line, BIT_ARRAY *bitarr,
-                          bit_index_t pos, const BIT_ARRAY *add)
+void bit_array_add_words(BIT_ARRAY *bitarr, bit_index_t pos, const BIT_ARRAY *add)
 {
-  if(bitarr == add)
-  {
-    // Error
-    call_die(file, line, __func__,
-             "bitarr and add cannot point to the same bit array");
-  }
+  assert(bitarr != add); // bitarr and add cannot point to the same bit array
 
   bit_index_t add_top_bit_set;
 
@@ -2794,10 +2556,7 @@ void _bit_array_add_words(const char *file, int line, BIT_ARRAY *bitarr,
   {
     // Just resize and copy!
     bit_index_t num_bits_required = pos + add_top_bit_set + 1;
-
-    bit_array_resize_critical(bitarr, num_bits_required,
-                              file, line, "bit_array_add_words");
-
+    bit_array_resize_critical(bitarr, num_bits_required);
     _array_copy(bitarr, pos, add, 0, add->num_of_bits);
     return;
   }
@@ -2835,8 +2594,7 @@ void _bit_array_add_words(const char *file, int line, BIT_ARRAY *bitarr,
     if(i >= bitarr->num_of_words)
     {
       // Extend by a word
-      bit_array_resize_critical(bitarr, (bit_index_t)(i+1)*WORD_SIZE+1,
-                                file, line, "bit_array_add_words");
+      bit_array_resize_critical(bitarr, (bit_index_t)(i+1)*WORD_SIZE+1);
     }
 
     word_t prev = bitarr->words[i];
@@ -2857,16 +2615,12 @@ void _bit_array_add_words(const char *file, int line, BIT_ARRAY *bitarr,
     bitarr->num_of_bits = min_bits;
   }
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
 char bit_array_minus_word(BIT_ARRAY* bitarr, bit_index_t pos, word_t minus)
 {
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 
   if(minus == 0)
   {
@@ -2878,11 +2632,7 @@ char bit_array_minus_word(BIT_ARRAY* bitarr, bit_index_t pos, word_t minus)
   if(w >= minus)
   {
     _set_word(bitarr, pos, w - minus);
-
-    #ifdef DEBUG
-    VALIDATE_BIT_ARRAY(bitarr);
-    #endif
-
+    DEBUG_VALIDATE(bitarr);
     return 1;
   }
 
@@ -2905,30 +2655,19 @@ char bit_array_minus_word(BIT_ARRAY* bitarr, bit_index_t pos, word_t minus)
 
       _set_word(bitarr, pos, WORD_MAX - minus);
 
-      #ifdef DEBUG
-      VALIDATE_BIT_ARRAY(bitarr);
-      #endif
-
+      DEBUG_VALIDATE(bitarr);
       return 1;
     }
   }
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 
   return 0;
 }
 
-char _bit_array_minus_words(const char *file, int line,
-                            BIT_ARRAY* bitarr, bit_index_t pos, BIT_ARRAY* minus)
+char bit_array_minus_words(BIT_ARRAY* bitarr, bit_index_t pos, BIT_ARRAY* minus)
 {
-  if(bitarr == minus)
-  {
-    // Error
-    call_die(file, line, __func__,
-             "bitarr and minus cannot point to the same bit array");
-  }
+  assert(bitarr != minus); // bitarr and minus cannot point to the same bit array
 
   int cmp = bit_array_cmp_words(bitarr, pos, minus);
 
@@ -2960,9 +2699,7 @@ char _bit_array_minus_words(const char *file, int line,
 
   bit_array_not(minus, minus);
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 
   return 1;
 }
@@ -2990,23 +2727,20 @@ void bit_array_multiply(BIT_ARRAY *bitarr, uint64_t multiplier)
     }
   }
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 }
 
-void _bit_array_product(const char *file, int line,
-                        BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2)
+void bit_array_product(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2)
 {
   if(src1->num_of_bits == 0 || src2->num_of_bits == 0)
   {
     bit_array_clear_all(dst);
     return;
   }
-  else if(dst == src1 && src1 == src2)
-  {
-    call_die(file, line, __func__, "Cannot pass the same array as dst, src1 AND src2");
-  }
+
+  // Cannot pass the same array as dst, src1 AND src2
+  assert(dst != src1 || dst != src2);
+
   // Dev: multiplier == 1?
 
   BIT_ARRAY *read_arr, *add_arr;
@@ -3038,20 +2772,14 @@ void _bit_array_product(const char *file, int line,
     }
   }
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(dst);
-  #endif
+  DEBUG_VALIDATE(dst);
 }
 
 // bitarr = round_down(bitarr / divisor)
 // rem = bitarr % divisor
-void _bit_array_div(const char *file, int line,
-                    BIT_ARRAY *bitarr, uint64_t divisor, uint64_t *rem)
+void bit_array_div(BIT_ARRAY *bitarr, uint64_t divisor, uint64_t *rem)
 {
-  if(divisor == 0)
-  {
-    call_die(file, line, __func__, "Cannot divide by zero");
-  }
+  assert(divisor != 0); // cannot divide by zero
 
   bit_index_t div_top_bit = 63 - leading_zeros(divisor);
   bit_index_t bitarr_top_bit;
@@ -3116,13 +2844,9 @@ void _bit_array_div(const char *file, int line,
 //   quotient = dividend / divisor
 //   dividend = dividend % divisor
 // (dividend is used to return the remainder)
-void _bit_array_divide(const char *file, int line, BIT_ARRAY *dividend,
-                       BIT_ARRAY *quotient, BIT_ARRAY *divisor)
+void bit_array_divide(BIT_ARRAY *dividend, BIT_ARRAY *quotient, BIT_ARRAY *divisor)
 {
-  if(bit_array_compare_num(divisor, 0) == 0)
-  {
-    call_die(file, line, __func__, "Cannot divide by zero");
-  }
+  assert(bit_array_compare_num(divisor, 0) != 0); // Cannot divide by zero
 
   bit_array_clear_all(quotient);
 
@@ -3306,7 +3030,7 @@ char bit_array_load(BIT_ARRAY* bitarr, FILE* f)
 #endif
 
   // Resize
-  bit_array_resize_critical(bitarr, num_bits, __FILE__, __LINE__, __func__);
+  bit_array_resize_critical(bitarr, num_bits);
 
   // Have to calculate how many bytes are needed for the file
   // (Note: this may be different from num_of_words * sizeof(word_t))
@@ -3340,9 +3064,7 @@ char bit_array_load(BIT_ARRAY* bitarr, FILE* f)
   // Mask top word
   _mask_top_word(bitarr);
 
-  #ifdef DEBUG
-  VALIDATE_BIT_ARRAY(bitarr);
-  #endif
+  DEBUG_VALIDATE(bitarr);
 
   return 1;
 }

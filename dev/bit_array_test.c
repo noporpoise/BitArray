@@ -2484,31 +2484,31 @@ void test_bar_wrapper()
   ASSERT(barlen(&foo) == 0);
 
   // Auto-resizing array turned off, so these tests fail
-  /*
+
   // run through get/set/clear/toggle/assign.
   // start with 0, increase size each time.
 
   tb = 7;
   ASSERT(barlen(&foo) == 0);
-  rv = barget(&foo, tb);
+  rv = barrget(&foo, tb);
   ASSERT(rv == 0);
   ASSERT(barlen(&foo) >= tb);
   tb *= 4;
-  barset(&foo, tb);
+  barrset(&foo, tb);
   ASSERT(barlen(&foo) >= tb);
-  ASSERT(barget(&foo, tb) == 1);
+  ASSERT(barrget(&foo, tb) == 1);
   tb *= 4;
-  barclr(&foo, tb);
+  barrclr(&foo, tb);
   ASSERT(barlen(&foo) >= tb);
-  ASSERT(barget(&foo, tb) == 0);
+  ASSERT(barrget(&foo, tb) == 0);
   tb *= 4;
-  barflip(&foo, tb);
+  barrflip(&foo, tb);
   ASSERT(barlen(&foo) >= tb);
-  ASSERT(barget(&foo, tb) == 1);
+  ASSERT(barrget(&foo, tb) == 1);
   tb *= 4;
-  barmake(&foo, tb, 1);
+  barrmake(&foo, tb, 1);
   ASSERT(barlen(&foo) >= tb);
-  ASSERT(barget(&foo, tb) == 1);
+  ASSERT(barrget(&foo, tb) == 1);
   tb *= 4;
 
   for (i = 1; i < 5; i++) {
@@ -2516,7 +2516,7 @@ void test_bar_wrapper()
     ASSERT(barlen(&(bars[i])) == barlen(&foo));
     rv = barlen(&(bars[i]));
     rv += 57;
-    barset(&(bars[i]), rv);
+    barrset(&(bars[i]), rv);
     ASSERT(barlen(&(bars[i])) >= rv);
     barcpy(&foo, &(bars[i]));
     ASSERT(barlen(&foo) >= rv);
@@ -2524,17 +2524,13 @@ void test_bar_wrapper()
 
   barfree(&foo);
   ASSERT(barlen(&foo) == 0);
-  */
 
-  // Auto-resizing array turned off, set size here
-  bit_array_resize(&foo, 101);
-
-  barset(&foo, 100);
+  barrset(&foo, 100);
   barfill(&foo);
   rv = barffz(&foo, &res);
   ASSERT(rv == 0);
 
-  barclr(&foo, 50);
+  barrclr(&foo, 50);
   rv = barffz(&foo, &res);
   ASSERT(rv == 1);
   ASSERT(res == 50);
@@ -2546,12 +2542,9 @@ void test_bar_wrapper()
   barfree(&foo);
   ASSERT(barlen(&foo) == 0);
 
-  // Auto-resizing array turned off, set size here
-  bit_array_resize(&foo, 101);
-
-  barset(&foo, 1);
-  barset(&foo, 3);
-  barset(&foo, 15);
+  barrset(&foo, 1);
+  barrset(&foo, 3);
+  barrset(&foo, 15);
   ASSERT(barlen(&foo) >= 15);
 
   j = 9;
