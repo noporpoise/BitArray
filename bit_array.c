@@ -2980,19 +2980,19 @@ bit_index_t bit_array_save(const BIT_ARRAY* bitarr, FILE* f)
 
   uint64_t i, w, whole_words = num_of_bytes/8;
   uint64_t rem_bytes = num_of_bytes - whole_words*8;
-  uint64_t n_bits = bswap64(bitarr->num_of_bits);
+  uint64_t n_bits = __builtin_bswap64(bitarr->num_of_bits);
 
   // Write 8 bytes to store the number of bits in the array
   bytes_written += fwrite(&n_bits, 1, 8, f);
 
   // Write the array
   for(i = 0; i < whole_words; i++) {
-    w = bswap64(bitarr->words[i]);
+    w = __builtin_bswap64(bitarr->words[i]);
     bytes_written += fwrite(&w, 1, 8, f);
   }
 
   if(rem_bytes > 0) {
-    w = bswap64(bitarr->words[whole_words]);
+    w = __builtin_bswap64(bitarr->words[whole_words]);
     bytes_written += fwrite(&w, 1, rem_bytes, f);
   }
 
@@ -3026,7 +3026,7 @@ char bit_array_load(BIT_ARRAY* bitarr, FILE* f)
   }
 
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  num_bits = bswap64(num_bits);
+  num_bits = __builtin_bswap64(num_bits);
 #endif
 
   // Resize
@@ -3043,12 +3043,12 @@ char bit_array_load(BIT_ARRAY* bitarr, FILE* f)
 
   for(i = 0; i < whole_words; i++) {
     bytes_read += fread(&w, 1, 8, f);
-    bitarr->words[i] = bswap64(w);
+    bitarr->words[i] = __builtin_bswap64(w);
   }
 
   if(rem_bytes > 0) {
     bytes_read += fread(&w, 1, rem_bytes, f);
-    bitarr->words[whole_words] = bswap64(w);
+    bitarr->words[whole_words] = __builtin_bswap64(w);
   }
 
 #else
