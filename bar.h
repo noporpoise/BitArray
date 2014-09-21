@@ -16,6 +16,8 @@
 
 #define bar BIT_ARRAY
 
+#include "bit_array.h"
+
 #define barcreate  bit_array_create
 #define bardestroy bit_array_free
 #define baralloc   bit_array_alloc
