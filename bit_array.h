@@ -433,23 +433,8 @@ int bit_array_cmp_uint64(const BIT_ARRAY* bitarr, uint64_t value);
 // Arithmetic
 //
 
-// Will be renamed:
-//  bit_array_add_uint64  (bit_array_add)
-//  bit_array_add_word
-//  bit_array_add_words
-//  bit_array_sub_uint64  (bit_array_minus)
-//  bit_array_sub_word    (bit_array_minus_word)
-//  bit_array_sub_words   (bit_array_minus_words)
-//  bit_array_mul_uint64  (bit_array_multiply)
-//  bit_array_div_uint64  (bit_array_div)
-//
-//  bit_array_add (bit_array_sum)
-//  bit_array_sub (bit_array_difference)
-//  bit_array_mul (bit_array_product)
-//  bit_array_div (bit_array_divide)
-
 // bitarr will be extended if needed
-void bit_array_add(BIT_ARRAY* bitarr, uint64_t value);
+void bit_array_add_uint64(BIT_ARRAY* bitarr, uint64_t value);
 
 // Add `add` to `bitarr` at `pos` -- same as:
 //   bitarr + (add << pos)
@@ -461,23 +446,23 @@ void bit_array_add_words(BIT_ARRAY *bitarr, bit_index_t pos, const BIT_ARRAY *ad
 
 // If value is greater than bitarr, bitarr is not changed and 0 is returned
 // Returns 1 on success, 0 if value > bitarr
-char bit_array_minus(BIT_ARRAY* bitarr, uint64_t value);
+char bit_array_sub_uint64(BIT_ARRAY* bitarr, uint64_t value);
 
 // minus `minus` from `bitarr` at `pos` -- same as:
 //   bitarr + (minus << pos)
 // Returns 1 on success, 0 if value > bitarr
-char bit_array_minus_word(BIT_ARRAY *bitarr, bit_index_t pos, word_t minus);
+char bit_array_sub_word(BIT_ARRAY *bitarr, bit_index_t pos, word_t minus);
 
 // minus `minus` from `bitarr` at `pos`
 // Returns 1 on success, 0 if value > bitarr
-char bit_array_minus_words(BIT_ARRAY* bitarr, bit_index_t pos, BIT_ARRAY* minus);
+char bit_array_sub_words(BIT_ARRAY* bitarr, bit_index_t pos, BIT_ARRAY* minus);
 
 // Multiply by some value
-void bit_array_multiply(BIT_ARRAY *bitarr, uint64_t multiplier);
+void bit_array_mul_uint64(BIT_ARRAY *bitarr, uint64_t multiplier);
 
 // bitarr = round_down(bitarr / divisor)
 // rem = bitarr % divisor
-void bit_array_div(BIT_ARRAY *bitarr, uint64_t divisor, uint64_t *rem);
+void bit_array_div_uint64(BIT_ARRAY *bitarr, uint64_t divisor, uint64_t *rem);
 
 //
 // Arithmetic between arrays
@@ -486,18 +471,18 @@ void bit_array_div(BIT_ARRAY *bitarr, uint64_t divisor, uint64_t *rem);
 // dst = src1 + src2
 // src1, src2 and dst can all be the same BIT_ARRAY
 // If dst is shorter than either of src1, src2, it is enlarged
-void bit_array_sum(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
+void bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 
 // dst = src1 - src2
 // src1, src2 and dst can all be the same BIT_ARRAY
 // If dst is shorter than src1, it will be extended to be as long as src1
 // src1 must be greater than or equal to src2 (src1 >= src2)
-void bit_array_difference(BIT_ARRAY* dst,
-                          const BIT_ARRAY* src1, const BIT_ARRAY* src2);
+void bit_array_subtract(BIT_ARRAY* dst,
+                        const BIT_ARRAY* src1, const BIT_ARRAY* src2);
 
 // dst = src1 * src2
 // Pointers cannot all point to the same BIT_ARRAY
-void bit_array_product(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2);
+void bit_array_multiply(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2);
 
 // Results in:
 //   quotient = dividend / divisor

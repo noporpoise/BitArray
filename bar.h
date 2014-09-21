@@ -119,19 +119,19 @@
 
 /* Add/sub/mult/div a bit array with: */
 /*   _i unsigned integer, _si shifted integer, _sb shifted bitarray */
-#define baraddi    bit_array_add
+#define baraddi    bit_array_add_uint64
 #define baraddsi   bit_array_add_word
 #define baraddsb   bit_array_add_words
-#define barsubi    bit_array_minus
-#define barsubsi   bit_array_minus_word
-#define barsubsb   bit_array_minus_words
-#define barmulti   bit_array_multiply
-#define bardivi    bit_array_div
+#define barsubi    bit_array_sub_uint64
+#define barsubsi   bit_array_sub_word
+#define barsubsb   bit_array_sub_words
+#define barmuli    bit_array_mul_uint64
+#define bardivi    bit_array_div_uint64
 
 /* arguments are both bit arrays */
-#define baradd     bit_array_sum
-#define barsub     bit_array_difference
-#define barmult    bit_array_product
+#define baradd     bit_array_add
+#define barsub     bit_array_subtract
+#define barmul     bit_array_multiply
 #define bardiv     bit_array_divide
 
 #define barsave    bit_array_save

@@ -217,31 +217,31 @@ void test_arithmetic()
   printf("arr2: %s\n", bit_array_to_str(arr2, tmp));
 
   printf("Increment: arr1++\n");
-  bit_array_add(arr1, 1);
+  bit_array_add_uint64(arr1, 1);
   printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
   printf("Decrement: arr1--\n");
-  bit_array_minus(arr1, 1);
+  bit_array_sub_uint64(arr1, 1);
   printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
   printf("Sum: arr1 = arr1 + arr2\n");
-  bit_array_sum(arr1, arr1, arr2);
+  bit_array_add(arr1, arr1, arr2);
   printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
   printf("Difference: arr1 = arr1 - arr2\n");
-  bit_array_difference(arr1, arr1, arr2);
+  bit_array_subtract(arr1, arr1, arr2);
   printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
   printf("Difference: arr1 = arr1 - arr1\n");
-  bit_array_difference(arr1, arr1, arr1);
+  bit_array_subtract(arr1, arr1, arr1);
   printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
   printf("Sum: arr1 = arr1 + arr2\n");
-  bit_array_sum(arr1, arr1, arr2);
+  bit_array_add(arr1, arr1, arr2);
   printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
   printf("Sum: arr1 = arr1 + arr2\n");
-  bit_array_sum(arr1, arr1, arr2);
+  bit_array_add(arr1, arr1, arr2);
   printf("arr1: %s\n", bit_array_to_str(arr1, tmp));
 
   bit_array_free(arr1);
@@ -1840,7 +1840,7 @@ void _test_as_num_cmp_num(uint64_t value)
 {
   BIT_ARRAY *arr = bit_array_create(0);
 
-  bit_array_add(arr, value);
+  bit_array_add_uint64(arr, value);
 
   // as_num returns 1 on success
   uint64_t num = 0;
@@ -1880,10 +1880,10 @@ void _test_add_single_word_small(unsigned long init, unsigned long add, int offs
 
   uint64_t a, b, result;
 
-  bit_array_add(arr1, init);
+  bit_array_add_uint64(arr1, init);
   bit_array_as_num(arr1, &a);
 
-  bit_array_add(arr2, add);
+  bit_array_add_uint64(arr2, add);
   if(offset > 0)
   {
     bit_array_resize(arr2, bit_array_length(arr2)+offset);
@@ -1941,19 +1941,19 @@ void _test_minus_single_word()
   BIT_ARRAY *arr = bit_array_create(0);
 
   // Add word twice, shift left (i.e. * 2^shift)
-  bit_array_add(arr, word);
-  bit_array_add(arr, word);
+  bit_array_add_uint64(arr, word);
+  bit_array_add_uint64(arr, word);
   bit_array_resize(arr, bit_array_length(arr)+shift);
   bit_array_shift_left(arr, shift, 0);
 
   // Subtract word shifted left (i.e. word * 2^shift)
-  ASSERT(bit_array_minus_word(arr, shift, word) == 1);
+  ASSERT(bit_array_sub_word(arr, shift, word) == 1);
 
   // Shift to the right again (should now be equal to word again)
   bit_array_shift_right(arr, shift, 0);
   
   BIT_ARRAY *arr2 = bit_array_create(0);
-  bit_array_add(arr2, word);
+  bit_array_add_uint64(arr2, word);
 
   ASSERT(bit_array_cmp_words(arr, 0, arr2) == 0);
 
@@ -1999,7 +1999,7 @@ void _test_add_words()
   bit_array_shift_left(arr1, shift1, 0);
   bit_array_resize(arr2, bit_array_length(arr2)+shift2);
   bit_array_shift_left(arr2, shift2, 0);
-  bit_array_sum(arr1, arr1, arr2); // arr1 = arr1 + arr2
+  bit_array_add(arr1, arr1, arr2); // arr1 = arr1 + arr2
 
   ASSERT(bit_array_cmp_words(arr1, 0, shifted_sum) == 0);
 
@@ -2034,7 +2034,7 @@ void _test_minus_words()
   while(shift2 > 0 && bit_array_get_bit(accum, shift2)) shift2--;
   bit_array_set_bit(accum, shift2);
 
-  bit_array_minus_words(accum, shift1, arr);
+  bit_array_sub_words(accum, shift1, arr);
 
   ASSERT(bit_array_get_bit(accum, shift2));
   bit_array_clear_bit(accum, shift2);
@@ -2060,8 +2060,8 @@ void test_minus_words()
 
   for(i = 0; i < 100; i++)
   {
-    bit_array_minus_words(arr1, 0, zero);
-    bit_array_minus_words(arr1, RAND(bit_array_length(arr1)), zero);
+    bit_array_sub_words(arr1, 0, zero);
+    bit_array_sub_words(arr1, RAND(bit_array_length(arr1)), zero);
   }
 
   ASSERT(bit_array_cmp(arr1, arr2) == 0);
@@ -2077,8 +2077,8 @@ void _test_multiply_small(uint64_t a, uint64_t b)
   BIT_ARRAY *arr = bit_array_create(0);
   uint64_t product;
 
-  bit_array_add(arr, a);
-  bit_array_multiply(arr, b);
+  bit_array_add_uint64(arr, a);
+  bit_array_mul_uint64(arr, b);
   bit_array_as_num(arr, &product);
 
   ASSERT(a * b == product);
@@ -2119,12 +2119,12 @@ void _test_small_product(uint64_t a, uint64_t b, char expect_overflow)
   {
     bit_array_resize(arr1, 0);
     bit_array_resize(arr2, 0);
-    bit_array_add(arr1, a);
-    bit_array_add(arr2, b);
+    bit_array_add_uint64(arr1, a);
+    bit_array_add_uint64(arr2, b);
 
     BIT_ARRAY *result = (i == 0 ? arr1 : arr2);
 
-    bit_array_product(result, arr1, arr2);
+    bit_array_multiply(result, arr1, arr2);
 
     // printf("  = %s\n", bit_array_to_str(result, tmp));
 
@@ -2172,11 +2172,11 @@ void test_small_products()
 void _test_div(uint64_t nom, uint64_t denom)
 {
   BIT_ARRAY *nom_arr = bit_array_create(0);
-  bit_array_add(nom_arr, nom);
+  bit_array_add_uint64(nom_arr, nom);
 
   uint64_t quotient, rem;
 
-  bit_array_div(nom_arr, denom, &rem);
+  bit_array_div_uint64(nom_arr, denom, &rem);
   bit_array_as_num(nom_arr, &quotient);
 
   ASSERT(quotient * denom + rem == nom);
@@ -2288,8 +2288,8 @@ void _test_product_divide()
   bit_array_divide(tmp, quotient, divisor);
 
   // Multiply and add
-  bit_array_product(quotient, quotient, divisor);
-  bit_array_sum(tmp, tmp, quotient);
+  bit_array_multiply(quotient, quotient, divisor);
+  bit_array_add(tmp, tmp, quotient);
 
   // Compare
   ASSERT(bit_array_cmp_words(tmp, 0, arr) == 0);
@@ -2355,7 +2355,7 @@ void _test_add_and_minus_multiple_words()
   BIT_ARRAY *tmp = bit_array_clone(big);
 
   // tmp -= small
-  bit_array_minus_words(tmp, offset, small);
+  bit_array_sub_words(tmp, offset, small);
 
   // tmp += small
   bit_array_add_words(tmp, offset, small);
@@ -2413,7 +2413,7 @@ void _test_add_and_minus_single_word()
   bit_array_add_word(tmp, offset, word);
 
   // tmp -= word
-  bit_array_minus_word(tmp, offset, word);
+  bit_array_sub_word(tmp, offset, word);
 
   // Compare tmp and arr
   ASSERT(bit_array_cmp_words(tmp, 0, arr) == 0);

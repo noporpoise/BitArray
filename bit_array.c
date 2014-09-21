@@ -1245,7 +1245,85 @@ void bit_array_print_substr(const BIT_ARRAY* bitarr,
   }
 }
 
+//
+// Decimal
+//
+
+// Get bit array as decimal str (e.g. 0b1101 -> "13")
+// len is the length of str char array -- will write at most len-1 chars
+// returns the number of characters needed
+// return is the same as strlen(str)
+size_t bit_array_to_decimal(const BIT_ARRAY *bitarr, char *str, size_t len)
+{
+  size_t i = 0;
+
+  if(bit_array_cmp_uint64(bitarr, 0) == 0)
+  {
+    if(len >= 2)
+    {
+      *str = '0';
+      *(str+1) = '\0';
+    }
+
+    return 1;
+  }
+
+  BIT_ARRAY *tmp = bit_array_clone(bitarr);
+  uint64_t rem;
+
+  str[len-1] = '\0';
+
+  while(bit_array_cmp_uint64(tmp, 0) != 0)
+  {
+    bit_array_div_uint64(tmp, 10, &rem);
+
+    if(i < len-1)
+    {
+      str[len-2-i] = '0' + rem;
+    }
+
+    i++;
+  }
+
+  if(i < len-1)
+  {
+    // Moves null-terminator as well
+    memmove(str, str+len-i-1, i+1);
+  }
+
+  bit_array_free(tmp);
+
+  return i;
+}
+
+// Get bit array from decimal str (e.g. "13" -> 0b1101)
+// Returns number of characters used
+size_t bit_array_from_decimal(BIT_ARRAY *bitarr, const char* decimal)
+{
+  bit_array_clear_all(bitarr);
+  size_t i = 0;
+
+  if(decimal[0] == '\0' || decimal[0] < '0' || decimal[0] > '9')
+  {
+    return 0;
+  }
+
+  bit_array_add_uint64(bitarr, decimal[i] - '0');
+  i++;
+
+  while(decimal[i] != '\0' && decimal[i] >= '0' && decimal[i] <= '9')
+  {
+    bit_array_mul_uint64(bitarr, 10);
+    bit_array_add_uint64(bitarr, decimal[i] - '0');
+    i++;
+  }
+
+  return i;
+}
+
+//
 // Hexidecimal
+//
 
 char bit_array_hex_to_nibble(char c, uint8_t *b)
 {
@@ -1612,6 +1690,10 @@ void bit_array_not(BIT_ARRAY* dst, const BIT_ARRAY* src)
 
   DEBUG_VALIDATE(dst);
 }
+
+//
+// Comparisons
+//
 
 // Compare two bit arrays by value stored, with index 0 being the Least
 // Significant Bit (LSB). Arrays do not have to be the same length.
@@ -2253,13 +2335,13 @@ int bit_array_cmp_uint64(const BIT_ARRAY* bitarr, uint64_t value)
   // If cannot put bitarr in uint64, it is > value
   if(!bit_array_as_num(bitarr, &arr_num)) return 1;
 
-  if(arr_num > value)      return 1;
+  if(arr_num > value)      return  1;
   else if(arr_num < value) return -1;
-  else                     return 0;
+  else                     return  0;
 }
 
 // If value is zero, no change is made
-void bit_array_add(BIT_ARRAY* bitarr, uint64_t value)
+void bit_array_add_uint64(BIT_ARRAY* bitarr, uint64_t value)
 {
   if(value == 0)
   {
@@ -2315,7 +2397,7 @@ void bit_array_add(BIT_ARRAY* bitarr, uint64_t value)
 
 // If value is greater than bitarr, bitarr is not changed and 0 is returned
 // Returns 1 on success, 0 if value > bitarr
-char bit_array_minus(BIT_ARRAY* bitarr, uint64_t value)
+char bit_array_sub_uint64(BIT_ARRAY* bitarr, uint64_t value)
 {
   if(value == 0)
   {
@@ -2430,7 +2512,7 @@ static void _arithmetic(BIT_ARRAY* dst,
 
 // src1, src2 and dst can all be the same BIT_ARRAY
 // If dst is shorter than either of src1, src2, it is enlarged
-void bit_array_sum(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
+void bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 {
   bit_array_ensure_size_critical(dst, MAX(src1->num_of_bits, src2->num_of_bits));
   _arithmetic(dst, src1, src2, 0);
@@ -2440,7 +2522,7 @@ void bit_array_sum(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 // src1, src2 and dst can all be the same BIT_ARRAY
 // If dst is shorter than src1, it will be extended to be as long as src1
 // src1 must be greater than or equal to src2 (src1 >= src2)
-void bit_array_difference(BIT_ARRAY* dst,
+void bit_array_subtract(BIT_ARRAY* dst,
                           const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 {
   // subtraction by method of complements:
@@ -2554,7 +2636,7 @@ void bit_array_add_words(BIT_ARRAY *bitarr, bit_index_t pos, const BIT_ARRAY *ad
   }
   else if(pos == 0)
   {
-    bit_array_sum(bitarr, bitarr, add);
+    bit_array_add(bitarr, bitarr, add);
     return;
   }
 
@@ -2610,7 +2692,7 @@ void bit_array_add_words(BIT_ARRAY *bitarr, bit_index_t pos, const BIT_ARRAY *ad
   DEBUG_VALIDATE(bitarr);
 }
 
-char bit_array_minus_word(BIT_ARRAY* bitarr, bit_index_t pos, word_t minus)
+char bit_array_sub_word(BIT_ARRAY* bitarr, bit_index_t pos, word_t minus)
 {
   DEBUG_VALIDATE(bitarr);
 
@@ -2657,7 +2739,7 @@ char bit_array_minus_word(BIT_ARRAY* bitarr, bit_index_t pos, word_t minus)
   return 0;
 }
 
-char bit_array_minus_words(BIT_ARRAY* bitarr, bit_index_t pos, BIT_ARRAY* minus)
+char bit_array_sub_words(BIT_ARRAY* bitarr, bit_index_t pos, BIT_ARRAY* minus)
 {
   assert(bitarr != minus); // bitarr and minus cannot point to the same bit array
 
@@ -2686,7 +2768,7 @@ char bit_array_minus_words(BIT_ARRAY* bitarr, bit_index_t pos, BIT_ARRAY* minus)
   bit_array_add_words(bitarr, pos, minus);
   bit_array_add_word(bitarr, pos, (word_t)1);
 
-  bit_array_minus_word(bitarr, pos+minus->num_of_bits, 1);
+  bit_array_sub_word(bitarr, pos+minus->num_of_bits, 1);
   bit_array_resize(bitarr, bitarr_length);
 
   bit_array_not(minus, minus);
@@ -2696,7 +2778,7 @@ char bit_array_minus_words(BIT_ARRAY* bitarr, bit_index_t pos, BIT_ARRAY* minus)
   return 1;
 }
 
-void bit_array_multiply(BIT_ARRAY *bitarr, uint64_t multiplier)
+void bit_array_mul_uint64(BIT_ARRAY *bitarr, uint64_t multiplier)
 {
   if(bitarr->num_of_bits == 0 || multiplier == 1)
   {
@@ -2722,7 +2804,7 @@ void bit_array_multiply(BIT_ARRAY *bitarr, uint64_t multiplier)
   DEBUG_VALIDATE(bitarr);
 }
 
-void bit_array_product(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2)
+void bit_array_multiply(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2)
 {
   if(src1->num_of_bits == 0 || src2->num_of_bits == 0)
   {
@@ -2769,7 +2851,7 @@ void bit_array_product(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2)
 
 // bitarr = round_down(bitarr / divisor)
 // rem = bitarr % divisor
-void bit_array_div(BIT_ARRAY *bitarr, uint64_t divisor, uint64_t *rem)
+void bit_array_div_uint64(BIT_ARRAY *bitarr, uint64_t divisor, uint64_t *rem)
 {
   assert(divisor != 0); // cannot divide by zero
 
@@ -2872,7 +2954,7 @@ void bit_array_divide(BIT_ARRAY *dividend, BIT_ARRAY *quotient, BIT_ARRAY *divis
   {
     if(bit_array_cmp_words(dividend, offset, divisor) >= 0)
     {
-      bit_array_minus_words(dividend, offset, divisor);
+      bit_array_sub_words(dividend, offset, divisor);
       bit_array_ensure_size(quotient, offset+1);
       bit_array_set(quotient, offset);
     }
@@ -2880,78 +2962,6 @@ void bit_array_divide(BIT_ARRAY *dividend, BIT_ARRAY *quotient, BIT_ARRAY *divis
     if(offset == 0)
       break;
   }
-}
-
-// Get bit array as decimal str (e.g. 0b1101 -> "13")
-// len is the length of str char array -- will write at most len-1 chars
-// returns the number of characters needed
-// return is the same as strlen(str)
-size_t bit_array_to_decimal(const BIT_ARRAY *bitarr, char *str, size_t len)
-{
-  size_t i = 0;
-
-  if(bit_array_cmp_uint64(bitarr, 0) == 0)
-  {
-    if(len >= 2)
-    {
-      *str = '0';
-      *(str+1) = '\0';
-    }
-
-    return 1;
-  }
-
-  BIT_ARRAY *tmp = bit_array_clone(bitarr);
-  uint64_t rem;
-
-  str[len-1] = '\0';
-
-  while(bit_array_cmp_uint64(tmp, 0) != 0)
-  {
-    bit_array_div(tmp, 10, &rem);
-
-    if(i < len-1)
-    {
-      str[len-2-i] = '0' + rem;
-    }
-
-    i++;
-  }
-
-  if(i < len-1)
-  {
-    // Moves null-terminator as well
-    memmove(str, str+len-i-1, i+1);
-  }
-
-  bit_array_free(tmp);
-
-  return i;
-}
-
-// Get bit array from decimal str (e.g. "13" -> 0b1101)
-// Returns number of characters used
-size_t bit_array_from_decimal(BIT_ARRAY *bitarr, const char* decimal)
-{
-  bit_array_clear_all(bitarr);
-  size_t i = 0;
-
-  if(decimal[0] == '\0' || decimal[0] < '0' || decimal[0] > '9')
-  {
-    return 0;
-  }
-
-  bit_array_add(bitarr, decimal[i] - '0');
-  i++;
-
-  while(decimal[i] != '\0' && decimal[i] >= '0' && decimal[i] <= '9')
-  {
-    bit_array_multiply(bitarr, 10);
-    bit_array_add(bitarr, decimal[i] - '0');
-    i++;
-  }
-
-  return i;
 }
 
 //

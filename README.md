@@ -528,7 +528,7 @@ Returns 1 on sucess, 0 if value in array is too big.
 
 Add to an array.  `bitarr` will be extended if needed.
 
-    void bit_array_add(BIT_ARRAY* bitarr, unsigned long value)
+    void bit_array_add_uint64(BIT_ARRAY* bitarr, unsigned long value)
 
 Add `add` to `bitarr` at `pos` -- same as:
   bitarr + (add << pos)
@@ -543,34 +543,34 @@ Add `add << pos` to `bitarr`
 Subtract from an array. If `value` is greater than `bitarr`, `bitarr` is not
 changed and `0` is returned. Returns `1` on success, `0` if `value > bitarr`
 
-    char bit_array_minus(BIT_ARRAY* bitarr, unsigned long value)
+    char bit_array_sub_uint64(BIT_ARRAY* bitarr, unsigned long value)
 
 Minus `minus << pos` from `bitarr`
 
-    char bit_array_minus_words(BIT_ARRAY* bitarr, bit_index_t pos,
+    char bit_array_sub_words(BIT_ARRAY* bitarr, bit_index_t pos,
                                BIT_ARRAY* minus)
 
 Multiply by some value
 
-    void bit_array_multiply(BIT_ARRAY *bitarr, uint64_t multiplier)
+    void bit_array_mul_uint64(BIT_ARRAY *bitarr, uint64_t multiplier)
 
 Add two bit arrays together and store the result.  `src1` and `src2` do not have
 to be the same length. `src1`, `src2` and `dst` can all be the same or different
 `BIT_ARRAY`s. If `dst` is shorter than either of `src1` or `src2`, it is enlarged
 to be as long as the longest.
 
-    void bit_array_sum(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
+    void bit_array_add(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 
 Subtract on BIT_ARRAY from another. `src1`, `src2` and `dst` can all be the same
 or different `BIT_ARRAY`s. If dst is shorter than src1, it will be extended to
 be as long as `src1`. `src1` must be greater than or equal to `src2` (`src1 >= src2`).
 
-    void bit_array_difference(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
+    void bit_array_subtract(BIT_ARRAY* dst, const BIT_ARRAY* src1, const BIT_ARRAY* src2)
 
 dst = src1 * src2
 Pointers cannot all point to the same BIT_ARRAY
 
-    void bit_array_product(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2)
+    void bit_array_multiply(BIT_ARRAY *dst, BIT_ARRAY *src1, BIT_ARRAY *src2)
 
 Divide a BitArray by a BitArray; returns:
 * `quotient = dividend / divisor`
