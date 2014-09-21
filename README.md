@@ -499,7 +499,7 @@ Bit (MSB). Sorts on length if all zeros: (0,0) < (0,0,0)
 Arrays do not have to be the same length.
 Example: 10.. > 01.. [index 0 is MSB at left hand side]
 
-    int bit_array_other_endian_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
+    int bit_array_cmp_big_endian(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
 
 Compare `bitarr` with `(bitarr2 << pos)`.  Does not use array length, only value
 stored.

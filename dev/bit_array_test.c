@@ -587,7 +587,7 @@ int cmp_strings(const char *str1, const char *str2, char rev)
   return len1 > len2 ? 1 : (len1 < len2 ? -1 : 0);
 }
 
-void _test_compare(const char *str1, const char *str2, char rev)
+void _test_cmp(const char *str1, const char *str2, char rev)
 {
   // Get correct answer
   int cmp_correct = cmp_strings(str1, str2, rev);
@@ -602,8 +602,8 @@ void _test_compare(const char *str1, const char *str2, char rev)
 
   if(rev)
   {
-    cmp1 = bit_array_other_endian_cmp(arr1, arr2);
-    cmp2 = bit_array_other_endian_cmp(arr2, arr1);
+    cmp1 = bit_array_cmp_big_endian(arr1, arr2);
+    cmp2 = bit_array_cmp_big_endian(arr2, arr1);
   }
   else
   {
@@ -621,14 +621,14 @@ void _test_compare(const char *str1, const char *str2, char rev)
   bit_array_free(arr2);
 }
 
-void _test_compares(char rev)
+void _test_cmps(char rev)
 {
   // Remember right hand side is msb
-  _test_compare("011010100", "001101010", rev);
-  _test_compare("0", "00", rev);
-  _test_compare("", "", rev);
-  _test_compare("100000", "10", rev);
-  _test_compare("11000000000000000000000000000000000000000000010000000000000000"
+  _test_cmp("011010100", "001101010", rev);
+  _test_cmp("0", "00", rev);
+  _test_cmp("", "", rev);
+  _test_cmp("100000", "10", rev);
+  _test_cmp("11000000000000000000000000000000000000000000010000000000000000"
                 "00000000000000000000000000000000001000000000000000000000000000"
                 "00000000000000000000000100000000000000000000000000000000000000"
                 "000000000000100000", "1000000000000000000000000000000000000000"
@@ -659,7 +659,7 @@ void _test_compares(char rev)
     }
     str2[len2] = '\0';
 
-    _test_compare(str1, str2, rev);
+    _test_cmp(str1, str2, rev);
   }*/
 }
 
@@ -667,7 +667,7 @@ void test_compare()
 {
   SUITE_START("compare");
 
-  _test_compares(0);
+  _test_cmps(0);
 
   SUITE_END();
 }
@@ -676,7 +676,7 @@ void test_compare2()
 {
   SUITE_START("compare (rev endian)")
 
-  _test_compares(1);
+  _test_cmps(1);
 
   SUITE_END();
 }
@@ -1829,7 +1829,7 @@ void _test_num_cmp(BIT_ARRAY *arr, uint64_t value, uint64_t num)
 {
   int cmp1, cmp2;
 
-  cmp1 = bit_array_compare_num(arr, num);
+  cmp1 = bit_array_cmp_uint64(arr, num);
   cmp1 = cmp1 > 0 ? 1 : (cmp1 < 0 ? -1 : 0);
   cmp2 = value > num ? 1 : (value < num ? -1 : 0);
 
@@ -1854,7 +1854,7 @@ void _test_as_num_cmp_num(uint64_t value)
   bit_array_free(arr);
 }
 
-// Test bit_array_as_num(), bit_array_compare_num()
+// Test bit_array_as_num(), bit_array_cmp_uint64()
 void test_as_num_cmp_num()
 {
   SUITE_START("as_num and num_cmp");
@@ -2038,7 +2038,7 @@ void _test_minus_words()
 
   ASSERT(bit_array_get_bit(accum, shift2));
   bit_array_clear_bit(accum, shift2);
-  ASSERT(bit_array_compare_num(accum, 0) == 0);
+  ASSERT(bit_array_cmp_uint64(accum, 0) == 0);
 
   bit_array_free(accum);
   bit_array_free(arr);
@@ -2274,7 +2274,7 @@ void _test_product_divide()
       bit_array_shift_right(divisor, 1, 0);
     }
 
-    if(bit_array_compare_num(divisor, 1) > 0 && rand() < RAND_MAX / 2)
+    if(bit_array_cmp_uint64(divisor, 1) > 0 && rand() < RAND_MAX / 2)
     {
       bit_array_shift_right(divisor, 1, 0);
     }
@@ -2560,7 +2560,6 @@ void test_bar_wrapper()
 
   SUITE_END();
 }
-
 
 int main(int argc, char* argv[])
 {

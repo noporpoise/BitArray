@@ -934,7 +934,81 @@ void bit_array_set_wordn(BIT_ARRAY* bitarr, bit_index_t start, uint64_t word, in
 }
 
 //
-// Number/position of bits set
+// Number of bits set
+//
+
+// Get the number of bits set (hamming weight)
+bit_index_t bit_array_num_bits_set(const BIT_ARRAY* bitarr)
+{
+  word_addr_t i;
+
+  bit_index_t num_of_bits_set = 0;
+
+  for(i = 0; i < bitarr->num_of_words; i++)
+  {
+    if(bitarr->words[i] > 0)
+    {
+      num_of_bits_set += POPCOUNT(bitarr->words[i]);
+    }
+  }
+
+  return num_of_bits_set;
+}
+
+// Get the number of bits not set (1 - hamming weight)
+bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr)
+{
+  return bitarr->num_of_bits - bit_array_num_bits_set(bitarr);
+}
+
+
+// Get the number of bits set in on array and not the other.  This is equivalent
+// to hamming weight of the XOR when the two arrays are the same length.
+// e.g. 10101 vs 00111 => hamming distance 2 (XOR is 10010)
+bit_index_t bit_array_hamming_distance(const BIT_ARRAY* arr1,
+                                       const BIT_ARRAY* arr2)
+{
+  word_addr_t min_words = MIN(arr1->num_of_words, arr2->num_of_words);
+  word_addr_t max_words = MAX(arr1->num_of_words, arr2->num_of_words);
+
+  bit_index_t hamming_distance = 0;
+  word_addr_t i;
+
+  for(i = 0; i < min_words; i++)
+  {
+    hamming_distance += POPCOUNT(arr1->words[i] ^ arr2->words[i]);
+  }
+
+  if(min_words != max_words)
+  {
+    const BIT_ARRAY* long_arr
+      = (arr1->num_of_words > arr2->num_of_words ? arr1 : arr2);
+
+    for(i = min_words; i < max_words; i++)
+    {
+      hamming_distance += POPCOUNT(long_arr->words[i]);
+    }
+  }
+
+  return hamming_distance;
+}
+
+// Parity - returns 1 if odd number of bits set, 0 if even
+char bit_array_parity(const BIT_ARRAY* bitarr)
+{
+  word_addr_t w;
+  unsigned int parity = 0;
+
+  for(w = 0; w < bitarr->num_of_words; w++)
+  {
+    parity ^= PARITY(bitarr->words[w]);
+  }
+
+  return (char)parity;
+}
+
+//
+// Find indices of set/clear bits
 //
 
 // Find the index of the next bit that is set/clear, at or after `offset`
@@ -1030,85 +1104,15 @@ char bit_array_find_last_clear_bit(const BIT_ARRAY* bitarr, bit_index_t* result)
   return bit_array_find_prev_clear_bit(bitarr, bitarr->num_of_bits, result);
 }
 
-// Parity - returns 1 if odd number of bits set, 0 if even
-char bit_array_parity(const BIT_ARRAY* bitarr)
-{
-  word_addr_t w;
-  unsigned int parity = 0;
-
-  for(w = 0; w < bitarr->num_of_words; w++)
-  {
-    parity ^= PARITY(bitarr->words[w]);
-  }
-
-  return (char)parity;
-}
-
-// Get the number of bits set (hamming weight)
-bit_index_t bit_array_num_bits_set(const BIT_ARRAY* bitarr)
-{
-  word_addr_t i;
-
-  bit_index_t num_of_bits_set = 0;
-
-  for(i = 0; i < bitarr->num_of_words; i++)
-  {
-    if(bitarr->words[i] > 0)
-    {
-      num_of_bits_set += POPCOUNT(bitarr->words[i]);
-    }
-  }
-
-  return num_of_bits_set;
-}
-
-
-// Get the number of bits set in on array and not the other.  This is equivalent
-// to hamming weight of the XOR when the two arrays are the same length.
-// e.g. 10101 vs 00111 => hamming distance 2 (XOR is 10010)
-bit_index_t bit_array_hamming_distance(const BIT_ARRAY* arr1,
-                                       const BIT_ARRAY* arr2)
-{
-  word_addr_t min_words = MIN(arr1->num_of_words, arr2->num_of_words);
-  word_addr_t max_words = MAX(arr1->num_of_words, arr2->num_of_words);
-
-  bit_index_t hamming_distance = 0;
-  word_addr_t i;
-
-  for(i = 0; i < min_words; i++)
-  {
-    hamming_distance += POPCOUNT(arr1->words[i] ^ arr2->words[i]);
-  }
-
-  if(min_words != max_words)
-  {
-    const BIT_ARRAY* long_arr
-      = (arr1->num_of_words > arr2->num_of_words ? arr1 : arr2);
-
-    for(i = min_words; i < max_words; i++)
-    {
-      hamming_distance += POPCOUNT(long_arr->words[i]);
-    }
-  }
-
-  return hamming_distance;
-}
-
-// Get the number of bits not set (1 - hamming weight)
-bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr)
-{
-  return bitarr->num_of_bits - bit_array_num_bits_set(bitarr);
-}
+//
+// "Sorting" bits
+//
 
 // Put all the 0s before all the 1s
 void bit_array_sort_bits(BIT_ARRAY* bitarr)
 {
   bit_index_t num_of_bits_set = bit_array_num_bits_set(bitarr);
   bit_index_t num_of_bits_cleared = bitarr->num_of_bits - num_of_bits_set;
-
-  DEBUG_PRINT("sort_bits (bits set: %zu, bits unset: %zu)\n",
-              (size_t)num_of_bits_set, (size_t)num_of_bits_cleared);
-
   bit_array_set_all(bitarr);
   CLEAR_REGION(bitarr, 0, num_of_bits_cleared);
   DEBUG_VALIDATE(bitarr);
@@ -1118,9 +1122,6 @@ void bit_array_sort_bits(BIT_ARRAY* bitarr)
 void bit_array_sort_bits_rev(BIT_ARRAY* bitarr)
 {
   bit_index_t num_of_bits_set = bit_array_num_bits_set(bitarr);
-
-  DEBUG_PRINT("rev_sort_bits (bits set: %zu)\n", (size_t)num_of_bits_set);
-
   bit_array_clear_all(bitarr);
   SET_REGION(bitarr, 0, num_of_bits_set);
   DEBUG_VALIDATE(bitarr);
@@ -1674,7 +1675,7 @@ int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
 //  >0 iff bitarr1 > bitarr2
 //   0 iff bitarr1 == bitarr2
 //  <0 iff bitarr1 < bitarr2
-int bit_array_other_endian_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
+int bit_array_cmp_big_endian(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
 {
   word_addr_t max_words = MAX(bitarr1->num_of_words, bitarr2->num_of_words);
 
@@ -2245,25 +2246,16 @@ char bit_array_as_num(const BIT_ARRAY* bitarr, uint64_t* result)
 // 1 iff bitarr > value
 // 0 iff bitarr == value
 // -1 iff bitarr < value
-int bit_array_compare_num(const BIT_ARRAY* bitarr, uint64_t value)
+int bit_array_cmp_uint64(const BIT_ARRAY* bitarr, uint64_t value)
 {
-  if(bitarr->words[0] > value)
-  {
-    return 1;
-  }
+  uint64_t arr_num = 0;
 
-  word_addr_t i;
-  for(i = 1; i < bitarr->num_of_words; i++)
-  {
-    if(bitarr->words[i] > 0)
-    {
-      return 1;
-    }
-  }
+  // If cannot put bitarr in uint64, it is > value
+  if(!bit_array_as_num(bitarr, &arr_num)) return 1;
 
-  // All words above words[0] are == 0
-  // words[0] is not > value
-  return (bitarr->words[0] == value ? 0 : -1);
+  if(arr_num > value)      return 1;
+  else if(arr_num < value) return -1;
+  else                     return 0;
 }
 
 // If value is zero, no change is made
@@ -2846,7 +2838,7 @@ void bit_array_div(BIT_ARRAY *bitarr, uint64_t divisor, uint64_t *rem)
 // (dividend is used to return the remainder)
 void bit_array_divide(BIT_ARRAY *dividend, BIT_ARRAY *quotient, BIT_ARRAY *divisor)
 {
-  assert(bit_array_compare_num(divisor, 0) != 0); // Cannot divide by zero
+  assert(bit_array_cmp_uint64(divisor, 0) != 0); // Cannot divide by zero
 
   bit_array_clear_all(quotient);
 
@@ -2898,7 +2890,7 @@ size_t bit_array_to_decimal(const BIT_ARRAY *bitarr, char *str, size_t len)
 {
   size_t i = 0;
 
-  if(bit_array_compare_num(bitarr, 0) == 0)
+  if(bit_array_cmp_uint64(bitarr, 0) == 0)
   {
     if(len >= 2)
     {
@@ -2914,7 +2906,7 @@ size_t bit_array_to_decimal(const BIT_ARRAY *bitarr, char *str, size_t len)
 
   str[len-1] = '\0';
 
-  while(bit_array_compare_num(tmp, 0) != 0)
+  while(bit_array_cmp_uint64(tmp, 0) != 0)
   {
     bit_array_div(tmp, 10, &rem);
 

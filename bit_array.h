@@ -183,14 +183,21 @@ void bit_array_set_wordn(BIT_ARRAY* bitarr, bit_index_t start, uint64_t word, in
 // Get the number of bits set (hamming weight)
 bit_index_t bit_array_num_bits_set(const BIT_ARRAY* bitarr);
 
+// Get the number of bits not set (length - hamming weight)
+bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr);
+
 // Get the number of bits set in on array and not the other.  This is equivalent
 // to hamming weight of the XOR when the two arrays are the same length.
 // e.g. 10101 vs 00111 => hamming distance 2 (XOR is 10010)
 bit_index_t bit_array_hamming_distance(const BIT_ARRAY* arr1,
                                        const BIT_ARRAY* arr2);
 
-// Get the number of bits not set (length - hamming weight)
-bit_index_t bit_array_num_bits_cleared(const BIT_ARRAY* bitarr);
+// Parity - returns 1 if odd number of bits set, 0 if even
+char bit_array_parity(const BIT_ARRAY* bitarr);
+
+//
+// Find indices of set/clear bits
+//
 
 // Find the index of the next bit that is set, at or after `offset`
 // Returns 1 if a bit is set, otherwise 0
@@ -243,9 +250,6 @@ char bit_array_find_last_set_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
 // Index of last zero bit is stored in the integer pointed to by `result`
 // If no bit is zero result is not changed
 char bit_array_find_last_clear_bit(const BIT_ARRAY* bitarr, bit_index_t* result);
-
-// Parity - returns 1 if odd number of bits set, 0 if even
-char bit_array_parity(const BIT_ARRAY* bitarr);
 
 
 //
@@ -359,7 +363,7 @@ void bit_array_not(BIT_ARRAY* dest, const BIT_ARRAY* src);
 // Comparisons
 //
 
-// Note: (bit_array_cmp(a,b) == 0) <=> (bit_array_other_endian_cmp(a,b) == 0)
+// Note: (bit_array_cmp(a,b) == 0) <=> (bit_array_cmp_big_endian(a,b) == 0)
 
 // comparison functions return:
 //   1 iff bitarr1 > bitarr2
@@ -374,7 +378,7 @@ int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
 // Compare two bit arrays by value stored, with index 0 being the Most
 // Significant Bit (MSB). Arrays do not have to be the same length.
 // Example: 10.. > 01.. [index 0 is MSB at left hand side]
-int bit_array_other_endian_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
+int bit_array_cmp_big_endian(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2);
 
 // compare bitarr with (bitarr2 << pos)
 int bit_array_cmp_words(const BIT_ARRAY *bitarr,
@@ -394,7 +398,7 @@ void bit_array_shift_left_extend(BIT_ARRAY* bitarr, bit_index_t shift_dist,
 
 // Cyclic shift
 void bit_array_cycle_right(BIT_ARRAY* bitarr, bit_index_t dist);
-void bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t dist);
+void bit_array_cycle_left (BIT_ARRAY* bitarr, bit_index_t dist);
 
 // Interleave
 // dst cannot point to the same bit array as src1 or src2
@@ -414,7 +418,7 @@ void bit_array_reverse(BIT_ARRAY* bitarr);
 void bit_array_reverse_region(BIT_ARRAY* bitarr, bit_index_t start, bit_index_t len);
 
 //
-// Arithmetic
+// Numeric
 //
 
 // Returns 1 on sucess, 0 if value in array is too big
@@ -423,7 +427,26 @@ char bit_array_as_num(const BIT_ARRAY* bitarr, uint64_t* result);
 // 1 iff bitarr > value
 // 0 iff bitarr == value
 // -1 iff bitarr < value
-int bit_array_compare_num(const BIT_ARRAY* bitarr, uint64_t value);
+int bit_array_cmp_uint64(const BIT_ARRAY* bitarr, uint64_t value);
+
+//
+// Arithmetic
+//
+
+// Will be renamed:
+//  bit_array_add_uint64  (bit_array_add)
+//  bit_array_add_word
+//  bit_array_add_words
+//  bit_array_sub_uint64  (bit_array_minus)
+//  bit_array_sub_word    (bit_array_minus_word)
+//  bit_array_sub_words   (bit_array_minus_words)
+//  bit_array_mul_uint64  (bit_array_multiply)
+//  bit_array_div_uint64  (bit_array_div)
+//
+//  bit_array_add (bit_array_sum)
+//  bit_array_sub (bit_array_difference)
+//  bit_array_mul (bit_array_product)
+//  bit_array_div (bit_array_divide)
 
 // bitarr will be extended if needed
 void bit_array_add(BIT_ARRAY* bitarr, uint64_t value);
@@ -536,12 +559,6 @@ char* bit_array_word2str(const void *ptr, size_t num_of_bits, char *str);
 
 // Same as above but in reverse
 char* bit_array_word2str_rev(const void *ptr, size_t num_of_bits, char *str);
-
-//
-// In the pipeline:
-//
-
-// uint64_t bit_array_crc(const BIT_ARRAY *bitarr, uint64_t crc);
 
 #ifdef __cplusplus
 }
