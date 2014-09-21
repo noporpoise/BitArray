@@ -99,8 +99,8 @@
 #define barnot     bit_array_not
 
 #define barcmp     bit_array_cmp
-#define barbcmp    bit_array_cmp_big_endian
-#define barwcmp    bit_array_cmp_words
+#define barcmpb    bit_array_cmp_big_endian
+#define barcmpw    bit_array_cmp_words
 #define barcmp64   bit_array_cmp_uint64
 
 #define barshr     bit_array_shift_right
