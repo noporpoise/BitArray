@@ -14,9 +14,9 @@
 #ifndef BAR_HEADER_SEEN
 #define BAR_HEADER_SEEN
 
-#define bar BIT_ARRAY
-
 #include "bit_array.h"
+
+#define bar BIT_ARRAY
 
 #define barcreate  bit_array_create
 #define bardestroy bit_array_free

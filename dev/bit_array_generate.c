@@ -1,5 +1,5 @@
 /*
- bit_generate.h
+ dev/bit_array_generate.c
  project: bit array C library
  url: https://github.com/noporpoise/BitArray/
  author: Isaac Turner <turner.isaac@gmail.com>

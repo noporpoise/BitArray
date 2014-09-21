@@ -20,6 +20,8 @@ must be >= 0.
 
 Please get in touch if you have suggestions / requests / bugs.  
 
+Adapted from: http://stackoverflow.com/a/2633584/431087
+
 Build
 =====
 

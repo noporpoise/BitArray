@@ -1,10 +1,10 @@
 /*
- bit_array.c
+ bit_array.h
  project: bit array C library
  url: https://github.com/noporpoise/BitArray/
  maintainer: Isaac Turner <turner.isaac@gmail.com>
  license: Public Domain, no warranty
- date: Aug 2014
+ date: Sep 2014
 */
 
 #ifndef BIT_ARRAY_HEADER_SEEN

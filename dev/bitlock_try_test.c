@@ -1,3 +1,12 @@
+/*
+ dev/bitlock_try_test.c
+ project: bit array C library
+ url: https://github.com/noporpoise/BitArray/
+ maintainer: Isaac Turner <turner.isaac@gmail.com>
+ license: Public Domain, no warranty
+ date: Sep 2014
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -38,7 +47,7 @@ int main(int argc, char **argv)
   (void)argc; (void)argv;
 
   size_t i; int rc;
-  uint8_t *locks = calloc((LIMIT+7)/8, sizeof(uint8_t));
+  uint8_t *locks = (uint8_t*)calloc((LIMIT+7)/8, sizeof(uint8_t));
   TestThread *workers = calloc(NWORKERS, sizeof(TestThread));
 
   // Create threads
