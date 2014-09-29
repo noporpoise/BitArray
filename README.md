@@ -56,7 +56,7 @@ Thread safety
 
 You cannot safely access the same BitArray in multiple threads at once. Use a
 lock to protect BitArray objects. The same methods can be safely called in
-separate threads as long as they are not accessing the same BitArray structs.
+separate threads as long as they are not accessing the same BitArray struct.
 
 Basics
 ------
