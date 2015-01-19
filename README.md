@@ -31,8 +31,7 @@ To build the library:
 
 To build and run the test code:
 
-    make
-    ./dev/bit_array_test
+    make test
 
 Using bit_array in your code
 ============================
