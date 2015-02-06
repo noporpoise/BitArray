@@ -27,80 +27,42 @@ const char test_filename[] = "bitarr_example.dump";
 //
 // Tests
 //
-char *suite_name;
+const char *suite_name;
 char suite_pass;
 int suites_run = 0, suites_failed = 0, suites_empty = 0;
 int tests_in_suite = 0, tests_run = 0, tests_failed = 0;
 
 #define QUOTE(str) #str
 #define ASSERT(x) {tests_run++; tests_in_suite++; if(!(x)) \
-  { warn("failed assert [%s:%i] %s", __FILE__, __LINE__, QUOTE(x)); \
+  { fprintf(stderr, "failed assert [%s:%i] %s\n", __FILE__, __LINE__, QUOTE(x)); \
     suite_pass = 0; tests_failed++; }}
 
-#define SUITE_START(x) {suite_pass = 1; suite_name = x; \
-                        suites_run++; tests_in_suite = 0;}
+void SUITE_START(const char *name)
+{
+  suite_pass = 1;
+  suite_name = name;
+  suites_run++;
+  tests_in_suite = 0;
+}
 
-#define SUITE_END() do { \
-    printf("Testing %s ", suite_name); \
-    size_t suite_i; \
-    for(suite_i = strlen(suite_name); suite_i < 80-8-5; suite_i++) printf("."); \
-    printf("%s\n", suite_pass ? " pass" : " fail");   \
-    if(!suite_pass) suites_failed++; \
-    if(!tests_in_suite) suites_empty++; \
-  } while(0)
+void SUITE_END()
+{
+  printf("Testing %s ", suite_name);
+  size_t suite_i;
+  for(suite_i = strlen(suite_name); suite_i < 80-8-5; suite_i++) printf(".");
+  printf("%s\n", suite_pass ? " pass" : " fail");
+  if(!suite_pass) suites_failed++;
+  if(!tests_in_suite) suites_empty++;
+}
 
 //
 // Utility functions
 //
 
-void die(const char *fmt, ...)
-__attribute__((format(printf, 1, 2)))
-__attribute__((noreturn));
-
-void warn(const char *fmt, ...)
-__attribute__((format(printf, 1, 2)));
-
-void die(const char *fmt, ...)
-{
-  fflush(stdout);
-
-  // Print error
-  fprintf(stderr, "Error: ");
-
-  va_list argptr;
-  va_start(argptr, fmt);
-  vfprintf(stderr, fmt, argptr);
-  va_end(argptr);
-
-  // Check if we need to print a newline
-  if(*(fmt + strlen(fmt) - 1) != '\n')
-  {
-    fprintf(stderr, "\n");
-  }
-
-  exit(EXIT_FAILURE);
-}
-
-void warn(const char *fmt, ...)
-{
-  fflush(stdout);
-
-  // Print warning
-  fprintf(stderr, "Warning: ");
-
-  va_list argptr;
-  va_start(argptr, fmt);
-  vfprintf(stderr, fmt, argptr);
-  va_end(argptr);
-
-  // Check if we need to print a newline
-  if(*(fmt + strlen(fmt) - 1) != '\n')
-  {
-    fprintf(stderr, "\n");
-  }
-
-  fflush(stderr);
-}
+#define die(fmt,...) do { \
+  fprintf(stderr, "[%s:%i] Error: %s() "fmt"\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
+  exit(EXIT_FAILURE); \
+} while(0);
 
 void reverse_str(char *str)
 {
@@ -674,7 +636,7 @@ void test_compare()
 
 void test_compare2()
 {
-  SUITE_START("compare (rev endian)")
+  SUITE_START("compare (rev endian)");
 
   _test_cmps(1);
 
@@ -1894,7 +1856,7 @@ void _test_add_single_word_small(unsigned long init, unsigned long add, int offs
 
   if(b != add << offset)
   {
-    printf("Warning: b != add << offset\n");
+    fprintf(stderr, "Warning: b != add << offset\n");
   }
 
   bit_array_add_word(arr1, offset, add);
@@ -2634,5 +2596,5 @@ int main(int argc, char* argv[])
 
   printf("\n THE END.\n");
   
-  return EXIT_SUCCESS;
+  return tests_failed ? EXIT_FAILURE : EXIT_SUCCESS;
 }
