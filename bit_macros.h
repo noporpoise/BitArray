@@ -68,9 +68,9 @@
 #define bitset64_wrd(pos) ((pos) >> 6)
 #define bitset64_idx(pos) ((pos) & 63)
 
-#define bitset_wrd(arr,pos) ((pos) / (sizeof(*(arr))*8))
-#define bitset_idx(arr,pos) ((pos) % (sizeof(*(arr))*8))
-
+//
+// Bit functions on arrays
+//
 #define bitset2_get(arr,wrd,idx)     (((arr)[wrd] >> (idx)) & 0x1)
 #define bitset2_set(arr,wrd,idx)     ((arr)[wrd] |=  _TYPESHIFT(arr,1,idx))
 #define bitset2_del(arr,wrd,idx)     ((arr)[wrd] &=~ _TYPESHIFT(arr,1,idx))
@@ -80,9 +80,28 @@
 #define bitset2_and(arr,wrd,idx,bit) ((arr)[wrd] &= (_TYPESHIFT(arr,bit,idx) | ~_TYPESHIFT(arr,1,idx)))
 #define bitset2_cpy(arr,wrd,idx,bit) ((arr)[wrd]  = ((arr)[wrd] &~ _TYPESHIFT(arr,1,idx)) | _TYPESHIFT(arr,bit,idx))
 
+//
+// Thread safe versions
+//
+// They return the value of the bit (0 or 1) before it was updated
+#define bitset2_get_mt(arr,wrd,idx)     bitset2_get(_VOLPTR(*arr),wrd,idx)
+#define bitset2_set_mt(arr,wrd,idx)     ((__sync_fetch_and_or (_VOLPTR((arr)[wrd]),  _TYPESHIFT(arr,1,idx)) >> (idx))&1)
+#define bitset2_del_mt(arr,wrd,idx)     ((__sync_fetch_and_and(_VOLPTR((arr)[wrd]), ~_TYPESHIFT(arr,1,idx)) >> (idx))&1)
+#define bitset2_tgl_mt(arr,wrd,idx)     ((__sync_fetch_and_xor(_VOLPTR((arr)[wrd]),  _TYPESHIFT(arr,1,idx)) >> (idx))&1)
+#define bitset2_or_mt(arr,wrd,idx,bit)  ((__sync_fetch_and_or (_VOLPTR((arr)[wrd]),  _TYPESHIFT(arr,bit,idx)) >> (idx))&1)
+#define bitset2_xor_mt(arr,wrd,idx,bit) ((__sync_fetch_and_xor(_VOLPTR((arr)[wrd]),  _TYPESHIFT(arr,bit,idx)) >> (idx))&1)
+#define bitset2_and_mt(arr,wrd,idx,bit) ((__sync_fetch_and_and(_VOLPTR((arr)[wrd]), (_TYPESHIFT(arr,bit,idx) | ~_TYPESHIFT(arr,1,idx))) >> (idx))&1)
+#define bitset2_cpy_mt(arr,wrd,idx,bit) ((bit) ? bitset2_set_mt(arr,wrd,idx) : bitset2_del_mt(arr,wrd,idx))
+
+//
+// Auto detect size of type from pointer
+//
+#define bitset_wrd(arr,pos) bitsetX_wrd(sizeof(arr[0])*8,pos)
+#define bitset_idx(arr,pos) bitsetX_idx(sizeof(arr[0])*8,pos)
 #define bitset_op(func,arr,pos)      func(arr, bitset_wrd(arr,pos), bitset_idx(arr,pos))
 #define bitset_op2(func,arr,pos,bit) func(arr, bitset_wrd(arr,pos), bitset_idx(arr,pos), bit)
 
+// Auto-detect type size: bit functions
 #define bitset_get(arr,pos)     bitset_op(bitset2_get, arr, pos)
 #define bitset_set(arr,pos)     bitset_op(bitset2_set, arr, pos)
 #define bitset_del(arr,pos)     bitset_op(bitset2_del, arr, pos)
@@ -92,30 +111,19 @@
 #define bitset_and(arr,pos,bit) bitset_op2(bitset2_and, arr, pos, bit)
 #define bitset_cpy(arr,pos,bit) bitset_op2(bitset2_cpy, arr, pos, bit)
 
-#define bitset_clear_word(arr,pos) ((arr)[bitset_wrd(arr,pos)] = 0)
-
-//
-// Thread safe versions
-//
-// They return the value of the bit (0 or 1) before it was updated
-#define bitset2_set_mt(arr,wrd,idx)     ((__sync_fetch_and_or (_VOLPTR((arr)[wrd]),  _TYPESHIFT(arr,1,idx)) >> (idx))&1)
-#define bitset2_del_mt(arr,wrd,idx)     ((__sync_fetch_and_and(_VOLPTR((arr)[wrd]), ~_TYPESHIFT(arr,1,idx)) >> (idx))&1)
-#define bitset2_tgl_mt(arr,wrd,idx)     ((__sync_fetch_and_xor(_VOLPTR((arr)[wrd]),  _TYPESHIFT(arr,1,idx)) >> (idx))&1)
-#define bitset2_or_mt(arr,wrd,idx,bit)  ((__sync_fetch_and_or (_VOLPTR((arr)[wrd]),  _TYPESHIFT(arr,bit,idx)) >> (idx))&1)
-#define bitset2_and_mt(arr,wrd,idx,bit) ((__sync_fetch_and_and(_VOLPTR((arr)[wrd]), (_TYPESHIFT(arr,bit,idx) | ~_TYPESHIFT(arr,1,idx))) >> (idx))&1)
-#define bitset2_cpy_mt(arr,wrd,idx,bit) ((bit) ? bitset2_set_mt(arr,wrd,idx) : bitset2_del_mt(arr,wrd,idx))
-
+// Auto-detect type size: thread safe bit functions
+#define bitset_get_mt(arr,pos)     bitset_op(bitset2_get_mt,  arr, pos)
 #define bitset_set_mt(arr,pos)     bitset_op(bitset2_set_mt,  arr, pos)
 #define bitset_del_mt(arr,pos)     bitset_op(bitset2_del_mt,  arr, pos)
 #define bitset_tgl_mt(arr,pos)     bitset_op(bitset2_tgl_mt,  arr, pos)
 #define bitset_or_mt(arr,pos,bit)  bitset_op2(bitset2_or_mt,  arr, pos, bit)
+#define bitset_xor_mt(arr,pos,bit) bitset_op2(bitset2_xor_mt, arr, pos, bit)
 #define bitset_and_mt(arr,pos,bit) bitset_op2(bitset2_and_mt, arr, pos, bit)
 #define bitset_cpy_mt(arr,pos,bit) bitset_op2(bitset2_cpy_mt, arr, pos, bit)
 
-// The following do not need atomics
-#define bitset_get_mt(arr,pos)        bitset_get(_VOLPTR(*arr),pos)
-#define bitset2_get_mt(arr,wrd,idx)   bitset2_get(_VOLPTR(*arr),wrd,idx)
-#define bitset_clear_word_mt(arr,pos) __sync_fetch_and_and(_VOLPTR((arr)[wrd]), 0)
+// Clearing a word does not return a meaningful value
+#define bitset_clear_word(arr,pos) ((arr)[bitset_wrd(arr,pos)] = 0)
+#define bitset_clear_word_mt(arr,pos) (_VOLVALUE((arr)[bitset_wrd(arr,pos)]) = 0)
 
 //
 // Compact bit array of spin locks
