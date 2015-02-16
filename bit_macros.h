@@ -84,7 +84,7 @@
 // Thread safe versions
 //
 // They return the value of the bit (0 or 1) before it was updated
-#define bitset2_get_mt(arr,wrd,idx)     bitset2_get(_VOLPTR(*arr),wrd,idx)
+#define bitset2_get_mt(arr,wrd,idx)     bitset2_get(_VOLPTR(*(arr)),wrd,idx)
 #define bitset2_set_mt(arr,wrd,idx)     ((__sync_fetch_and_or (_VOLPTR((arr)[wrd]),  _TYPESHIFT(arr,1,idx)) >> (idx))&1)
 #define bitset2_del_mt(arr,wrd,idx)     ((__sync_fetch_and_and(_VOLPTR((arr)[wrd]), ~_TYPESHIFT(arr,1,idx)) >> (idx))&1)
 #define bitset2_tgl_mt(arr,wrd,idx)     ((__sync_fetch_and_xor(_VOLPTR((arr)[wrd]),  _TYPESHIFT(arr,1,idx)) >> (idx))&1)
@@ -96,8 +96,8 @@
 //
 // Auto detect size of type from pointer
 //
-#define bitset_wrd(arr,pos) bitsetX_wrd(sizeof(arr[0])*8,pos)
-#define bitset_idx(arr,pos) bitsetX_idx(sizeof(arr[0])*8,pos)
+#define bitset_wrd(arr,pos) bitsetX_wrd(sizeof(*(arr))*8,pos)
+#define bitset_idx(arr,pos) bitsetX_idx(sizeof(*(arr))*8,pos)
 #define bitset_op(func,arr,pos)      func(arr, bitset_wrd(arr,pos), bitset_idx(arr,pos))
 #define bitset_op2(func,arr,pos,bit) func(arr, bitset_wrd(arr,pos), bitset_idx(arr,pos), bit)
 
