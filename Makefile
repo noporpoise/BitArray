@@ -33,7 +33,7 @@ dev: libbitarr.a bit_macros.h
 examples: libbitarr.a
 	cd examples && $(MAKE)
 
-test:
+test: libbitarr.a
 	cd dev && $(MAKE) test
 	cd examples && $(MAKE) test
 

@@ -555,8 +555,9 @@ char bit_array_resize(BIT_ARRAY* bitarr, bit_index_t new_num_of_bits)
   bitarr->num_of_bits = new_num_of_bits;
   bitarr->num_of_words = new_num_of_words;
 
-  DEBUG_PRINT("Resize: old_num_of_words: %i; new_num_of_words: %i\n",
-              (int)old_num_of_words, (int)new_num_of_words);
+  DEBUG_PRINT("Resize: old_num_of_words: %i; new_num_of_words: %i capacity: %i\n",
+              (int)old_num_of_words, (int)new_num_of_words,
+              (int)bitarr->capacity_in_words);
 
   if(new_num_of_words > bitarr->capacity_in_words)
   {
@@ -1705,48 +1706,37 @@ void bit_array_not(BIT_ARRAY* dst, const BIT_ARRAY* src)
 //  <0 iff bitarr1 < bitarr2
 int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
 {
-  word_addr_t max_words = MAX(bitarr1->num_of_words, bitarr2->num_of_words);
-
-  if(max_words == 0)
-  {
-    return 0;
-  }
-
   word_addr_t i;
   word_t word1, word2;
+  word_addr_t min_words = bitarr1->num_of_words;
 
-  // i is unsigned to break when i == 0
-  for(i = max_words-1; ; i--)
-  {
-    word1 = (i < bitarr1->num_of_words ? bitarr1->words[i] : (word_t)0);
-    word2 = (i < bitarr2->num_of_words ? bitarr2->words[i] : (word_t)0);
-
-    if(word1 > word2)
-    {
-      return 1;
+  // i is unsigned so break when i == 0
+  if(bitarr1->num_of_words > bitarr2->num_of_words) {
+    min_words = bitarr2->num_of_words;
+    for(i = bitarr1->num_of_words-1; ; i--) {
+      if(bitarr1->words[i]) return 1;
+      if(i == bitarr2->num_of_words) break;
     }
-    else if(word1 < word2)
-    {
-      return -1;
-    }
-    else if(i == 0)
-    {
-      break;
+  }
+  else if(bitarr1->num_of_words < bitarr2->num_of_words) {
+    for(i = bitarr2->num_of_words-1; ; i--) {
+      if(bitarr2->words[i]) return 1;
+      if(i == bitarr1->num_of_words) break;
     }
   }
 
-  if(bitarr1->num_of_bits > bitarr2->num_of_bits)
+  if(min_words == 0) return 0;
+
+  for(i = min_words-1; ; i--)
   {
-    return 1;
+    word1 = bitarr1->words[i];
+    word2 = bitarr2->words[i];
+    if(word1 != word2) return (word1 > word2 ? 1 : -1);
+    if(i == 0) break;
   }
-  else if(bitarr1->num_of_bits < bitarr2->num_of_bits)
-  {
-    return -1;
-  }
-  else
-  {
-    return 0;
-  }
+
+  if(bitarr1->num_of_bits == bitarr2->num_of_bits) return 0;
+  return bitarr1->num_of_bits > bitarr2->num_of_bits ? 1 : -1;
 }
 
 // Compare two bit arrays by value stored, with index 0 being the Most
@@ -1759,41 +1749,25 @@ int bit_array_cmp(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
 //  <0 iff bitarr1 < bitarr2
 int bit_array_cmp_big_endian(const BIT_ARRAY* bitarr1, const BIT_ARRAY* bitarr2)
 {
-  word_addr_t max_words = MAX(bitarr1->num_of_words, bitarr2->num_of_words);
+  word_addr_t min_words = MAX(bitarr1->num_of_words, bitarr2->num_of_words);
 
   word_addr_t i;
   word_t word1, word2;
 
-  for(i = 0; i < max_words; i++)
-  {
-    word1 = (i < bitarr1->num_of_words ? bitarr1->words[i] : (word_t)0);
-    word2 = (i < bitarr2->num_of_words ? bitarr2->words[i] : (word_t)0);
-
-    word1 = _reverse_word(word1);
-    word2 = _reverse_word(word2);
-
-    if(word1 > word2)
-    {
-      return 1;
-    }
-    else if(word1 < word2)
-    {
-      return -1;
-    }
+  for(i = 0; i < min_words; i++) {
+    word1 = _reverse_word(bitarr1->words[i]);
+    word2 = _reverse_word(bitarr2->words[i]);
+    if(word1 != word2) return (word1 > word2 ? 1 : -1);
   }
 
-  if(bitarr1->num_of_bits > bitarr2->num_of_bits)
-  {
-    return 1;
-  }
-  else if(bitarr1->num_of_bits < bitarr2->num_of_bits)
-  {
-    return -1;
-  }
-  else
-  {
-    return 0;
-  }
+  // Check remaining words. Only one of these loops will execute
+  for(; i < bitarr1->num_of_words; i++)
+    if(bitarr1->words[i]) return 1;
+  for(; i < bitarr2->num_of_words; i++)
+    if(bitarr2->words[i]) return -1;
+
+  if(bitarr1->num_of_bits == bitarr2->num_of_bits) return 0;
+  return bitarr1->num_of_bits > bitarr2->num_of_bits ? 1 : -1;
 }
 
 // compare bitarr with (bitarr2 << pos)
@@ -2978,58 +2952,59 @@ bit_index_t bit_array_save(const BIT_ARRAY* bitarr, FILE* f)
   bit_index_t num_of_bytes = roundup_bits2bytes(bitarr->num_of_bits);
   bit_index_t bytes_written = 0;
 
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  const int endian = 1;
+  if(*(uint8_t*)&endian == 1)
+  {
+    // Little endian machine
+    // Write 8 bytes to store the number of bits in the array
+    bytes_written += fwrite(&bitarr->num_of_bits, 1, 8, f);
 
-  uint64_t i, w, whole_words = num_of_bytes/8;
-  uint64_t rem_bytes = num_of_bytes - whole_words*8;
-  uint64_t n_bits = __builtin_bswap64(bitarr->num_of_bits);
-
-  // Write 8 bytes to store the number of bits in the array
-  bytes_written += fwrite(&n_bits, 1, 8, f);
-
-  // Write the array
-  for(i = 0; i < whole_words; i++) {
-    w = __builtin_bswap64(bitarr->words[i]);
-    bytes_written += fwrite(&w, 1, 8, f);
+    // Write the array
+    bytes_written += fwrite(bitarr->words, 1, num_of_bytes, f);
   }
+  else
+  {
+    // Big endian machine
+    uint64_t i, w, whole_words = num_of_bytes/sizeof(word_t);
+    uint64_t rem_bytes = num_of_bytes - whole_words*sizeof(word_t);
+    uint64_t n_bits = __builtin_bswap64(bitarr->num_of_bits);
 
-  if(rem_bytes > 0) {
-    w = __builtin_bswap64(bitarr->words[whole_words]);
-    bytes_written += fwrite(&w, 1, rem_bytes, f);
+    // Write 8 bytes to store the number of bits in the array
+    bytes_written += fwrite(&n_bits, 1, 8, f);
+
+    // Write the array
+    for(i = 0; i < whole_words; i++) {
+      w = __builtin_bswap64(bitarr->words[i]);
+      bytes_written += fwrite(&w, 1, 8, f);
+    }
+
+    if(rem_bytes > 0) {
+      w = __builtin_bswap64(bitarr->words[whole_words]);
+      bytes_written += fwrite(&w, 1, rem_bytes, f);
+    }
   }
-
-#else
-
-  // Write 8 bytes to store the number of bits in the array
-  bytes_written += fwrite(&bitarr->num_of_bits, 1, 8, f);
-
-  // Write the array
-  bytes_written += fwrite(bitarr->words, 1, num_of_bytes, f);
-
-#endif
 
   return bytes_written;
+}
+
+// Load a uint64 from little endian format.
+// Works for both big and little endian architectures
+static inline uint64_t le64_to_cpu(const uint8_t *x)
+{
+  return (((uint64_t)(x[0]))       | ((uint64_t)(x[1]) << 8)  |
+          ((uint64_t)(x[2]) << 16) | ((uint64_t)(x[3]) << 24) |
+          ((uint64_t)(x[4]) << 32) | ((uint64_t)(x[5]) << 40) |
+          ((uint64_t)(x[6]) << 48) | ((uint64_t)(x[7]) << 56));
 }
 
 // Reads bit array from a file. bitarr is resized and filled.
 // Returns 1 on success, 0 on failure
 char bit_array_load(BIT_ARRAY* bitarr, FILE* f)
 {
-  size_t bytes_read;
-
-  // Read in number of bits
-  bit_index_t num_bits = 0;
-  bytes_read = fread(&num_bits, 1, 8, f);
-
-  if(bytes_read != 8)
-  {
-    // Couldn't read in number of bytes
-    return 0;
-  }
-
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  num_bits = __builtin_bswap64(num_bits);
-#endif
+  // Read in number of bits, return 0 if we can't read in
+  bit_index_t num_bits;
+  if(fread(&num_bits, 1, 8, f) != 8) return 0;
+  num_bits = le64_to_cpu((uint8_t*)&num_bits);
 
   // Resize
   bit_array_resize_critical(bitarr, num_bits);
@@ -3037,37 +3012,16 @@ char bit_array_load(BIT_ARRAY* bitarr, FILE* f)
   // Have to calculate how many bytes are needed for the file
   // (Note: this may be different from num_of_words * sizeof(word_t))
   bit_index_t num_of_bytes = roundup_bits2bytes(bitarr->num_of_bits);
+  if(fread(bitarr->words, 1, num_of_bytes, f) != num_of_bytes) return 0;
 
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-
-  uint64_t i, w, whole_words = num_of_bytes/8;
-  uint64_t rem_bytes = num_of_bytes - whole_words*8;
-
-  for(i = 0; i < whole_words; i++) {
-    bytes_read += fread(&w, 1, 8, f);
-    bitarr->words[i] = __builtin_bswap64(w);
-  }
-
-  if(rem_bytes > 0) {
-    bytes_read += fread(&w, 1, rem_bytes, f);
-    bitarr->words[whole_words] = __builtin_bswap64(w);
-  }
-
-#else
-  bytes_read += fread(bitarr->words, 1, num_of_bytes, f);
-#endif
-
-  // +8 for num_of_bits 8 byte word
-  if(bytes_read != num_of_bytes+8)
-  {
-    return 0;
-  }
+  // Fix endianness
+  word_addr_t i;
+  for(i = 0; i < bitarr->num_of_words; i++)
+    bitarr->words[i] = le64_to_cpu((uint8_t*)&bitarr->words[i]);
 
   // Mask top word
   _mask_top_word(bitarr);
-
   DEBUG_VALIDATE(bitarr);
-
   return 1;
 }
 
