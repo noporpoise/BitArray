@@ -112,6 +112,7 @@
 #define bitset_cpy(arr,pos,bit) bitset_op2(bitset2_cpy, arr, pos, bit)
 
 // Auto-detect type size: thread safe bit functions
+// They return the value of the bit (0 or 1) before it was updated
 #define bitset_get_mt(arr,pos)     bitset_op(bitset2_get_mt,  arr, pos)
 #define bitset_set_mt(arr,pos)     bitset_op(bitset2_set_mt,  arr, pos)
 #define bitset_del_mt(arr,pos)     bitset_op(bitset2_del_mt,  arr, pos)
