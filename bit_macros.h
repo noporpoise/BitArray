@@ -162,4 +162,32 @@
   bitlock_acquire_block(arr,pos,{*retptr=0;break;},if(!*retptr){break;});      \
 } while(0)
 
+/*
+ * Byteswapping
+ */
+
+/* GCC versions < 4.3 do not have __builtin_bswapX() */
+#if !defined(__clang__) && defined(__GNUC__) && defined(__GNUC_MINOR__) && \
+    ( (__GNUC__ < 4)  || (__GNUC__ == 4 && __GNUC_MINOR__ < 3))
+  #define byteswap64(x) ( (((uint64_t)(x) << 56))                       | \
+                          (((uint64_t)(x) << 40) & 0xff000000000000ULL) | \
+                          (((uint64_t)(x) << 24) & 0xff0000000000ULL)   | \
+                          (((uint64_t)(x) <<  8) & 0xff00000000ULL)     | \
+                          (((uint64_t)(x) >>  8) & 0xff000000ULL)       | \
+                          (((uint64_t)(x) >> 24) & 0xff0000ULL)         | \
+                          (((uint64_t)(x) >> 40) & 0xff00ULL)           | \
+                          (((uint64_t)(x) >> 56)) )
+
+  #define byteswap32(x) ( (((uint32_t)(x) << 24))                       | \
+                          (((uint32_t)(x) <<  8) & 0xff0000U)           | \
+                          (((uint32_t)(x) >>  8) & 0xff00U)             | \
+                          (((uint32_t)(x) >> 24)) )
+
+  #define byteswap16(x) ( (((uint16_t)(x) << 8) | (((uint16_t)(x) >> 8) )
+#else
+  #define byteswap64(x) __builtin_bswap64(x)
+  #define byteswap32(x) __builtin_bswap64(x)
+  #define byteswap16(x) __builtin_bswap64(x)
+#endif
+
 #endif /* BITLOCK_H_ */

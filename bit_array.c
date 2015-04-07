@@ -2967,19 +2967,19 @@ bit_index_t bit_array_save(const BIT_ARRAY* bitarr, FILE* f)
     // Big endian machine
     uint64_t i, w, whole_words = num_of_bytes/sizeof(word_t);
     uint64_t rem_bytes = num_of_bytes - whole_words*sizeof(word_t);
-    uint64_t n_bits = __builtin_bswap64(bitarr->num_of_bits);
+    uint64_t n_bits = byteswap64(bitarr->num_of_bits);
 
     // Write 8 bytes to store the number of bits in the array
     bytes_written += fwrite(&n_bits, 1, 8, f);
 
     // Write the array
     for(i = 0; i < whole_words; i++) {
-      w = __builtin_bswap64(bitarr->words[i]);
+      w = byteswap64(bitarr->words[i]);
       bytes_written += fwrite(&w, 1, 8, f);
     }
 
     if(rem_bytes > 0) {
-      w = __builtin_bswap64(bitarr->words[whole_words]);
+      w = byteswap64(bitarr->words[whole_words]);
       bytes_written += fwrite(&w, 1, rem_bytes, f);
     }
   }
