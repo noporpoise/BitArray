@@ -4,6 +4,9 @@ language: c
 compiler:
   - clang
   - gcc
+os:
+- linux
+- osx
 
 install: make all
 script: make test

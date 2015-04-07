@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 
   size_t i; int rc;
   uint8_t *locks = (uint8_t*)calloc((LIMIT+7)/8, sizeof(uint8_t));
-  TestThread *workers = calloc(NWORKERS, sizeof(TestThread));
+  TestThread *workers = (TestThread*)calloc(NWORKERS, sizeof(TestThread));
 
   // Create threads
   for(i = 0; i < NWORKERS; i++) {
