@@ -167,8 +167,9 @@
  */
 
 /* GCC versions < 4.3 do not have __builtin_bswapX() */
-#if !defined(__clang__) && defined(__GNUC__) && defined(__GNUC_MINOR__) && \
-    ( (__GNUC__ < 4)  || (__GNUC__ == 4 && __GNUC_MINOR__ < 3))
+#if ( defined(__clang__) && !__has_builtin(__builtin_bswap64) ) || \
+    ( !defined(__clang__) && defined(__GNUC__) && defined(__GNUC_MINOR__) && \
+      ( (__GNUC__ < 4)  || (__GNUC__ == 4 && __GNUC_MINOR__ < 3)) )
   #define byteswap64(x) ( (((uint64_t)(x) << 56))                       | \
                           (((uint64_t)(x) << 40) & 0xff000000000000ULL) | \
                           (((uint64_t)(x) << 24) & 0xff0000000000ULL)   | \
