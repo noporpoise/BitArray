@@ -184,7 +184,9 @@
                           (((uint32_t)(x) >>  8) & 0xff00U)             | \
                           (((uint32_t)(x) >> 24)) )
 
-  #define byteswap16(x) ( (((uint16_t)(x) << 8) | (((uint16_t)(x) >> 8) )
+  /* uint16_t type might be bigger than 2 bytes, so need to mask */
+  #define byteswap16(x) ( (((uint16_t)(x) & 0xff) << 8) | \
+                          (((uint16_t)(x) >> 8) & 0xff) )
 #else
   #define byteswap64(x) __builtin_bswap64(x)
   #define byteswap32(x) __builtin_bswap64(x)
