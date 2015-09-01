@@ -8,6 +8,8 @@ os:
 - linux
 - osx
 
+sudo: false
+
 install: make all
 script: make test
 
