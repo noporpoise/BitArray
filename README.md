@@ -521,7 +521,7 @@ integer type):
 Arithmetic
 ----------
 
-Bit arrays can be interpretted as arbitarily large unsigned integers. To do this
+Bit arrays can be interpretted as arbitrarily large unsigned integers. To do this
 the bit at index 0 is treated as the least significant bit.  BitArrays provide
 functions for arithmetic between a BitArray & a long, and between BitArrays.
 
