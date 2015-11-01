@@ -2046,6 +2046,7 @@ void bit_array_cycle_left(BIT_ARRAY* bitarr, bit_index_t cycle_dist)
 
 static word_t _next_permutation(word_t v)
 {
+  assert(v);
   // From http://graphics.stanford.edu/~seander/bithacks.html#NextBitPermutation
   word_t t = v | (v - 1); // t gets v's least significant 0 bits set to 1
   // Next set to 1 the most significant bit to change,
