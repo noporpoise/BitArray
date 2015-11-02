@@ -43,7 +43,7 @@ You are welcome to bundle bit_array with your own code. Add to the top of your c
 Add to your compiler arguments:
 
     BIT_ARR_PATH=path/to/bit_array/
-    gcc ... -I$(BIT_ARR_PATH) -L$(BIT_ARR_PATH) -libbitarr
+    gcc ... -I$(BIT_ARR_PATH) -L$(BIT_ARR_PATH) -lbitarr
 
 Shorter function names are provided in `bar.h`, which can be included instead of
 `bit_array.h`:
