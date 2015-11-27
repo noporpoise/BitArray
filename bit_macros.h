@@ -158,8 +158,8 @@
 // Block until we get the lock or someone else does
 // sets the memory pointed to by retptr to 1 if we got the lock, 0 otherwise
 #define bitlock_try_acquire(arr,pos,retptr) do {                               \
-  *retptr = 1; /* default to success, set to zero if locked */                 \
-  bitlock_acquire_block(arr,pos,{*retptr=0;break;},if(!*retptr){break;});      \
+  *(retptr) = 1; /* default to success, set to zero if locked */               \
+  bitlock_acquire_block(arr,pos,{*(retptr)=0;break;},if(!*(retptr)){break;});  \
 } while(0)
 
 /*
