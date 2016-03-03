@@ -899,6 +899,9 @@ uint64_t bit_array_get_wordn(const BIT_ARRAY* bitarr, bit_index_t start, int n)
 //
 // Set a word at a time
 //
+// Doesn't extend bit array. However it is safe to TRY to set bits beyond the
+// end of the array, as long as: `start` is < `bit_array_length(arr)`
+//
 
 void bit_array_set_word64(BIT_ARRAY* bitarr, bit_index_t start, uint64_t word)
 {
@@ -910,14 +913,14 @@ void bit_array_set_word32(BIT_ARRAY* bitarr, bit_index_t start, uint32_t word)
 {
   assert(start < bitarr->num_of_bits);
   word_t w = _get_word(bitarr, start);
-  _set_word(bitarr, start, (w & ~(word_t)0xffffffff) | word);
+  _set_word(bitarr, start, bitmask_merge(w, word, 0xffffffff00000000UL));
 }
 
 void bit_array_set_word16(BIT_ARRAY* bitarr, bit_index_t start, uint16_t word)
 {
   assert(start < bitarr->num_of_bits);
   word_t w = _get_word(bitarr, start);
-  _set_word(bitarr, start, (w & ~(word_t)0xffff) | word);
+  _set_word(bitarr, start, bitmask_merge(w, word, 0xffffffffffff0000UL));
 }
 
 void bit_array_set_word8(BIT_ARRAY* bitarr, bit_index_t start, uint8_t byte)

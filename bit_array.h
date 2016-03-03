@@ -170,6 +170,8 @@ uint8_t  bit_array_get_word8(const BIT_ARRAY* bitarr, bit_index_t start);
 uint64_t bit_array_get_wordn(const BIT_ARRAY* bitarr, bit_index_t start, int n);
 
 // Set 64 bits at once from a particular start position
+// Doesn't extend bit array. However it is safe to TRY to set bits beyond the
+// end of the array, as long as: `start` is < `bit_array_length(arr)`
 void bit_array_set_word64(BIT_ARRAY* bitarr, bit_index_t start, uint64_t word);
 void bit_array_set_word32(BIT_ARRAY* bitarr, bit_index_t start, uint32_t word);
 void bit_array_set_word16(BIT_ARRAY* bitarr, bit_index_t start, uint16_t word);
