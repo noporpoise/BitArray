@@ -2401,31 +2401,32 @@ void test_get_set_bytes()
 {
   SUITE_START("get/set byte");
 
-  const size_t nbytes = 8;
-  uint8_t bytes[nbytes] = {0x55,0x31,0x5A,0x12,0x02,0x31,0xC3,0x1E};
+  #define NBYTES 8
+  uint8_t bytes[NBYTES] = {0x55,0x31,0x5A,0x12,0x02,0x31,0xC3,0x1E};
   size_t s, i;
 
-  BIT_ARRAY *arr = bit_array_create(nbytes*8);
+  BIT_ARRAY *arr = bit_array_create(NBYTES*8);
 
   // Set bytes using different offsets
   for(s = 0; s < 8; s++) {
     bit_array_clear_all(arr);
-    for(i = 0; i < nbytes-1; i++) {
+    for(i = 0; i < NBYTES-1; i++) {
       bit_array_set_word8(arr, i*8+s, bytes[i]);
       ASSERT(bit_array_get_word8(arr, i*8+s) == bytes[i]);
     }
     // Setting bytes doesn't extend the array - check last byte with masking
-    i = nbytes-1;
+    i = NBYTES-1;
     bit_array_set_word8(arr, i*8+s, bytes[i]);
     ASSERT(bit_array_get_word8(arr, i*8+s) == (bytes[i] & (0xff>>s)));
 
     // Check bits
     for(i = 0; i < s; i++) ASSERT(bit_array_get(arr, i) == 0);
-    for(i = s; i < nbytes*8; i++)
+    for(i = s; i < NBYTES*8; i++)
       ASSERT(bit_array_get(arr, i) == bitset_get(bytes, i-s));
   }
 
   bit_array_free(arr);
+  #undef NBYTES
 
   SUITE_END();
 }
