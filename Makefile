@@ -28,7 +28,7 @@ libbitarr.a: bit_array.o
 	$(CC) $(CFLAGS) $(OBJFLAGS) -c $< -o $@
 
 dev: libbitarr.a bit_macros.h
-	cd dev && $(MAKE) 
+	cd dev && $(MAKE)
 
 examples: libbitarr.a
 	cd examples && $(MAKE)
