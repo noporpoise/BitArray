@@ -664,6 +664,22 @@ char bit_array_get_bit(const BIT_ARRAY* bitarr, bit_index_t b)
   return bit_array_get(bitarr, b);
 }
 
+// Get the offsets of the set bits, returns the number of bits set
+// It is assumed that dst is at least of length end
+bit_index_t bit_array_get_bits(const BIT_ARRAY* bitarr, bit_index_t end, bit_index_t* dst)
+{
+    bit_index_t i;
+    bit_index_t bits_set = 0;
+
+    assert(end <= bitarr->num_of_bits);
+    for(i = 0; i < end; i++) {
+       if(bit_array_get(bitarr, i) == 1) {
+          dst[bits_set++] = i;
+       }
+    }
+    return bits_set;
+}
+
 // set a bit (to 1) at position b
 void bit_array_set_bit(BIT_ARRAY* bitarr, bit_index_t b)
 {
