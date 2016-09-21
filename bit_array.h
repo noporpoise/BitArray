@@ -89,6 +89,8 @@ void bit_array_ensure_size_critical(BIT_ARRAY* bitarr, bit_index_t num_of_bits);
 // c must be 0 or 1
 #define bit_array_assign(arr,i,c) bitset_cpy((arr)->words,i,c)
 
+#define bit_array_len(arr) ((arr)->num_of_bits)
+
 //
 // Get, set, clear, assign and toggle individual bits
 // "Safe": use assert() to check bounds
@@ -113,8 +115,15 @@ void bit_array_rtoggle(BIT_ARRAY* bitarr, bit_index_t b);
 void bit_array_rassign(BIT_ARRAY* bitarr, bit_index_t b, char c);
 
 //
-// Set, clear and toggle several bits at once
+// Get, set, clear and toggle several bits at once
 //
+
+// Get the offsets of the set bits (for offsets start<=offset<end)
+// Returns the number of bits set
+// It is assumed that dst is at least of length (end-start)
+bit_index_t bit_array_get_bits(const BIT_ARRAY* bitarr,
+                               bit_index_t start, bit_index_t end,
+                               bit_index_t* dst);
 
 // Set multiple bits at once.
 // e.g. set bits 1, 20 & 31: bit_array_set_bits(bitarr, 3, 1,20,31);

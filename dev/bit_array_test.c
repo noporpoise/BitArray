@@ -157,6 +157,36 @@ void test_copy()
   SUITE_END();
 }
 
+// Fetch bits start..end from arr into setbits, then check that the return
+// result is correct. `setbits` must be at least (end-start) elements long
+void _get_bits(const BIT_ARRAY *arr, bit_index_t start, bit_index_t end,
+               bit_index_t *setbits)
+{
+  bit_index_t i, j, n = bit_array_get_bits(arr, start, end, setbits);
+  for(i = start, j = 0; i < end; i++) {
+    if(bit_array_get(arr,i)) {
+      ASSERT(setbits[j] == i);
+      j++;
+    }
+  }
+  ASSERT(j == n);
+}
+
+// Test function bit_array_get_bits(arr,start,end,indices)
+void test_get_bits()
+{
+  bit_index_t *setbits = calloc(200, sizeof(*setbits));
+  BIT_ARRAY *arr = bit_array_create(200);
+  bit_array_random(arr, 0.5f);
+  _get_bits(arr, 0, 0, setbits);
+  _get_bits(arr, 0, 200, setbits);
+  _get_bits(arr, 200, 200, setbits);
+  _get_bits(arr, 50, 150, setbits);
+  free(setbits);
+  bit_array_free(arr);
+  SUITE_END();
+}
+
 void test_arithmetic()
 {
   printf("== testing arithmetic ==\n");
@@ -2575,6 +2605,7 @@ int main(int argc, char* argv[])
   test_copy();
   test_get_set_bytes();
 
+  test_get_bits();
   test_parity();
   test_interleave();
   test_reverse();

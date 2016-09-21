@@ -740,8 +740,25 @@ void bit_array_rassign(BIT_ARRAY* bitarr, bit_index_t b, char c)
 }
 
 //
-// Set, clear and toggle several bits at once
+// Get, set, clear and toggle several bits at once
 //
+
+// Get the offsets of the set bits (for offsets start<=offset<end)
+// Returns the number of bits set
+// It is assumed that dst is at least of length (end-start)
+bit_index_t bit_array_get_bits(const BIT_ARRAY* bitarr,
+                               bit_index_t start, bit_index_t end,
+                               bit_index_t* dst)
+{
+  bit_index_t i, n = 0;
+  assert(end <= bitarr->num_of_bits);
+  for(i = start; i < end; i++) {
+    if(bit_array_get(bitarr, i)) {
+      dst[n++] = i;
+    }
+  }
+  return n;
+}
 
 // Set multiple bits at once.
 // e.g. set bits 1, 20 & 31: bit_array_set_bits(bitarr, 3, 1,20,31);
