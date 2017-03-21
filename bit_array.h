@@ -98,6 +98,7 @@ void bit_array_ensure_size_critical(BIT_ARRAY* bitarr, bit_index_t num_of_bits);
 
 // Get the value of a bit (returns 0 or 1)
 char bit_array_get_bit(const BIT_ARRAY* bitarr, bit_index_t b);
+bit_index_t bit_array_get_bits(const BIT_ARRAY* bitarr, bit_index_t end, bit_index_t* dst);
 void bit_array_set_bit(BIT_ARRAY* bitarr, bit_index_t b);
 void bit_array_clear_bit(BIT_ARRAY* bitarr, bit_index_t b);
 void bit_array_toggle_bit(BIT_ARRAY* bitarr, bit_index_t b);
