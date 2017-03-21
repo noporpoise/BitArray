@@ -175,7 +175,7 @@ void _get_bits(const BIT_ARRAY *arr, bit_index_t start, bit_index_t end,
 // Test function bit_array_get_bits(arr,start,end,indices)
 void test_get_bits()
 {
-  bit_index_t *setbits = calloc(200, sizeof(*setbits));
+  bit_index_t *setbits = (bit_index_t *) calloc(200, sizeof(*setbits));
   BIT_ARRAY *arr = bit_array_create(200);
   bit_array_random(arr, 0.5f);
   _get_bits(arr, 0, 0, setbits);
