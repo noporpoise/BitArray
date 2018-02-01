@@ -2548,6 +2548,10 @@ void test_bar_wrapper()
     ASSERT(barlen(&foo) >= rv);
   }
 
+  for (i = 1; i < 5; i++) {
+    barfree(&(bars[i]));
+  }
+
   barfree(&foo);
   ASSERT(barlen(&foo) == 0);
 
