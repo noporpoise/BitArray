@@ -2358,6 +2358,7 @@ void bit_array_add_uint64(BIT_ARRAY* bitarr, uint64_t value)
     {
       carry = 1;
       bitarr->words[i] += value;
+      value = 1;
     }
     else
     {
